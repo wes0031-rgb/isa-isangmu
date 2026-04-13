@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.env
+.env.*
+!.env.example
+
+# Raw scraped data (not needed at runtime, only curated chunks matter)
+backend/data/procedures/easylaw/
+backend/data/procedures/gov24/
+backend/data/procedures/telecom/
+backend/data/procedures/utility/
+backend/data/mapping/
+backend/data/laws/
+backend/data/samples/
+
+.DS_Store

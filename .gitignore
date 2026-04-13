@@ -1,0 +1,57 @@
+# ===== Secrets =====
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ===== Node / Expo =====
+node_modules/
+.expo/
+dist/
+.next/
+.cache/
+web-build/
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== Project-specific large/raw data =====
+# 원본 스크랩 데이터 — 수집 리포트는 유지, 개별 파일은 제외 (선택)
+backend/data/samples/
+
+# ===== Logs =====
+*.log
+/tmp/
+
+# ===== Backup·임시 =====
+*.bak
+*~
+.#*
+
+# ===== Code export·노션 공유 (선택: 원본 코드는 backend/frontend 로 충분) =====
+# 필요시 주석 해제해서 제외
+# code_export/
+# notion_share/

@@ -1,0 +1,121 @@
+{
+  "name": "moving-law-index",
+  "description": "MoveWise Index A — 법률 원문 조문 단위 청크 (주택임대차보호법, 주민등록법, 동물보호법 등)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "Edm.String",
+      "key": true,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "law_name",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true,
+      "analyzer": "ko.lucene"
+    },
+    {
+      "name": "article",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": false
+    },
+    {
+      "name": "title",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "analyzer": "ko.lucene"
+    },
+    {
+      "name": "content",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "analyzer": "ko.lucene"
+    },
+    {
+      "name": "keywords",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "category",
+      "type": "Collection(Edm.String)",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "source_url",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": false,
+      "retrievable": true
+    },
+    {
+      "name": "last_updated",
+      "type": "Edm.DateTimeOffset",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "sortable": true
+    },
+    {
+      "name": "content_vector",
+      "type": "Collection(Edm.Single)",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": false,
+      "dimensions": 1536,
+      "vectorSearchProfile": "movewise-vector-profile"
+    }
+  ],
+  "vectorSearch": {
+    "algorithms": [
+      {
+        "name": "movewise-hnsw",
+        "kind": "hnsw",
+        "hnswParameters": {
+          "m": 4,
+          "efConstruction": 400,
+          "efSearch": 500,
+          "metric": "cosine"
+        }
+      }
+    ],
+    "profiles": [
+      {
+        "name": "movewise-vector-profile",
+        "algorithm": "movewise-hnsw"
+      }
+    ]
+  },
+  "semantic": {
+    "configurations": [
+      {
+        "name": "movewise-semantic",
+        "prioritizedFields": {
+          "titleField": {"fieldName": "title"},
+          "prioritizedContentFields": [{"fieldName": "content"}],
+          "prioritizedKeywordsFields": [{"fieldName": "keywords"}, {"fieldName": "law_name"}]
+        }
+      }
+    ]
+  }
+}

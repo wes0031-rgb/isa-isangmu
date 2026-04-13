@@ -1,0 +1,662 @@
+{
+  "description": "MoveWise RAG 평가용 Golden Query 세트 — 사용자 조건(user_input)에 대한 정답 체크리스트 항목(expected_items)과 금지 항목(must_not_include)",
+  "version": "draft-v1",
+  "created_at": "2026-04-13",
+  "created_by": "Claude draft, awaits user review",
+  "note": "각 쿼리는 실제 사용자 상황 기준. expected_items의 deadline은 이사일로부터의 일수. citation은 인덱스 A/B의 chunk id가 아니라 근거 법률명(추후 chunk id로 치환).",
+  "queries": [
+    {
+      "query_id": "Q001",
+      "scenario": "25세 여성, 첫 자취 시작, 분당 원룸 월세",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "경기도 성남시 분당구",
+        "move_date": "2026-05-01",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true, "region_hint": "성남시 수도사업소"},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "삼천리도시가스"},
+        {"category": "인터넷 이전 설치", "must_appear": true},
+        {"category": "우편물 주소이전", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학", "강제경매"]
+    },
+    {
+      "query_id": "Q002",
+      "scenario": "28세 남성, 자취, 서울 강남구, 반려견 1마리",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "서울특별시 강남구",
+        "move_date": "2026-05-15",
+        "has_pet": true,
+        "has_car": false,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30, "citation_hint": "동물보호법 제15조"},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "코원에너지서비스"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true, "region_hint": "서울시 상수도본부"}
+      ],
+      "must_not_include": ["자동차 변경등록", "아이 전학"]
+    },
+    {
+      "query_id": "Q003",
+      "scenario": "30대 신혼부부, 전세, 서울 마포구, 자동차 보유",
+      "user_input": {
+        "household": "신혼",
+        "contract": "전세",
+        "region": "서울특별시 마포구",
+        "move_date": "2026-06-01",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30, "citation_hint": "자동차등록령 제22조"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "서울도시가스"},
+        {"category": "인터넷 이전 설치", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "아이 전학"]
+    },
+    {
+      "query_id": "Q004",
+      "scenario": "38세 부부+초등 자녀 2명, 전세, 성남시 분당 > 수정구",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "경기도 성남시 수정구",
+        "move_date": "2026-06-15",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": true,
+        "children_count": 2,
+        "children_school_level": "초등"
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "자녀 전학", "must_appear": true, "citation_hint": "초·중등교육법"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true, "region_hint": "성남시 수도사업소"},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q005",
+      "scenario": "35세 싱글, 월세, 부산 해운대구, 반려묘",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "부산광역시 해운대구",
+        "move_date": "2026-05-20",
+        "has_pet": true,
+        "has_car": false,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "부산도시가스"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "아이 전학"]
+    },
+    {
+      "query_id": "Q006",
+      "scenario": "45세 부부+중학생, 이사하면서 장기수선충당금 반환 문의",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "서울특별시 송파구",
+        "move_date": "2026-07-01",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": true,
+        "special_concerns": ["장기수선충당금 반환"]
+      },
+      "expected_items": [
+        {"category": "장기수선충당금 반환청구", "must_appear": true, "citation_hint": "공동주택관리법 시행령"},
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "관리비 정산", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q007",
+      "scenario": "30세 여성 자취, 월세, 대구, 집주인이 보증금 반환 지연 걱정",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "대구광역시 중구",
+        "move_date": "2026-08-01",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false,
+        "special_concerns": ["보증금 반환 우려"]
+      },
+      "expected_items": [
+        {"category": "대항력·우선변제권 확보", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "임차권등기명령 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의3"},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "대성에너지"}
+      ],
+      "must_not_include": ["반려동물 주소변경", "자동차 변경등록", "아이 전학"]
+    },
+    {
+      "query_id": "Q008",
+      "scenario": "신혼부부, 월세, 인천 서구, 반려견+자동차",
+      "user_input": {
+        "household": "신혼",
+        "contract": "월세",
+        "region": "인천광역시 서구",
+        "move_date": "2026-05-05",
+        "has_pet": true,
+        "has_car": true,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "인천도시가스"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "인터넷 이전 설치", "must_appear": true}
+      ],
+      "must_not_include": ["아이 전학"]
+    },
+    {
+      "query_id": "Q009",
+      "scenario": "22세 대학생, 원룸 월세, 서울 관악구, 첫 자취",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "서울특별시 관악구",
+        "move_date": "2026-03-01",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true, "region_hint": "서울시 상수도본부"},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "대륜E&S"},
+        {"category": "인터넷 이전 설치", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학"]
+    },
+    {
+      "query_id": "Q010",
+      "scenario": "40대 부부, 전세, 제주도, 자동차 2대+반려견, 자녀 고등학생",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "제주특별자치도 제주시",
+        "move_date": "2026-07-15",
+        "has_pet": true,
+        "has_car": true,
+        "car_count": 2,
+        "has_children": true,
+        "children_school_level": "고등"
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30, "multi": true},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "제주도시가스"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q011",
+      "scenario": "32세 자취, 월세, 광주 북구, 차임 증액 관련 걱정",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "광주광역시 북구",
+        "move_date": "2026-06-10",
+        "special_concerns": ["월세 인상 가능성"]
+      },
+      "expected_items": [
+        {"category": "차임·보증금 증감청구 한도 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제7조"},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "해양에너지"}
+      ],
+      "must_not_include": ["자동차 변경등록", "반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q012",
+      "scenario": "28세 자취, 월세, 대전 유성구, 이사 후 집 하자 발견",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "대전광역시 유성구",
+        "move_date": "2026-05-25",
+        "special_concerns": ["하자 발견"]
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "주택수리 하자 분쟁해결 기준", "must_appear": true},
+        {"category": "임대인 수선의무 안내", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q013",
+      "scenario": "26세 자취, 월세, 울산, 이사 + 전월세신고제 대상",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "울산광역시 남구",
+        "move_date": "2026-05-10",
+        "deposit_krw": 50000000,
+        "monthly_rent_krw": 400000
+      },
+      "expected_items": [
+        {"category": "전월세 계약 신고", "must_appear": true, "deadline_days": 30, "citation_hint": "부동산 거래신고법"},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "경동도시가스"}
+      ],
+      "must_not_include": ["자동차 변경등록"]
+    },
+    {
+      "query_id": "Q014",
+      "scenario": "27세 여성, 월세, 서울 서대문구, 이사업체 문제 겪음",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "서울특별시 서대문구",
+        "move_date": "2026-04-25",
+        "special_concerns": ["이사업체 분쟁"]
+      },
+      "expected_items": [
+        {"category": "이사업체 분쟁 해결 방법", "must_appear": true},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "서울도시가스"}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q015",
+      "scenario": "23세 신입사원, 사택 → 첫 자취, 월세, 세종시",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "세종특별자치시",
+        "move_date": "2026-05-01",
+        "first_time": true
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true},
+        {"category": "인터넷 이전 설치", "must_appear": true},
+        {"category": "청년 월세 지원 제도 안내", "must_appear": false}
+      ],
+      "must_not_include": ["반려동물 주소변경", "자동차 변경등록", "아이 전학"]
+    },
+    {
+      "query_id": "Q016",
+      "scenario": "37세 부부, 전세, 춘천, 갱신 요구권 사용 상황",
+      "user_input": {
+        "household": "신혼",
+        "contract": "전세",
+        "region": "강원특별자치도 춘천시",
+        "move_date": "2026-09-01",
+        "special_concerns": ["갱신요구권 행사"]
+      },
+      "expected_items": [
+        {"category": "임대차 갱신요구권 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제6조의3"},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학"]
+    },
+    {
+      "query_id": "Q017",
+      "scenario": "외국인 유학생, 자취, 월세, 서울, 영어 지원 필요",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "서울특별시 용산구",
+        "move_date": "2026-03-01",
+        "is_foreigner": true,
+        "language_preference": "en"
+      },
+      "expected_items": [
+        {"category": "외국인등록 주소변경", "must_appear": true, "deadline_days": 14, "citation_hint": "출입국관리법 제36조"},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "임차인 권리 안내 (외국인)", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "아이 전학"]
+    },
+    {
+      "query_id": "Q018",
+      "scenario": "45세 싱글, 매매 후 이사, 서울 성동구",
+      "user_input": {
+        "household": "자취",
+        "contract": "자가",
+        "region": "서울특별시 성동구",
+        "move_date": "2026-08-20",
+        "has_car": true
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "예스코"}
+      ],
+      "must_not_include": ["확정일자", "반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q019",
+      "scenario": "29세 자취, 월세, 성남 분당, 이사 후 관리비예치금 반환 문의",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "경기도 성남시 분당구",
+        "move_date": "2026-06-30",
+        "special_concerns": ["관리비예치금 반환"]
+      },
+      "expected_items": [
+        {"category": "관리비예치금·장기수선충당금 정산 절차", "must_appear": true},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "삼천리"}
+      ],
+      "must_not_include": ["자동차 변경등록", "아이 전학", "반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q020",
+      "scenario": "26세 커플 동거 시작, 월세, 서울 성북구, 반려견",
+      "user_input": {
+        "household": "신혼",
+        "contract": "월세",
+        "region": "서울특별시 성북구",
+        "move_date": "2026-05-18",
+        "has_pet": true,
+        "has_car": false
+      },
+      "expected_items": [
+        {"category": "전입신고 (공동 세대주)", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
+        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "예스코"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "아이 전학"]
+    },
+    {
+      "query_id": "Q021",
+      "scenario": "외국인 유학생 자취, 월세, 서울 관악구",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "서울특별시 관악구",
+        "move_date": "2026-06-10",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false,
+        "is_foreigner": true
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "외국인등록 주소변경", "must_appear": true, "deadline_days": 14, "citation_hint": "출입국관리법"},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학"]
+    },
+    {
+      "query_id": "Q022",
+      "scenario": "가족 4인, 전세, 대전 유성구, 중학생 자녀",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "대전광역시 유성구",
+        "move_date": "2026-06-25",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": true,
+        "children_school_level": "중등"
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "외국인등록 주소변경"]
+    },
+    {
+      "query_id": "Q023",
+      "scenario": "가족 3인, 전세, 서울 양천구, 고등학생 자녀, 반려묘",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "서울특별시 양천구",
+        "move_date": "2026-07-05",
+        "has_pet": true,
+        "has_car": false,
+        "has_children": true,
+        "children_school_level": "고등"
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30, "citation_hint": "동물보호법"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["자동차 변경등록", "외국인등록 주소변경"]
+    },
+    {
+      "query_id": "Q024",
+      "scenario": "대가족 5인 복합 조건, 전세, 경기 수원 영통, 자녀+자동차+반려견",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "경기도 수원시 영통구",
+        "move_date": "2026-08-15",
+        "has_pet": true,
+        "has_car": true,
+        "has_children": true,
+        "children_school_level": "초등"
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "대항력·우선변제권 확보", "must_appear": true},
+        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["외국인등록 주소변경"]
+    },
+    {
+      "query_id": "Q025",
+      "scenario": "자가 매도 후 전세로 이동 (멀티 계약), 가족, 서울 강동구",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "contracts": ["자가", "전세"],
+        "region": "서울특별시 강동구",
+        "move_date": "2026-07-20",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": false
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "아이 전학", "외국인등록 주소변경"]
+    },
+    {
+      "query_id": "Q026",
+      "scenario": "신혼 전세, 인천 연수, 갱신요구권 고민",
+      "user_input": {
+        "household": "신혼",
+        "contract": "전세",
+        "region": "인천광역시 연수구",
+        "move_date": "2026-06-18",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false,
+        "special_concerns": ["갱신요구권"]
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "임대차 갱신요구권 안내", "must_appear": true},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "자동차 변경등록"]
+    },
+    {
+      "query_id": "Q027",
+      "scenario": "자취 월세, 부산 해운대, 하자·수선 분쟁 고민",
+      "user_input": {
+        "household": "자취",
+        "contract": "월세",
+        "region": "부산광역시 해운대구",
+        "move_date": "2026-06-01",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false,
+        "special_concerns": ["하자 분쟁", "수선 요청"]
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "주택수리 하자 분쟁해결", "must_appear": true},
+        {"category": "임대인 수선의무 안내", "must_appear": true, "citation_hint": "민법 제623조"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "자동차 변경등록"]
+    },
+    {
+      "query_id": "Q028",
+      "scenario": "가족, 월세, 광주 북구, 이사업체 분쟁 경험",
+      "user_input": {
+        "household": "가족",
+        "contract": "월세",
+        "region": "광주광역시 북구",
+        "move_date": "2026-07-10",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": true,
+        "children_school_level": "초등",
+        "special_concerns": ["이사업체 분쟁"]
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true},
+        {"category": "이사업체 분쟁해결", "must_appear": true},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "자동차 변경등록", "must_appear": true},
+        {"category": "전기 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q029",
+      "scenario": "외국인 가족, 전세, 경기 고양 일산동구, 자녀+자동차 (복합)",
+      "user_input": {
+        "household": "가족",
+        "contract": "전세",
+        "region": "경기도 고양시 일산동구",
+        "move_date": "2026-08-05",
+        "has_pet": false,
+        "has_car": true,
+        "has_children": true,
+        "children_school_level": "초등",
+        "is_foreigner": true
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "외국인등록 주소변경", "must_appear": true, "deadline_days": 14, "citation_hint": "출입국관리법"},
+        {"category": "자녀 전학", "must_appear": true},
+        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
+        {"category": "전기 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q030",
+      "scenario": "자취 전세, 서울 강서구, 전세사기 의심 + 보증금 반환 우려",
+      "user_input": {
+        "household": "자취",
+        "contract": "전세",
+        "region": "서울특별시 강서구",
+        "move_date": "2026-06-20",
+        "has_pet": false,
+        "has_car": false,
+        "has_children": false,
+        "special_concerns": ["전세사기 의심", "보증금 반환 우려"]
+      },
+      "expected_items": [
+        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
+        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "대항력·우선변제권 확보", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "임차권등기명령 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의3"},
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "자동차 변경등록", "아이 전학"]
+    }
+  ]
+}

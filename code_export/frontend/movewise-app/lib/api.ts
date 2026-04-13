@@ -1,0 +1,134 @@
+/**
+ * FastAPI backend client for MoveWise.
+ */
+import Constants from 'expo-constants';
+
+const DEFAULT_API_URL = 'https://habitat-surrounded-websites-accessible.trycloudflare.com';
+
+const extra = (Constants.expoConfig?.extra ?? {}) as { apiUrl?: string };
+
+let runtimeApiUrl =
+  process.env.EXPO_PUBLIC_API_URL || extra.apiUrl || DEFAULT_API_URL;
+
+export function getApiUrl(): string {
+  return runtimeApiUrl;
+}
+
+export function setApiUrl(url: string): void {
+  runtimeApiUrl = url;
+}
+
+// Legacy export (still used by MY screen display)
+export const API_URL = runtimeApiUrl;
+
+// ===== Types =====
+
+export type HouseholdType = '자취' | '신혼' | '가족';
+export type ContractType = '전세' | '월세' | '자가';
+export type SchoolLevel = '초등' | '중등' | '고등';
+
+export interface ChecklistRequest {
+  household: HouseholdType;
+  contract: ContractType;
+  region: string;
+  move_date: string; // YYYY-MM-DD
+  has_pet: boolean;
+  has_car: boolean;
+  car_count?: number;
+  has_children: boolean;
+  children_count?: number;
+  children_school_level?: SchoolLevel | null;
+  is_foreigner?: boolean;
+  deposit_krw?: number | null;
+  monthly_rent_krw?: number | null;
+  special_concerns?: string[];
+}
+
+export interface Citation {
+  law_name: string;
+  article: string;
+  source_url?: string | null;
+}
+
+export interface ChecklistItem {
+  category: string;
+  title: string;
+  description: string;
+  d_day_offset: number;
+  start_date: string;
+  has_legal_deadline: boolean;
+  deadline_date?: string | null;
+  deadline_days?: number | null;
+  penalty?: string | null;
+  method?: string | null;
+  contact?: string | null;
+  region_hint?: string | null;
+  citations: Citation[];
+}
+
+export interface ChecklistResponse {
+  request: ChecklistRequest;
+  generated_at: string;
+  items: ChecklistItem[];
+  total_items: number;
+  used_queries: string[];
+  warning?: string | null;
+}
+
+export interface SafeContractRequest {
+  text: string;
+  deposit_krw: number;
+  expected_market_price_krw: number;
+}
+
+export interface RiskItem {
+  severity: 'green' | 'yellow' | 'red';
+  label: string;
+  explanation_plain: string;
+  related_laws: Citation[];
+}
+
+export interface ServiceReferral {
+  icon: string;
+  name: string;
+  url: string;
+  description: string;
+}
+
+export interface SafeContractResponse {
+  extraction: Record<string, unknown>;
+  jeontse_ratio: number;
+  summary: string;
+  risks: RiskItem[];
+  referrals: ServiceReferral[];
+  disclaimer: string;
+}
+
+// ===== Client =====
+
+async function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
+  const res = await fetch(`${getApiUrl()}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<TRes>;
+}
+
+export const api = {
+  async health(): Promise<{ service: string; version: string; azure_ready: boolean }> {
+    const res = await fetch(`${getApiUrl()}/`);
+    if (!res.ok) throw new Error(`health ${res.status}`);
+    return res.json();
+  },
+  checklist(req: ChecklistRequest) {
+    return post<ChecklistRequest, ChecklistResponse>('/checklist', req);
+  },
+  safecontract(req: SafeContractRequest) {
+    return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);
+  },
+};

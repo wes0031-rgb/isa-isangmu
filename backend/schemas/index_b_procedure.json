@@ -1,0 +1,158 @@
+{
+  "name": "moving-procedure-index",
+  "description": "MoveWise Index B — 행정 절차 청크 (easylaw 이사/주택임대차 카테고리)",
+  "fields": [
+    {
+      "name": "id",
+      "type": "Edm.String",
+      "key": true,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true
+    },
+    {
+      "name": "parent_doc",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "doc_title",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "analyzer": "ko.lucene"
+    },
+    {
+      "name": "breadcrumb",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "analyzer": "ko.lucene"
+    },
+    {
+      "name": "content",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "analyzer": "ko.lucene"
+    },
+    {
+      "name": "category",
+      "type": "Collection(Edm.String)",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "applicable_to",
+      "type": "Collection(Edm.String)",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "contract_type",
+      "type": "Collection(Edm.String)",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "region",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "deadlines",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "penalties",
+      "type": "Collection(Edm.String)",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "related_laws",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "filterable": true,
+      "retrievable": true,
+      "facetable": true
+    },
+    {
+      "name": "source_url",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": false,
+      "retrievable": true
+    },
+    {
+      "name": "fetched_at",
+      "type": "Edm.DateTimeOffset",
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "sortable": true
+    },
+    {
+      "name": "content_vector",
+      "type": "Collection(Edm.Single)",
+      "searchable": true,
+      "filterable": false,
+      "retrievable": false,
+      "dimensions": 1536,
+      "vectorSearchProfile": "movewise-vector-profile"
+    }
+  ],
+  "vectorSearch": {
+    "algorithms": [
+      {
+        "name": "movewise-hnsw",
+        "kind": "hnsw",
+        "hnswParameters": {
+          "m": 4,
+          "efConstruction": 400,
+          "efSearch": 500,
+          "metric": "cosine"
+        }
+      }
+    ],
+    "profiles": [
+      {
+        "name": "movewise-vector-profile",
+        "algorithm": "movewise-hnsw"
+      }
+    ]
+  },
+  "semantic": {
+    "configurations": [
+      {
+        "name": "movewise-semantic",
+        "prioritizedFields": {
+          "titleField": {"fieldName": "doc_title"},
+          "prioritizedContentFields": [{"fieldName": "content"}, {"fieldName": "breadcrumb"}],
+          "prioritizedKeywordsFields": [{"fieldName": "related_laws"}, {"fieldName": "category"}, {"fieldName": "deadlines"}]
+        }
+      }
+    ]
+  }
+}

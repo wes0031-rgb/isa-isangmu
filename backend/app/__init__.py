@@ -1,0 +1,1 @@
+"""MoveWise backend application."""

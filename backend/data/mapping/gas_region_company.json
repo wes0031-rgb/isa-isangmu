@@ -1,0 +1,183 @@
+{
+  "source": "http://www.citygas.or.kr/company/situation.jsp",
+  "fetched_at": "2026-04-13",
+  "total_entries": 35,
+  "unique_companies": 34,
+  "entries": [
+    {
+      "region": "수도권",
+      "company": "코원에너지서비스㈜",
+      "class_hint": "company_01"
+    },
+    {
+      "region": "수도권",
+      "company": "㈜예스코",
+      "class_hint": "company_02"
+    },
+    {
+      "region": "수도권",
+      "company": "서울도시가스㈜",
+      "class_hint": "company_03"
+    },
+    {
+      "region": "수도권",
+      "company": "㈜귀뚜라미에너지",
+      "class_hint": "company_04"
+    },
+    {
+      "region": "수도권",
+      "company": "㈜삼천리",
+      "class_hint": "company_07"
+    },
+    {
+      "region": "수도권",
+      "company": "대륜E&S",
+      "class_hint": "company_05"
+    },
+    {
+      "region": "인천광역시",
+      "company": "인천도시가스㈜",
+      "class_hint": "company_06"
+    },
+    {
+      "region": "충청북도",
+      "company": "참빛충북도시가스㈜",
+      "class_hint": "company_09"
+    },
+    {
+      "region": "충청북도",
+      "company": "충청에너지서비스㈜",
+      "class_hint": "company_010"
+    },
+    {
+      "region": "충청남도",
+      "company": "미래엔서해에너지",
+      "class_hint": "company_08"
+    },
+    {
+      "region": "충청남도",
+      "company": "JB㈜",
+      "class_hint": "company_011"
+    },
+    {
+      "region": "대전광역시",
+      "company": "CNCITY에너지",
+      "class_hint": "company_012"
+    },
+    {
+      "region": "전라북도",
+      "company": "군산도시가스㈜",
+      "class_hint": "company_013"
+    },
+    {
+      "region": "전라북도",
+      "company": "전북에너지서비스㈜",
+      "class_hint": "company_014"
+    },
+    {
+      "region": "전라북도",
+      "company": "전북도시가스㈜",
+      "class_hint": "company_015"
+    },
+    {
+      "region": "광주광역시",
+      "company": "㈜해양에너지",
+      "class_hint": "company_016"
+    },
+    {
+      "region": "전라남도",
+      "company": "전남도시가스㈜",
+      "class_hint": "company_018"
+    },
+    {
+      "region": "전라남도",
+      "company": "대화도시가스㈜",
+      "class_hint": "company_020"
+    },
+    {
+      "region": "전라남도",
+      "company": "MC에너지",
+      "class_hint": "company_017"
+    },
+    {
+      "region": "강원도",
+      "company": "강원도시가스㈜",
+      "class_hint": "company_032"
+    },
+    {
+      "region": "강원도",
+      "company": "참빛도시가스㈜",
+      "class_hint": "company_033"
+    },
+    {
+      "region": "강원도",
+      "company": "참빛원주도시가스㈜",
+      "class_hint": "company_030"
+    },
+    {
+      "region": "강원도",
+      "company": "참빛영동도시가스㈜",
+      "class_hint": "company_031"
+    },
+    {
+      "region": "강원도",
+      "company": "명성파워그린㈜",
+      "class_hint": "company_034"
+    },
+    {
+      "region": "경상북도",
+      "company": "대성청정에너지㈜",
+      "class_hint": "company_029"
+    },
+    {
+      "region": "경상북도",
+      "company": "영남에너지서비스㈜(구미)",
+      "class_hint": "company_028"
+    },
+    {
+      "region": "경상북도",
+      "company": "영남에너지서비스㈜(포항)",
+      "class_hint": "company_026"
+    },
+    {
+      "region": "경상북도",
+      "company": "서라벌도시가스㈜",
+      "class_hint": "company_025"
+    },
+    {
+      "region": "경상남도",
+      "company": "경남에너지㈜",
+      "class_hint": "company_022"
+    },
+    {
+      "region": "경상남도",
+      "company": "㈜지에스이",
+      "class_hint": "company_021"
+    },
+    {
+      "region": "대구광역시",
+      "company": "대성에너지㈜",
+      "class_hint": "company_027"
+    },
+    {
+      "region": "울산광역시",
+      "company": "㈜경동도시가스",
+      "class_hint": "company_024"
+    },
+    {
+      "region": "부산광역시",
+      "company": "㈜부산도시가스",
+      "class_hint": "company_023"
+    },
+    {
+      "region": "세종특별시",
+      "company": "JB㈜",
+      "class_hint": "company_011"
+    },
+    {
+      "region": "제주도",
+      "company": "㈜제주도시가스",
+      "class_hint": "company_019"
+    }
+  ]
+}

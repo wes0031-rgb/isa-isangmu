@@ -1,0 +1,139 @@
+{
+  "total": 22,
+  "ok": 22,
+  "errors": 0,
+  "results": [
+    {
+      "status": "ok",
+      "id": "easylaw-666-1-1-1",
+      "length": 5283,
+      "laws": 5
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-1-1-2",
+      "length": 4207,
+      "laws": 10
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-1-1-3",
+      "length": 7249,
+      "laws": 38
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-1-2-1",
+      "length": 1381,
+      "laws": 1
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-1-3-1",
+      "length": 6054,
+      "laws": 11
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-1-1",
+      "length": 5802,
+      "laws": 23
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-1-2",
+      "length": 4356,
+      "laws": 1
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-1-3",
+      "length": 3945,
+      "laws": 18
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-2-1",
+      "length": 3618,
+      "laws": 16
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-2-2",
+      "length": 4983,
+      "laws": 5
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-2-3",
+      "length": 3708,
+      "laws": 8
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-2-4",
+      "length": 6228,
+      "laws": 28
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-2-5",
+      "length": 3888,
+      "laws": 10
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-3-1",
+      "length": 4762,
+      "laws": 11
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-2-3-2",
+      "length": 3498,
+      "laws": 2
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-3-1-1",
+      "length": 1586,
+      "laws": 0
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-3-2-1",
+      "length": 5129,
+      "laws": 1
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-3-2-2",
+      "length": 7411,
+      "laws": 8
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-3-3-1",
+      "length": 2451,
+      "laws": 0
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-3-3-2",
+      "length": 1246,
+      "laws": 4
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-4-1-1",
+      "length": 6124,
+      "laws": 12
+    },
+    {
+      "status": "ok",
+      "id": "easylaw-666-4-2-1",
+      "length": 1970,
+      "laws": 5
+    }
+  ]
+}
