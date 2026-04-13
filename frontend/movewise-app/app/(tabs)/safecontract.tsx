@@ -329,10 +329,17 @@ export default function SafeContractScreen() {
                 </View>
               )}
 
-              <Text style={styles.disclaimerBottom}>
-                ⚠️ 본 서비스는 법률 자문이 아닌 참고용 사전 검토 도구입니다.
-                정확한 판단을 위해 전문가 상담을 권합니다.
-              </Text>
+              <View style={styles.disclaimerBox}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={14}
+                  color={colors.textMute}
+                />
+                <Text style={styles.disclaimerBottom}>
+                  본 서비스는 법률 자문이 아닌 참고용 사전 검토 도구입니다.
+                  정확한 판단을 위해 전문가 상담을 권합니다.
+                </Text>
+              </View>
             </>
           ) : (
             <ResultView
@@ -437,7 +444,10 @@ function ResultView({
       </View>
 
       {/* 위험 항목 아코디언 */}
-      <Text style={styles.sectionH}>🚨 위험 항목</Text>
+      <View style={styles.sectionHRow}>
+        <Ionicons name="warning" size={18} color={colors.danger} />
+        <Text style={styles.sectionH}>위험 항목</Text>
+      </View>
       {result.risks.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={{ color: colors.textSub, fontSize: 14 }}>
@@ -449,7 +459,10 @@ function ResultView({
       )}
 
       {/* 다음에 확인하세요 */}
-      <Text style={styles.sectionH}>🔗 다음에 확인하세요</Text>
+      <View style={styles.sectionHRow}>
+        <Ionicons name="link" size={18} color={colors.primaryLight} />
+        <Text style={styles.sectionH}>다음에 확인하세요</Text>
+      </View>
       {result.referrals.map((rf, idx) => (
         <Pressable
           key={idx}
@@ -493,8 +506,6 @@ function RiskAccordion({ risk }: { risk: RiskItem }) {
       : risk.severity === 'yellow'
       ? colors.warning
       : colors.success;
-  const emoji =
-    risk.severity === 'red' ? '🔴' : risk.severity === 'yellow' ? '🟡' : '🟢';
 
   return (
     <View style={[styles.riskCard, { borderLeftColor: color }]}>
@@ -502,7 +513,7 @@ function RiskAccordion({ risk }: { risk: RiskItem }) {
         onPress={() => setExpanded(!expanded)}
         style={styles.riskHeader}
       >
-        <Text style={styles.riskEmoji}>{emoji}</Text>
+        <View style={[styles.severityDot, { backgroundColor: color }]} />
         <Text style={styles.riskLabel}>{risk.label}</Text>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -517,10 +528,17 @@ function RiskAccordion({ risk }: { risk: RiskItem }) {
             <View style={styles.riskLawBox}>
               {risk.related_laws.map((c, i) => (
                 <View key={i} style={{ marginBottom: spacing.xs }}>
-                  <Text style={styles.riskLawTitle}>
-                    📖 {c.law_name} {c.article}
-                    {c.article_title ? ` — ${c.article_title}` : ''}
-                  </Text>
+                  <View style={styles.riskLawTitleRow}>
+                    <Ionicons
+                      name="library"
+                      size={12}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.riskLawTitle}>
+                      {c.law_name} {c.article}
+                      {c.article_title ? ` — ${c.article_title}` : ''}
+                    </Text>
+                  </View>
                   {c.article_text && (
                     <Text style={styles.riskLawText}>{c.article_text}</Text>
                   )}
@@ -704,10 +722,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
+  disclaimerBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
   disclaimerBottom: {
     ...typography.caption,
-    textAlign: 'center',
-    marginTop: spacing.xl,
+    flex: 1,
     lineHeight: 18,
   },
 
@@ -733,10 +757,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xs,
   },
-  sectionH: {
-    ...typography.subtitle,
+  sectionHRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
+  },
+  sectionH: {
+    ...typography.subtitle,
   },
   emptyCard: {
     backgroundColor: colors.cardBg,
@@ -762,7 +791,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.md + 2,
   },
-  riskEmoji: { fontSize: 18 },
+  severityDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
   riskLabel: {
     ...typography.subtitle,
     fontSize: 15,
@@ -783,11 +816,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     marginTop: spacing.xs,
   },
+  riskLawTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
   riskLawTitle: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
-    marginBottom: 2,
+    flex: 1,
   },
   riskLawText: {
     fontSize: 12,

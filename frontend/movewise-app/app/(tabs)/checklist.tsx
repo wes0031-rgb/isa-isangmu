@@ -178,7 +178,7 @@ export default function ChecklistScreen() {
   async function handleShare() {
     if (!result) return;
     const lines = [
-      `📋 MoveWise 이사 체크리스트`,
+      `[MoveWise 이사 체크리스트]`,
       `이사일: ${moveDate} · ${region} · ${household} · ${contracts.join('/')}`,
       '',
       ...result.items.map((it, idx) => {
@@ -626,10 +626,13 @@ function ChecklistCard({
           </View>
         )}
         {item.citations.length > 0 && (
-          <Text style={styles.citationShort}>
-            📖 {item.citations[0].law_name} {item.citations[0].article}
-            {item.citations.length > 1 && ` 외 ${item.citations.length - 1}건`}
-          </Text>
+          <View style={styles.citationShortRow}>
+            <Ionicons name="library" size={12} color={colors.primaryLight} />
+            <Text style={styles.citationShort}>
+              {item.citations[0].law_name} {item.citations[0].article}
+              {item.citations.length > 1 && ` 외 ${item.citations.length - 1}건`}
+            </Text>
+          </View>
         )}
       </Pressable>
       <Ionicons name="chevron-forward" size={18} color={colors.textMute} />
@@ -911,8 +914,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   deadlineText: { color: colors.warning, fontSize: 13, fontWeight: '700' },
+  citationShortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+  },
   citationShort: {
     ...typography.caption,
-    marginTop: spacing.xs,
+    flex: 1,
   },
 });

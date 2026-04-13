@@ -85,7 +85,14 @@ export default function Home() {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Greeting */}
         <View style={styles.greeting}>
-          <Text style={styles.welcome}>어서와요 👋</Text>
+          <View style={styles.welcomeRow}>
+            <Ionicons
+              name="hand-right"
+              size={18}
+              color={colors.accent}
+            />
+            <Text style={styles.welcome}>어서와요</Text>
+          </View>
           <Text style={styles.userName}>MoveWise</Text>
         </View>
 
@@ -166,7 +173,10 @@ export default function Home() {
         {/* Upcoming deadlines */}
         {upcomingDeadlines.length > 0 && (
           <View style={styles.sectionBlock}>
-            <Text style={styles.sectionTitle}>⏰ 임박한 마감일</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="alarm" size={18} color={colors.warning} />
+              <Text style={styles.sectionTitle}>임박한 마감일</Text>
+            </View>
             {upcomingDeadlines.map((it, idx) => {
               const days = daysUntil(it.deadline_date!);
               const severity = days <= 3 ? 'danger' : days <= 7 ? 'warning' : 'ok';
@@ -302,6 +312,11 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.lg, paddingBottom: spacing.xxl },
   greeting: { marginBottom: spacing.lg },
+  welcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   welcome: { ...typography.caption, fontSize: 14 },
   userName: { ...typography.display, marginTop: spacing.xs },
 
@@ -382,9 +397,14 @@ const styles = StyleSheet.create({
 
   // Upcoming
   sectionBlock: { marginBottom: spacing.lg },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
   sectionTitle: {
     ...typography.subtitle,
-    marginBottom: spacing.sm,
   },
   deadlineCard: {
     flexDirection: 'row',

@@ -89,7 +89,7 @@ export default function TaskDetail() {
   async function handleShare() {
     if (!item) return;
     const lines = [
-      `📌 ${item.title}`,
+      `[${item.title}]`,
       `카테고리: ${item.category}`,
       `시작일: ${item.start_date} (D${item.d_day_offset >= 0 ? '+' : ''}${item.d_day_offset})`,
       item.deadline_date ? `마감: ${item.deadline_date} (${item.deadline_days}일 기한)` : '',
@@ -97,7 +97,7 @@ export default function TaskDetail() {
       '',
       item.description,
       '',
-      ...item.citations.map((c) => `📖 ${c.law_name} ${c.article}`),
+      ...item.citations.map((c) => `[법] ${c.law_name} ${c.article}`),
     ].filter(Boolean);
     try {
       await Share.share({ message: lines.join('\n') });
@@ -162,7 +162,7 @@ export default function TaskDetail() {
         {/* 설명 */}
         {item.description && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>📝 설명</Text>
+            <SectionHeader icon="reader" title="설명" />
             <Text style={styles.body}>{item.description}</Text>
           </View>
         )}
@@ -170,7 +170,7 @@ export default function TaskDetail() {
         {/* 방법 */}
         {item.method && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>🛠 신청 방법</Text>
+            <SectionHeader icon="construct" title="신청 방법" />
             <Text style={styles.body}>{item.method}</Text>
           </View>
         )}
@@ -178,7 +178,7 @@ export default function TaskDetail() {
         {/* 연락처 */}
         {item.contact && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>☎ 연락처</Text>
+            <SectionHeader icon="call" title="연락처" />
             <Pressable onPress={() => Linking.openURL(`tel:${item.contact}`)}>
               <Text style={[styles.body, { color: colors.primaryLight, fontWeight: '700' }]}>
                 {item.contact}
@@ -190,7 +190,7 @@ export default function TaskDetail() {
         {/* 법 조항 citations — 원문 텍스트 포함 */}
         {item.citations.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>📖 법적 근거</Text>
+            <SectionHeader icon="library" title="법적 근거" />
             {item.citations.map((c, i) => (
               <LawArticleCard key={i} citation={c} onOpenExternal={openLaw} />
             ))}
@@ -226,6 +226,21 @@ export default function TaskDetail() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SectionHeader({
+  icon,
+  title,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+}) {
+  return (
+    <View style={styles.sectionHeaderRow}>
+      <Ionicons name={icon} size={16} color={colors.primaryLight} />
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
   );
 }
 
@@ -341,10 +356,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
   sectionTitle: {
     ...typography.subtitle,
-    fontSize: 14,
-    marginBottom: spacing.sm,
+    fontSize: 15,
   },
   body: { ...typography.body, fontSize: 14, lineHeight: 22 },
   row: {
