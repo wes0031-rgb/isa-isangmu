@@ -5,9 +5,8 @@ import json
 import re
 
 from .azure_clients import get_openai_client, get_search_client_law
-from .checklist_service import _clean_hanja
 from .config import get_settings
-from .local_search import find_law_article
+from .local_search import clean_hanja, find_law_article
 from .models import (
     ChecklistCitation,
     RegistryExtraction,
@@ -19,13 +18,13 @@ from .models import (
 
 
 def _cite(law_name: str, article: str) -> ChecklistCitation:
-    """법령·조문 → 원문 자동 첨부된 Citation. 한자 병기는 제거."""
+    """법령·조문 → 원문 자동 첨부된 Citation. 한자는 로드 시점에 이미 제거됨."""
     base = ChecklistCitation(law_name=law_name, article=article)
     found = find_law_article(law_name, article)
     if not found:
         return base
-    content = _clean_hanja((found.get("content") or "").strip())
-    title = _clean_hanja((found.get("title") or "").strip())
+    content = (found.get("content") or "").strip()
+    title = (found.get("title") or "").strip()
     if content:
         base.article_text = content[:500] + ("…" if len(content) > 500 else "")
     if title:

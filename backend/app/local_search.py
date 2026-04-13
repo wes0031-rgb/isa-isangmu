@@ -3,6 +3,8 @@
 Loads `index_b_chunks_curated.jsonl` (행정 절차) and `index_a_chunks.jsonl`
 (법률 조문) once, and performs simple keyword scoring. This keeps `/checklist`
 and `/safecontract` functional during local development before Azure setup.
+
+모든 데이터는 로드 시점에 한자 병기 제거(_clean_hanja)를 거침.
 """
 from __future__ import annotations
 
@@ -11,6 +13,49 @@ import re
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
+
+# ---------- 한자 제거 ----------
+
+_HANJA_RE = re.compile(r"[\u3400-\u4DBF\u4E00-\u9FFF]")
+_HANJA_PARENS_RE = re.compile(
+    r"\(\s*[\u3400-\u4DBF\u4E00-\u9FFF]+(?:\s*[·,、\s]\s*[\u3400-\u4DBF\u4E00-\u9FFF]+)*\s*\)"
+)
+
+
+def clean_hanja(text: str) -> str:
+    """한국 법조문에서 한자 병기·잔여 한자 전부 제거.
+
+    예) '집행권원(執行權原)' → '집행권원'
+        '賃貸借' → ''  (단독 한자도 제거)
+        '「민사집행법」' → '「민사집행법」' (유지)
+        '(예시)' → '(예시)' (유지)
+    """
+    if not text or not _HANJA_RE.search(text):
+        return text
+    cleaned = _HANJA_PARENS_RE.sub("", text)
+    cleaned = _HANJA_RE.sub("", cleaned)
+    cleaned = re.sub(r"\(\s*\)", "", cleaned)
+    cleaned = re.sub(r"  +", " ", cleaned)
+    cleaned = re.sub(r"\s+([,.·])", r"\1", cleaned)
+    return cleaned.strip()
+
+
+def _scrub_record(rec: dict) -> dict:
+    """청크의 모든 텍스트 필드에 clean_hanja 적용."""
+    TEXT_FIELDS = (
+        "content", "title", "doc_title", "breadcrumb",
+        "description", "method", "law_name",
+    )
+    out = dict(rec)
+    for f in TEXT_FIELDS:
+        if f in out and isinstance(out[f], str):
+            out[f] = clean_hanja(out[f])
+    # List-of-string 필드
+    for f in ("category", "applicable_to", "contract_type",
+              "deadlines", "penalties", "related_laws", "keywords"):
+        if f in out and isinstance(out[f], list):
+            out[f] = [clean_hanja(x) if isinstance(x, str) else x for x in out[f]]
+    return out
 
 _INDEX_DIR = (
     Path(__file__).resolve().parent.parent / "data" / "indexes"
@@ -30,7 +75,7 @@ def load_chunks() -> list[dict]:
     with CHUNKS_FILE.open(encoding="utf-8") as fp:
         for line in fp:
             if line.strip():
-                out.append(json.loads(line))
+                out.append(_scrub_record(json.loads(line)))
     return out
 
 
@@ -95,7 +140,7 @@ def load_laws() -> list[dict]:
     with LAW_FILE.open(encoding="utf-8") as fp:
         for line in fp:
             if line.strip():
-                out.append(json.loads(line))
+                out.append(_scrub_record(json.loads(line)))
     return out
 
 

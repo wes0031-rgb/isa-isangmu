@@ -4,12 +4,10 @@ from __future__ import annotations
 import json
 from datetime import date
 
-import re
-
 from .azure_clients import get_openai_client, get_search_client_procedure
 from .config import get_settings
 from .date_utils import compute_deadline, compute_start_date
-from .local_search import find_law_article
+from .local_search import clean_hanja, find_law_article
 from .local_search import search as local_search
 from .models import (
     ChecklistCitation,
@@ -18,32 +16,12 @@ from .models import (
     ChecklistResponse,
 )
 
-# (한자), (漢字) 같은 한자 병기 제거용 — 한국 법조문 원문에서 자주 등장
-_HANJA_PARENS = re.compile(r"\(\s*[\u3400-\u4DBF\u4E00-\u9FFF]+(?:\s*[·,]\s*[\u3400-\u4DBF\u4E00-\u9FFF]+)*\s*\)")
-_HANJA_BARE = re.compile(r"[\u3400-\u4DBF\u4E00-\u9FFF]+")
-
-
-def _clean_hanja(text: str) -> str:
-    """법조문 본문에서 한자 병기와 잔여 한자를 제거.
-
-    예) '집행권원(執行權原)' → '집행권원'
-        '임차인(賃借人)' → '임차인'
-        '「민사집행법」' → '「민사집행법」' (이건 한글 + 괄호라 유지)
-    """
-    if not text:
-        return text
-    # 1단계: (한자) 또는 (한자, 한자) 병기 제거
-    cleaned = _HANJA_PARENS.sub("", text)
-    # 2단계: 본문 중 단독 한자도 제거 (드물지만 있음)
-    cleaned = _HANJA_BARE.sub("", cleaned)
-    # 3단계: 한자 제거로 생긴 빈 괄호·이중 공백 정리
-    cleaned = re.sub(r"\(\s*\)", "", cleaned)
-    cleaned = re.sub(r"  +", " ", cleaned)
-    return cleaned.strip()
+# Legacy alias — 외부 import 가 있을 수 있어 유지
+_clean_hanja = clean_hanja
 
 
 def _enrich_citation(cite: dict) -> dict:
-    """Citation dict 에 Index A 조문 텍스트를 붙여 반환."""
+    """Citation dict 에 Index A 조문 텍스트를 붙여 반환. 한자는 로드 시점에 이미 제거됨."""
     law_name = cite.get("law_name") or ""
     article = cite.get("article") or ""
     if not law_name or not article:
@@ -51,8 +29,8 @@ def _enrich_citation(cite: dict) -> dict:
     found = find_law_article(law_name, article)
     if not found:
         return cite
-    content = _clean_hanja((found.get("content") or "").strip())
-    title = _clean_hanja((found.get("title") or "").strip())
+    content = (found.get("content") or "").strip()
+    title = (found.get("title") or "").strip()
     source_url = found.get("source_url")
     enriched = dict(cite)
     if content and not enriched.get("article_text"):
