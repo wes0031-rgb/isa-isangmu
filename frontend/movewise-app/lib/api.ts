@@ -122,6 +122,32 @@ async function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
   return res.json() as Promise<TRes>;
 }
 
+export interface SafeContractUploadParams {
+  uri: string;
+  name: string;
+  mimeType?: string;
+  deposit_krw: number;
+  expected_market_price_krw: number;
+}
+
+async function postMultipart<TRes>(path: string, form: FormData): Promise<TRes> {
+  const res = await fetch(`${getApiUrl()}${path}`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) {
+    let detail: string;
+    try {
+      const body = await res.json();
+      detail = body?.detail || JSON.stringify(body);
+    } catch {
+      detail = await res.text();
+    }
+    throw new Error(`API ${res.status}: ${detail}`);
+  }
+  return res.json() as Promise<TRes>;
+}
+
 export const api = {
   async health(): Promise<{ service: string; version: string; azure_ready: boolean }> {
     const res = await fetch(`${getApiUrl()}/`);
@@ -133,5 +159,17 @@ export const api = {
   },
   safecontract(req: SafeContractRequest) {
     return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);
+  },
+  async safecontractUpload(params: SafeContractUploadParams): Promise<SafeContractResponse> {
+    const form = new FormData();
+    // React Native FormData 는 {uri, name, type} 객체를 받음
+    form.append('file', {
+      uri: params.uri,
+      name: params.name,
+      type: params.mimeType || 'application/pdf',
+    } as any);
+    form.append('deposit_krw', String(params.deposit_krw));
+    form.append('expected_market_price_krw', String(params.expected_market_price_krw));
+    return postMultipart<SafeContractResponse>('/safecontract/upload', form);
   },
 };

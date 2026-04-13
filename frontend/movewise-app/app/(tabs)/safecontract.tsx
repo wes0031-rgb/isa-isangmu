@@ -3,6 +3,7 @@
  * 기획서 3.5 참조: 텍스트/PDF/사진 3가지 입력, 아코디언 결과, 체크리스트 연결.
  */
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -24,6 +25,13 @@ import { alertAsync } from '../../lib/confirm';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
 type InputMode = 'text' | 'pdf' | 'photo';
+
+interface PickedFile {
+  uri: string;
+  name: string;
+  mimeType?: string;
+  size?: number;
+}
 
 /** 1,234,567 형식으로 포맷팅 */
 function formatNumber(value: string): string {
@@ -48,6 +56,7 @@ export default function SafeContractScreen() {
   const router = useRouter();
   const [mode, setMode] = useState<InputMode>('text');
   const [text, setText] = useState('');
+  const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
   const [deposit, setDeposit] = useState('100000000');
   const [market, setMarket] = useState('300000000');
   const [loading, setLoading] = useState(false);
@@ -55,31 +64,82 @@ export default function SafeContractScreen() {
   const [result, setResult] = useState<SafeContractResponse | null>(null);
 
   async function submit() {
-    if (!text.trim()) {
-      setError('등기부등본 텍스트를 입력하세요');
-      return;
-    }
-    setLoading(true);
     setError(null);
-    setResult(null);
-    try {
-      const res = await api.safecontract({
-        text,
-        deposit_krw: parseInt(deposit.replace(/\D/g, ''), 10) || 0,
-        expected_market_price_krw: parseInt(market.replace(/\D/g, ''), 10) || 0,
-      });
-      setResult(res);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+    const depositN = parseInt(deposit.replace(/\D/g, ''), 10) || 0;
+    const marketN = parseInt(market.replace(/\D/g, ''), 10) || 0;
+
+    if (mode === 'text') {
+      if (!text.trim()) {
+        setError('등기부등본 텍스트를 입력하세요');
+        return;
+      }
+      setLoading(true);
+      setResult(null);
+      try {
+        const res = await api.safecontract({
+          text,
+          deposit_krw: depositN,
+          expected_market_price_krw: marketN,
+        });
+        setResult(res);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    } else if (mode === 'pdf') {
+      if (!pickedFile) {
+        setError('PDF 파일을 먼저 선택하세요');
+        return;
+      }
+      setLoading(true);
+      setResult(null);
+      try {
+        const res = await api.safecontractUpload({
+          uri: pickedFile.uri,
+          name: pickedFile.name,
+          mimeType: pickedFile.mimeType,
+          deposit_krw: depositN,
+          expected_market_price_krw: marketN,
+        });
+        setResult(res);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
     }
   }
 
-  function handleUploadDisabled(label: string) {
+  async function pickPdf() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled) return;
+      const asset = res.assets[0];
+      if (asset.size && asset.size > 20 * 1024 * 1024) {
+        setError('파일 크기는 20MB 이하여야 합니다');
+        return;
+      }
+      setPickedFile({
+        uri: asset.uri,
+        name: asset.name,
+        mimeType: asset.mimeType || 'application/pdf',
+        size: asset.size,
+      });
+      setError(null);
+    } catch (e: any) {
+      setError(`파일 선택 실패: ${e.message}`);
+    }
+  }
+
+  function handlePhotoDisabled() {
     alertAsync(
-      `${label} — Azure 연결 후 활성화`,
-      'Azure Document Intelligence 연결이 필요한 기능입니다. 현재는 텍스트 붙여넣기만 지원합니다.',
+      '사진 촬영 — 곧 출시',
+      '카메라 연동은 현재 준비 중입니다. 우선 PDF 업로드 또는 텍스트 붙여넣기를 이용해주세요.',
     );
   }
 
@@ -90,6 +150,7 @@ export default function SafeContractScreen() {
   function resetForm() {
     setResult(null);
     setText('');
+    setPickedFile(null);
     setError(null);
   }
 
@@ -113,7 +174,7 @@ export default function SafeContractScreen() {
                 <ModeButton
                   icon="document-text"
                   label="텍스트"
-                  badge="추천"
+                  badge="즉시"
                   active={mode === 'text'}
                   onPress={() => setMode('text')}
                 />
@@ -121,17 +182,16 @@ export default function SafeContractScreen() {
                   icon="cloud-upload"
                   label="PDF 업로드"
                   badge="Azure"
-                  active={false}
-                  disabled
-                  onPress={() => handleUploadDisabled('PDF 업로드')}
+                  active={mode === 'pdf'}
+                  onPress={() => setMode('pdf')}
                 />
                 <ModeButton
                   icon="camera"
                   label="사진 촬영"
-                  badge="Azure"
+                  badge="준비 중"
                   active={false}
                   disabled
-                  onPress={() => handleUploadDisabled('사진 촬영')}
+                  onPress={handlePhotoDisabled}
                 />
               </View>
 
@@ -139,24 +199,72 @@ export default function SafeContractScreen() {
               <View style={styles.helpBox}>
                 <Ionicons name="information-circle" size={16} color={colors.primaryLight} />
                 <Text style={styles.helpText}>
-                  <Text style={{ fontWeight: '700' }}>인터넷등기소</Text>
-                  <Text> → 열람발급 → 본인이 받은 등기부등본 PDF 또는 HTML 에서{' '}</Text>
-                  <Text style={{ fontWeight: '700' }}>갑구·을구 영역 전체를 복사</Text>
-                  <Text>해서 아래에 붙여넣으세요.</Text>
+                  {mode === 'text' ? (
+                    <>
+                      <Text style={{ fontWeight: '700' }}>인터넷등기소</Text>
+                      <Text> → 열람발급 → 본인이 받은 등기부등본에서{' '}</Text>
+                      <Text style={{ fontWeight: '700' }}>갑구·을구 영역 전체를 복사</Text>
+                      <Text>해서 아래에 붙여넣으세요.</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={{ fontWeight: '700' }}>인터넷등기소</Text>
+                      <Text>에서 다운받은 등기부등본 PDF 파일을 그대로 업로드하세요.{' '}</Text>
+                      <Text style={{ fontWeight: '700' }}>Azure Document Intelligence</Text>
+                      <Text>가 자동으로 갑구·을구를 읽어냅니다.</Text>
+                    </>
+                  )}
                 </Text>
               </View>
 
-              {/* 텍스트 입력 */}
-              <Text style={styles.sectionLabel}>등기부등본 본문</Text>
-              <TextInput
-                value={text}
-                onChangeText={setText}
-                placeholder="[갑구] 1. 2021-05-12 소유권이전 홍길동&#10;[을구] 1. 근저당권설정 채권최고액 금 2억4천만원 국민은행"
-                placeholderTextColor={colors.textMute}
-                multiline
-                style={styles.textarea}
-                textAlignVertical="top"
-              />
+              {/* 입력 영역 (모드별 분기) */}
+              {mode === 'text' ? (
+                <>
+                  <Text style={styles.sectionLabel}>등기부등본 본문</Text>
+                  <TextInput
+                    value={text}
+                    onChangeText={setText}
+                    placeholder="[갑구] 1. 2021-05-12 소유권이전 홍길동&#10;[을구] 1. 근저당권설정 채권최고액 금 2억4천만원 국민은행"
+                    placeholderTextColor={colors.textMute}
+                    multiline
+                    style={styles.textarea}
+                    textAlignVertical="top"
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.sectionLabel}>PDF 파일</Text>
+                  <Pressable style={styles.pdfDropzone} onPress={pickPdf}>
+                    <Ionicons
+                      name={pickedFile ? 'document-attach' : 'cloud-upload-outline'}
+                      size={36}
+                      color={pickedFile ? colors.success : colors.primaryLight}
+                    />
+                    {pickedFile ? (
+                      <>
+                        <Text style={styles.pdfPickedName} numberOfLines={1}>
+                          {pickedFile.name}
+                        </Text>
+                        <Text style={styles.pdfPickedSize}>
+                          {pickedFile.size
+                            ? `${(pickedFile.size / 1024).toFixed(0)} KB`
+                            : ''}
+                          {' · 다시 선택하려면 탭'}
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles.pdfDropzoneTitle}>
+                          PDF 파일 선택
+                        </Text>
+                        <Text style={styles.pdfDropzoneSub}>
+                          최대 20MB, .pdf 만 지원
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </>
+              )}
 
               {/* 보증금·시세 */}
               <View style={styles.row}>
@@ -191,17 +299,25 @@ export default function SafeContractScreen() {
               <Pressable
                 style={[
                   styles.submitBtn,
-                  (loading || !text) && { opacity: 0.5 },
+                  (loading ||
+                    (mode === 'text' && !text) ||
+                    (mode === 'pdf' && !pickedFile)) && { opacity: 0.5 },
                 ]}
                 onPress={submit}
-                disabled={loading || !text}
+                disabled={
+                  loading ||
+                  (mode === 'text' && !text) ||
+                  (mode === 'pdf' && !pickedFile)
+                }
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
                     <Ionicons name="shield-checkmark" size={18} color="#fff" />
-                    <Text style={styles.submitText}>분석하기</Text>
+                    <Text style={styles.submitText}>
+                      {mode === 'pdf' ? 'PDF 분석하기' : '분석하기'}
+                    </Text>
                   </>
                 )}
               </Pressable>
@@ -507,6 +623,38 @@ const styles = StyleSheet.create({
     minHeight: 140,
     borderWidth: 1,
     borderColor: colors.borderLight,
+  },
+  pdfDropzone: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.primaryBg,
+    borderStyle: 'dashed',
+    minHeight: 140,
+    gap: spacing.xs,
+  },
+  pdfDropzoneTitle: {
+    ...typography.subtitle,
+    color: colors.primary,
+    marginTop: spacing.xs,
+  },
+  pdfDropzoneSub: {
+    ...typography.caption,
+    color: colors.textMute,
+  },
+  pdfPickedName: {
+    ...typography.bodyBold,
+    color: colors.text,
+    marginTop: spacing.xs,
+    maxWidth: 240,
+  },
+  pdfPickedSize: {
+    ...typography.caption,
+    color: colors.textSub,
+    marginTop: 2,
   },
   input: {
     backgroundColor: colors.cardBg,

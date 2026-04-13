@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import re
 
-from .azure_clients import get_openai_client, get_search_client_law
+from .azure_clients import get_docintel_client, get_openai_client, get_search_client_law
 from .config import get_settings
 from .local_search import clean_hanja, find_law_article
 from .models import (
@@ -15,6 +15,70 @@ from .models import (
     SafeContractResponse,
     ServiceReferral,
 )
+
+
+# ---------- PDF / 이미지 → 텍스트 (Azure Document Intelligence) ----------
+
+
+class DocumentIntelligenceNotConfigured(RuntimeError):
+    """AZURE_DOCINTEL_* 환경변수 미설정 시 발생."""
+
+
+def extract_text_from_pdf(file_bytes: bytes) -> str:
+    """Azure Document Intelligence 의 `prebuilt-layout` 모델로 PDF → 텍스트 변환.
+
+    등기부등본은 갑구/을구가 표 구조라 layout 모델이 가장 적합.
+    테이블 셀도 content 에 순서대로 포함되므로 평문으로 반환.
+
+    Raises:
+        DocumentIntelligenceNotConfigured: Azure 키 미설정 시
+    """
+    client = get_docintel_client()
+    if client is None:
+        raise DocumentIntelligenceNotConfigured(
+            "Azure Document Intelligence 가 설정되지 않았습니다. "
+            ".env 의 AZURE_DOCINTEL_ENDPOINT 와 AZURE_DOCINTEL_API_KEY 를 입력하세요."
+        )
+
+    # SDK v1.0 은 analyze_document 에 AnalyzeDocumentRequest(bytes_source=...) 전달
+    from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+
+    poller = client.begin_analyze_document(
+        "prebuilt-layout",
+        AnalyzeDocumentRequest(bytes_source=file_bytes),
+    )
+    result = poller.result()
+
+    # 페이지 순서대로 line/content 합침
+    parts: list[str] = []
+    if getattr(result, "content", None):
+        parts.append(result.content)
+    # fallback: 페이지별 라인 직접 수집
+    elif getattr(result, "pages", None):
+        for page in result.pages:
+            for line in page.lines or []:
+                parts.append(line.content)
+
+    text = "\n".join(parts).strip()
+    return clean_hanja(text)  # 한자 병기 제거
+
+
+def analyze_safecontract_pdf(
+    file_bytes: bytes, deposit_krw: int, expected_market_price_krw: int
+) -> SafeContractResponse:
+    """PDF 업로드 → Document Intelligence → 기존 분석 파이프라인.
+
+    기획서 3.5.2 P1 목표 — Azure Document Intelligence 연결 시 활성화.
+    """
+    text = extract_text_from_pdf(file_bytes)
+    if not text:
+        raise ValueError("PDF 에서 텍스트를 추출하지 못했습니다. 스캔 품질을 확인하세요.")
+    req = SafeContractRequest(
+        text=text,
+        deposit_krw=deposit_krw,
+        expected_market_price_krw=expected_market_price_krw,
+    )
+    return analyze_safecontract(req)
 
 
 def _cite(law_name: str, article: str) -> ChecklistCitation:
