@@ -51,7 +51,14 @@ backend/data/samples/
 *~
 .#*
 
-# ===== Code export·노션 공유 (선택: 원본 코드는 backend/frontend 로 충분) =====
-# 필요시 주석 해제해서 제외
-# code_export/
-# notion_share/
+# ===== 사용자 지시로 git 관리 제외 (2026-04-13 삭제됨, 다시 커밋 금지) =====
+# 루트의 문서 / 기획서 / 노션 공유 / 아키텍처 이미지 / 임시 아이디어 파일
+/README.md
+/AZURE_ACTIVATION.md
+/DEPLOYMENT.md
+/TEAM_HANDOFF.md
+/기반_기획서.md
+/이승아_아이디어_전체.txt
+/전세사기_위험도_스코어링_PRD.md
+/movewise_architecture.png
+/notion_share/
