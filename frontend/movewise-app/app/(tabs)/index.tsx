@@ -252,7 +252,7 @@ export default function Home() {
               <Ionicons name="shield-checkmark" size={26} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.ctaTitle}>SafeContract</Text>
+              <Text style={styles.ctaTitle}>계약 전 체크</Text>
               <Text style={styles.ctaDesc}>
                 등기부등본 해석 + 기존 서비스 안내
               </Text>

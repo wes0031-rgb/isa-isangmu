@@ -60,7 +60,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="safecontract"
         options={{
-          title: '안심계약',
+          title: '계약 전 체크',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'}
