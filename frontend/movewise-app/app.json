@@ -14,9 +14,11 @@
       "backgroundColor": "#003A75"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.movewise.app"
     },
     "android": {
+      "package": "com.movewise.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

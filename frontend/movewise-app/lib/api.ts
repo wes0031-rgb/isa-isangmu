@@ -3,7 +3,7 @@
  */
 import Constants from 'expo-constants';
 
-const DEFAULT_API_URL = 'https://habitat-surrounded-websites-accessible.trycloudflare.com';
+const DEFAULT_API_URL = 'https://movewise-jf1s.onrender.com';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as { apiUrl?: string };
 

@@ -25,11 +25,41 @@ SCHEMA_DIR = ROOT / "backend" / "schemas"
 INDEX_A_DATA = ROOT / "backend" / "data" / "indexes" / "index_a_chunks.jsonl"
 INDEX_B_DATA = ROOT / "backend" / "data" / "indexes" / "index_b_chunks_curated.jsonl"
 
+# Index A / B 스키마에 있는 필드만 남기고 나머지 잘라냄 (upload 시 거부 방지)
+INDEX_A_FIELDS = {
+    "id", "law_name", "article", "title", "content",
+    "keywords", "category", "source_url", "last_updated", "content_vector",
+}
+INDEX_B_FIELDS = {
+    "id", "parent_doc", "doc_title", "breadcrumb", "content",
+    "category", "applicable_to", "contract_type", "region",
+    "deadlines", "penalties", "related_laws", "source_url",
+    "fetched_at", "content_vector",
+}
+
 
 def load_jsonl(path: Path) -> list[dict]:
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _to_iso_datetime(value: str | None) -> str | None:
+    """'2026-04-13' → '2026-04-13T00:00:00Z' (Azure DateTimeOffset)."""
+    if not value:
+        return None
+    if "T" in value:
+        return value
+    return f"{value}T00:00:00Z"
+
+
+def _normalize_chunk(d: dict, allowed_fields: set[str], date_fields: tuple[str, ...]) -> dict:
+    """스키마 필드만 남기고 날짜는 ISO로 변환."""
+    out = {k: v for k, v in d.items() if k in allowed_fields}
+    for df in date_fields:
+        if df in out:
+            out[df] = _to_iso_datetime(out[df])
+    return out
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
@@ -108,10 +138,16 @@ def main() -> None:
         create_index(SCHEMA_DIR / "index_a_law.json")
         create_index(SCHEMA_DIR / "index_b_procedure.json")
 
-    # Index A
-    index_a_docs = load_jsonl(INDEX_A_DATA)
-    if index_a_docs:
-        print(f"Index A: {len(index_a_docs)} docs")
+    # Index A (법률 조문)
+    raw_a = load_jsonl(INDEX_A_DATA)
+    if raw_a:
+        print(f"Index A: {len(raw_a)} law articles")
+        # id 는 영/한 혼용이라 Azure Search key 규칙(영숫자·_·-·=) 에 맞게 변환
+        index_a_docs = []
+        for d in raw_a:
+            safe_id = "law_" + str(hash(d["id"]) & 0xFFFFFFFFFFFFFFFF)
+            d["id"] = safe_id
+            index_a_docs.append(_normalize_chunk(d, INDEX_A_FIELDS, ("last_updated",)))
         if not args.skip_embeddings:
             texts = [d["content"] for d in index_a_docs]
             embeddings = []
@@ -123,15 +159,18 @@ def main() -> None:
                 doc["content_vector"] = emb
         upload_documents(s.azure_search_law_index, index_a_docs)
 
-    # Index B
-    index_b_docs = load_jsonl(INDEX_B_DATA)
-    if index_b_docs:
-        print(f"Index B: {len(index_b_docs)} chunks")
-        # Normalize fields to match schema
-        for d in index_b_docs:
-            # region 필드가 기본 '전국' 으로 단일 문자열이어야 함
+    # Index B (행정 절차)
+    raw_b = load_jsonl(INDEX_B_DATA)
+    if raw_b:
+        print(f"Index B: {len(raw_b)} procedure chunks")
+        index_b_docs = []
+        for d in raw_b:
+            # region 필드가 list 면 단일 문자열로
             if isinstance(d.get("region"), list):
                 d["region"] = d["region"][0] if d["region"] else "전국"
+            safe_id = "proc_" + str(hash(d["id"]) & 0xFFFFFFFFFFFFFFFF)
+            d["id"] = safe_id
+            index_b_docs.append(_normalize_chunk(d, INDEX_B_FIELDS, ("fetched_at",)))
         if not args.skip_embeddings:
             texts = [d["content"] for d in index_b_docs]
             embeddings = []
