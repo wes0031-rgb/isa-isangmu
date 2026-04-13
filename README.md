@@ -2,6 +2,20 @@
 
 > **이사 후 전입신고·공과금·인터넷까지, 개인 상황에 맞춰 AI가 전체 이사 여정을 한 곳에서 가이드**
 
+---
+
+## 👥 팀원 진입 가이드
+
+**Azure 작업을 이어받는 팀원은 [TEAM_HANDOFF.md](./TEAM_HANDOFF.md) 부터 읽어주세요.**
+리소스 생성 → `.env` 입력 → `activate_azure.py` 원샷 실행 → 검증까지 1시간 내 끝납니다.
+
+### 현재 공유 링크
+- **백엔드 (Render, Live)**: https://movewise-jf1s.onrender.com
+- **GitHub 레포**: https://github.com/wes0031-rgb/movewise
+- **Expo 앱 (개발 중)**: `exp://marxism-mayflower-skier.ngrok-free.dev` (Mac 켜져 있을 때만)
+
+---
+
 | 항목 | 내용 |
 | --- | --- |
 | 프로젝트명 | **MoveWise** |
@@ -9,7 +23,7 @@
 | 작성일 | 2026-04-13 |
 | 필수 Azure 서비스 | OpenAI · AI Search · Document Intelligence · Blob Storage · App Service |
 | 지역 범위 | **전국** |
-| 상태 | 데이터 수집 · 청킹 · 백엔드 · 프론트엔드 스켈레톤 완료. Azure 리소스 대기 중 |
+| 상태 | 백엔드·프론트 fallback 모드 완료 · Render 배포 Live · **Azure 연결 대기 중** |
 
 ---
 
