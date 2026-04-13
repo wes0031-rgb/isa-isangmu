@@ -1,33 +1,46 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { colors, typography } from '../../theme/colors';
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMute,
         tabBarStyle: {
           backgroundColor: colors.cardBg,
-          borderTopColor: colors.border,
-          height: 64,
-          paddingTop: 6,
-          paddingBottom: 10,
+          borderTopColor: colors.borderLight,
+          borderTopWidth: 1,
+          height: Platform.OS === 'web' ? 68 : 78,
+          paddingTop: 8,
+          paddingBottom: Platform.OS === 'web' ? 10 : 18,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700' },
+        tabBarItemStyle: {
+          paddingHorizontal: 0,
+        },
+        tabBarLabelStyle: {
+          ...typography.tabLabel,
+          marginTop: 4,
+        },
+        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: '홈',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              color={color}
+              size={24}
+            />
           ),
         }}
       />
@@ -35,26 +48,38 @@ export default function TabsLayout() {
         name="checklist"
         options={{
           title: '체크리스트',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'list-circle' : 'list-circle-outline'}
+              color={color}
+              size={26}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="safecontract"
         options={{
-          title: 'SafeContract',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="shield-checkmark" color={color} size={size} />
+          title: '안심계약',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'}
+              color={color}
+              size={24}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="my"
         options={{
-          title: 'MY',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" color={color} size={size} />
+          title: '마이',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'person-circle' : 'person-circle-outline'}
+              color={color}
+              size={26}
+            />
           ),
         }}
       />

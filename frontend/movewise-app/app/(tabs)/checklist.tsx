@@ -718,7 +718,7 @@ function ToggleChip({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  h1: { ...typography.display, fontSize: 26 },
+  h1: { ...typography.display },
   h1Sub: {
     ...typography.caption,
     marginTop: spacing.xs,
@@ -740,13 +740,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  section: { marginBottom: spacing.md },
+  section: { marginBottom: spacing.lg },
   sectionLabel: {
-    ...typography.caption,
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
+    ...typography.captionBold,
     color: colors.text,
+    marginBottom: spacing.sm,
   },
   selector: {
     flexDirection: 'row',
@@ -754,15 +752,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: colors.cardBg,
     borderRadius: radius.md,
-    padding: spacing.md,
+    padding: spacing.md + 2,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
   },
   selectorText: {
     flex: 1,
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
+    ...typography.bodyBold,
   },
   segment: { flexDirection: 'row', gap: spacing.xs },
   segmentBtn: {
@@ -823,12 +819,9 @@ const styles = StyleSheet.create({
   concernGroups: { gap: spacing.md },
   concernGroup: {},
   concernGroupLabel: {
-    ...typography.caption,
-    fontSize: 11,
-    fontWeight: '700',
+    ...typography.captionBold,
     color: colors.primary,
     marginBottom: spacing.xs,
-    textTransform: 'uppercase',
   },
   submitBtn: {
     backgroundColor: colors.primary,
@@ -837,7 +830,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.md,
   },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  submitText: { color: '#fff', fontSize: 17, fontWeight: '800' },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -847,7 +840,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginTop: spacing.md,
   },
-  errorText: { color: colors.danger, fontSize: 12, flex: 1 },
+  errorText: { color: colors.danger, fontSize: 13, fontWeight: '600', flex: 1 },
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -857,7 +850,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     marginBottom: spacing.md,
   },
-  warningText: { color: colors.warning, fontSize: 11, flex: 1 },
+  warningText: { color: colors.warning, fontSize: 12, fontWeight: '600', flex: 1 },
   progressCard: {
     backgroundColor: colors.cardBg,
     borderRadius: radius.md,
@@ -907,20 +900,19 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radius.pill,
   },
-  dDayText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  itemTitle: { ...typography.subtitle, fontSize: 15, flex: 1 },
+  dDayText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  itemTitle: { ...typography.bodyBold, flex: 1 },
   strike: { textDecorationLine: 'line-through' },
-  itemSubDate: { ...typography.caption, fontSize: 12, marginBottom: spacing.xs },
+  itemSubDate: { ...typography.caption, marginBottom: spacing.xs },
   deadlineBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     marginBottom: spacing.xs,
   },
-  deadlineText: { color: colors.warning, fontSize: 12, fontWeight: '600' },
+  deadlineText: { color: colors.warning, fontSize: 13, fontWeight: '700' },
   citationShort: {
     ...typography.caption,
-    fontSize: 11,
     marginTop: spacing.xs,
   },
 });

@@ -14,11 +14,12 @@ export const colors = {
   warning: '#E67E22',
   success: '#27AE60',
 
-  // Grays
-  text: '#1A2332',
-  textSub: '#6B7684',
+  // Grays — 가독성 향상 위해 더 진한 텍스트
+  text: '#0F1822',
+  textSub: '#5A6573',
   textMute: '#9CA3AF',
   border: '#E5E8EB',
+  borderLight: '#F1F3F5',
   bg: '#F5F7FB',
   cardBg: '#FFFFFF',
   overlay: 'rgba(0,58,117,0.08)',
@@ -42,9 +43,12 @@ export const radius = {
 };
 
 export const typography = {
-  display: { fontSize: 28, fontWeight: '700' as const, color: colors.primary },
-  title: { fontSize: 22, fontWeight: '700' as const, color: colors.text },
-  subtitle: { fontSize: 16, fontWeight: '600' as const, color: colors.text },
-  body: { fontSize: 14, fontWeight: '400' as const, color: colors.text },
-  caption: { fontSize: 12, fontWeight: '400' as const, color: colors.textSub },
+  display: { fontSize: 30, fontWeight: '800' as const, color: colors.primary, lineHeight: 38 },
+  title: { fontSize: 22, fontWeight: '700' as const, color: colors.text, lineHeight: 30 },
+  subtitle: { fontSize: 17, fontWeight: '700' as const, color: colors.text, lineHeight: 24 },
+  body: { fontSize: 15, fontWeight: '400' as const, color: colors.text, lineHeight: 22 },
+  bodyBold: { fontSize: 15, fontWeight: '600' as const, color: colors.text, lineHeight: 22 },
+  caption: { fontSize: 13, fontWeight: '400' as const, color: colors.textSub, lineHeight: 18 },
+  captionBold: { fontSize: 13, fontWeight: '700' as const, color: colors.textSub, lineHeight: 18 },
+  tabLabel: { fontSize: 12, fontWeight: '700' as const, lineHeight: 14 },
 };
