@@ -225,5 +225,14 @@
         }
       ]
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "퇴거 타임라인 체크리스트",
+    "authority": "MoveWise 팀 편집본",
+    "source_url": "기반: 주택임대차보호법 + 공정위 분쟁해결기준 + 실무 사례",
+    "license": "원본 법률·가이드는 공공누리, 편집본은 프로젝트 소유",
+    "update_cycle": "수동",
+    "how_collected": "ingest_moveout.py (D-60~D+7)",
+    "last_annotated": "2026-04-14"
+  }
 }

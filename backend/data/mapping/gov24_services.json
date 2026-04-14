@@ -58,5 +58,14 @@
     }
   ],
   "source": "정부24 공식 https://www.gov.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "정부24 주요 민원",
+    "authority": "행정안전부",
+    "source_url": "https://www.gov.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services.py",
+    "last_annotated": "2026-04-14"
+  }
 }

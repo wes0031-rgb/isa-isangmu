@@ -15,5 +15,14 @@
   "importance": "연금 수급자 또는 추납·임의가입자는 주소 미갱신 시 중요 안내 우편 (보험료 고지·수급 관련)을 놓칠 수 있음.",
   "tip": "납부 중인 가입자는 자동 연동되지만, 수급자(노령연금·장애연금)는 반드시 공단 지사에 직접 확인.",
   "source": "https://www.nps.or.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "국민연금공단",
+    "authority": "국민연금공단",
+    "source_url": "https://www.nps.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

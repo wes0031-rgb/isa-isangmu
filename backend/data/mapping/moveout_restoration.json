@@ -79,5 +79,14 @@
       "article": "제623조",
       "topic": "임대인의 수선 의무"
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "원상회복 기준",
+    "authority": "공정거래위원회 · 대법원 판례 · 한국소비자원",
+    "source_url": "공정위 소비자분쟁해결기준",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_moveout.py",
+    "last_annotated": "2026-04-14"
+  }
 }

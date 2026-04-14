@@ -20,5 +20,14 @@
   "importance": "연말정산 시 주택청약·월세 세액공제는 주소지 기준으로 판단. 주소 미변경 상태면 세액공제 증빙 어려울 수 있음.",
   "tip": "전입신고해도 홈택스는 자동 연동 안 됨. 별도 신청 필수. 월세 세액공제 받으려면 확정일자 + 홈택스 주소 모두 일치해야 함.",
   "source": "https://hometax.go.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "국세청 홈택스 주소변경",
+    "authority": "국세청",
+    "source_url": "https://hometax.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

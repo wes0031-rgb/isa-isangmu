@@ -95,5 +95,14 @@
     }
   ],
   "source": "https://www.hikorea.go.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "외국인 주소변경",
+    "authority": "법무부 출입국·외국인청",
+    "source_url": "https://www.hikorea.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services.py",
+    "last_annotated": "2026-04-14"
+  }
 }

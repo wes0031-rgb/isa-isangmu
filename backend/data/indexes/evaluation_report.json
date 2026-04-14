@@ -494,5 +494,14 @@
     "chunks_source": "index_b_chunks_curated.jsonl (200 chunks)",
     "azure_openai": "not configured",
     "azure_search": "not configured"
+  },
+  "_source_metadata": {
+    "category": "품질 평가 결과",
+    "authority": "MoveWise 팀 (evaluate_checklist.py 실행)",
+    "source_url": "N/A",
+    "license": "프로젝트 소유",
+    "update_cycle": "자동 (평가 재실행 시)",
+    "how_collected": "evaluate_checklist.py",
+    "last_annotated": "2026-04-14"
   }
 }

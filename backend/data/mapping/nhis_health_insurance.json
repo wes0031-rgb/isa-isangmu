@@ -19,5 +19,14 @@
   ],
   "tip": "이사 후 보험료 고지서에 새 주소 찍혔는지 확인. 안 되면 바로 연락.",
   "source": "https://www.nhis.or.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "국민건강보험공단",
+    "authority": "국민건강보험공단",
+    "source_url": "https://www.nhis.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

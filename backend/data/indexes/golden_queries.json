@@ -18,15 +18,47 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true, "region_hint": "성남시 수도사업소"},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "삼천리도시가스"},
-        {"category": "인터넷 이전 설치", "must_appear": true},
-        {"category": "우편물 주소이전", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true,
+          "region_hint": "성남시 수도사업소"
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "삼천리도시가스"
+        },
+        {
+          "category": "인터넷 이전 설치",
+          "must_appear": true
+        },
+        {
+          "category": "우편물 주소이전",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학", "강제경매"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "반려동물 주소변경",
+        "아이 전학",
+        "강제경매"
+      ]
     },
     {
       "query_id": "Q002",
@@ -41,14 +73,42 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30, "citation_hint": "동물보호법 제15조"},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "코원에너지서비스"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true, "region_hint": "서울시 상수도본부"}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30,
+          "citation_hint": "동물보호법 제15조"
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "코원에너지서비스"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true,
+          "region_hint": "서울시 상수도본부"
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q003",
@@ -63,15 +123,44 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30, "citation_hint": "자동차등록령 제22조"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "서울도시가스"},
-        {"category": "인터넷 이전 설치", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30,
+          "citation_hint": "자동차등록령 제22조"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "서울도시가스"
+        },
+        {
+          "category": "인터넷 이전 설치",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "아이 전학"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q004",
@@ -88,15 +177,43 @@
         "children_school_level": "초등"
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "자녀 전학", "must_appear": true, "citation_hint": "초·중등교육법"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true, "region_hint": "성남시 수도사업소"},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true,
+          "citation_hint": "초·중등교육법"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true,
+          "region_hint": "성남시 수도사업소"
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q005",
@@ -111,14 +228,39 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "부산도시가스"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "부산도시가스"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q006",
@@ -131,17 +273,43 @@
         "has_pet": false,
         "has_car": true,
         "has_children": true,
-        "special_concerns": ["장기수선충당금 반환"]
+        "special_concerns": [
+          "장기수선충당금 반환"
+        ]
       },
       "expected_items": [
-        {"category": "장기수선충당금 반환청구", "must_appear": true, "citation_hint": "공동주택관리법 시행령"},
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "관리비 정산", "must_appear": true}
+        {
+          "category": "장기수선충당금 반환청구",
+          "must_appear": true,
+          "citation_hint": "공동주택관리법 시행령"
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "관리비 정산",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q007",
@@ -154,16 +322,42 @@
         "has_pet": false,
         "has_car": false,
         "has_children": false,
-        "special_concerns": ["보증금 반환 우려"]
+        "special_concerns": [
+          "보증금 반환 우려"
+        ]
       },
       "expected_items": [
-        {"category": "대항력·우선변제권 확보", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "임차권등기명령 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의3"},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "대성에너지"}
+        {
+          "category": "대항력·우선변제권 확보",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "임차권등기명령 안내",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의3"
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "대성에너지"
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q008",
@@ -178,16 +372,47 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "인천도시가스"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true},
-        {"category": "인터넷 이전 설치", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "인천도시가스"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "인터넷 이전 설치",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["아이 전학"]
+      "must_not_include": [
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q009",
@@ -202,14 +427,41 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true, "region_hint": "서울시 상수도본부"},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "대륜E&S"},
-        {"category": "인터넷 이전 설치", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true,
+          "region_hint": "서울시 상수도본부"
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "대륜E&S"
+        },
+        {
+          "category": "인터넷 이전 설치",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "반려동물 주소변경",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q010",
@@ -226,14 +478,44 @@
         "children_school_level": "고등"
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30, "multi": true},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "제주도시가스"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30,
+          "multi": true
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "제주도시가스"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        }
       ],
       "must_not_include": []
     },
@@ -245,15 +527,34 @@
         "contract": "월세",
         "region": "광주광역시 북구",
         "move_date": "2026-06-10",
-        "special_concerns": ["월세 인상 가능성"]
+        "special_concerns": [
+          "월세 인상 가능성"
+        ]
       },
       "expected_items": [
-        {"category": "차임·보증금 증감청구 한도 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제7조"},
-        {"category": "전입신고", "must_appear": true},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "해양에너지"}
+        {
+          "category": "차임·보증금 증감청구 한도 안내",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제7조"
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "해양에너지"
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "반려동물 주소변경"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q012",
@@ -263,15 +564,31 @@
         "contract": "월세",
         "region": "대전광역시 유성구",
         "move_date": "2026-05-25",
-        "special_concerns": ["하자 발견"]
+        "special_concerns": [
+          "하자 발견"
+        ]
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "주택수리 하자 분쟁해결 기준", "must_appear": true},
-        {"category": "임대인 수선의무 안내", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "주택수리 하자 분쟁해결 기준",
+          "must_appear": true
+        },
+        {
+          "category": "임대인 수선의무 안내",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q013",
@@ -285,12 +602,29 @@
         "monthly_rent_krw": 400000
       },
       "expected_items": [
-        {"category": "전월세 계약 신고", "must_appear": true, "deadline_days": 30, "citation_hint": "부동산 거래신고법"},
-        {"category": "전입신고", "must_appear": true},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "경동도시가스"}
+        {
+          "category": "전월세 계약 신고",
+          "must_appear": true,
+          "deadline_days": 30,
+          "citation_hint": "부동산 거래신고법"
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "경동도시가스"
+        }
       ],
-      "must_not_include": ["자동차 변경등록"]
+      "must_not_include": [
+        "자동차 변경등록"
+      ]
     },
     {
       "query_id": "Q014",
@@ -300,13 +634,28 @@
         "contract": "월세",
         "region": "서울특별시 서대문구",
         "move_date": "2026-04-25",
-        "special_concerns": ["이사업체 분쟁"]
+        "special_concerns": [
+          "이사업체 분쟁"
+        ]
       },
       "expected_items": [
-        {"category": "이사업체 분쟁 해결 방법", "must_appear": true},
-        {"category": "전입신고", "must_appear": true},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "서울도시가스"}
+        {
+          "category": "이사업체 분쟁 해결 방법",
+          "must_appear": true
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "서울도시가스"
+        }
       ],
       "must_not_include": []
     },
@@ -321,15 +670,44 @@
         "first_time": true
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true},
-        {"category": "인터넷 이전 설치", "must_appear": true},
-        {"category": "청년 월세 지원 제도 안내", "must_appear": false}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "인터넷 이전 설치",
+          "must_appear": true
+        },
+        {
+          "category": "청년 월세 지원 제도 안내",
+          "must_appear": false
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q016",
@@ -339,15 +717,34 @@
         "contract": "전세",
         "region": "강원특별자치도 춘천시",
         "move_date": "2026-09-01",
-        "special_concerns": ["갱신요구권 행사"]
+        "special_concerns": [
+          "갱신요구권 행사"
+        ]
       },
       "expected_items": [
-        {"category": "임대차 갱신요구권 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제6조의3"},
-        {"category": "전입신고", "must_appear": true},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "임대차 갱신요구권 안내",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제6조의3"
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "반려동물 주소변경",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q017",
@@ -361,11 +758,25 @@
         "language_preference": "en"
       },
       "expected_items": [
-        {"category": "외국인등록 주소변경", "must_appear": true, "deadline_days": 14, "citation_hint": "출입국관리법 제36조"},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "임차인 권리 안내 (외국인)", "must_appear": true}
+        {
+          "category": "외국인등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "출입국관리법 제36조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "임차인 권리 안내 (외국인)",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q018",
@@ -378,13 +789,34 @@
         "has_car": true
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "예스코"}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "예스코"
+        }
       ],
-      "must_not_include": ["확정일자", "반려동물 주소변경"]
+      "must_not_include": [
+        "확정일자",
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q019",
@@ -394,15 +826,34 @@
         "contract": "월세",
         "region": "경기도 성남시 분당구",
         "move_date": "2026-06-30",
-        "special_concerns": ["관리비예치금 반환"]
+        "special_concerns": [
+          "관리비예치금 반환"
+        ]
       },
       "expected_items": [
-        {"category": "관리비예치금·장기수선충당금 정산 절차", "must_appear": true},
-        {"category": "전입신고", "must_appear": true},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "삼천리"}
+        {
+          "category": "관리비예치금·장기수선충당금 정산 절차",
+          "must_appear": true
+        },
+        {
+          "category": "전입신고",
+          "must_appear": true
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "삼천리"
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "아이 전학", "반려동물 주소변경"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "아이 전학",
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q020",
@@ -416,14 +867,39 @@
         "has_car": false
       },
       "expected_items": [
-        {"category": "전입신고 (공동 세대주)", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "deadline_days": 1},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
-        {"category": "도시가스 명의변환", "must_appear": true, "region_hint": "예스코"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true}
+        {
+          "category": "전입신고 (공동 세대주)",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "deadline_days": 1
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true,
+          "region_hint": "예스코"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q021",
@@ -439,13 +915,36 @@
         "is_foreigner": true
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "외국인등록 주소변경", "must_appear": true, "deadline_days": 14, "citation_hint": "출입국관리법"},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "외국인등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "출입국관리법"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "반려동물 주소변경", "아이 전학"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "반려동물 주소변경",
+        "아이 전학"
+      ]
     },
     {
       "query_id": "Q022",
@@ -461,15 +960,43 @@
         "children_school_level": "중등"
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "외국인등록 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "외국인등록 주소변경"
+      ]
     },
     {
       "query_id": "Q023",
@@ -485,14 +1012,40 @@
         "children_school_level": "고등"
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30, "citation_hint": "동물보호법"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30,
+          "citation_hint": "동물보호법"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["자동차 변경등록", "외국인등록 주소변경"]
+      "must_not_include": [
+        "자동차 변경등록",
+        "외국인등록 주소변경"
+      ]
     },
     {
       "query_id": "Q024",
@@ -508,17 +1061,51 @@
         "children_school_level": "초등"
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14, "citation_hint": "주민등록법 제16조"},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "대항력·우선변제권 확보", "must_appear": true},
-        {"category": "반려동물 등록 주소변경", "must_appear": true, "deadline_days": 30},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "수도 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "주민등록법 제16조"
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "대항력·우선변제권 확보",
+          "must_appear": true
+        },
+        {
+          "category": "반려동물 등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "수도 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["외국인등록 주소변경"]
+      "must_not_include": [
+        "외국인등록 주소변경"
+      ]
     },
     {
       "query_id": "Q025",
@@ -526,7 +1113,10 @@
       "user_input": {
         "household": "가족",
         "contract": "전세",
-        "contracts": ["자가", "전세"],
+        "contracts": [
+          "자가",
+          "전세"
+        ],
         "region": "서울특별시 강동구",
         "move_date": "2026-07-20",
         "has_pet": false,
@@ -534,13 +1124,35 @@
         "has_children": false
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "아이 전학", "외국인등록 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "아이 전학",
+        "외국인등록 주소변경"
+      ]
     },
     {
       "query_id": "Q026",
@@ -553,16 +1165,38 @@
         "has_pet": false,
         "has_car": false,
         "has_children": false,
-        "special_concerns": ["갱신요구권"]
+        "special_concerns": [
+          "갱신요구권"
+        ]
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "임대차 갱신요구권 안내", "must_appear": true},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "임대차 갱신요구권 안내",
+          "must_appear": true
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "자동차 변경등록"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "자동차 변경등록"
+      ]
     },
     {
       "query_id": "Q027",
@@ -575,17 +1209,43 @@
         "has_pet": false,
         "has_car": false,
         "has_children": false,
-        "special_concerns": ["하자 분쟁", "수선 요청"]
+        "special_concerns": [
+          "하자 분쟁",
+          "수선 요청"
+        ]
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "주택수리 하자 분쟁해결", "must_appear": true},
-        {"category": "임대인 수선의무 안내", "must_appear": true, "citation_hint": "민법 제623조"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "주택수리 하자 분쟁해결",
+          "must_appear": true
+        },
+        {
+          "category": "임대인 수선의무 안내",
+          "must_appear": true,
+          "citation_hint": "민법 제623조"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "자동차 변경등록"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "자동차 변경등록"
+      ]
     },
     {
       "query_id": "Q028",
@@ -599,17 +1259,40 @@
         "has_car": true,
         "has_children": true,
         "children_school_level": "초등",
-        "special_concerns": ["이사업체 분쟁"]
+        "special_concerns": [
+          "이사업체 분쟁"
+        ]
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true},
-        {"category": "이사업체 분쟁해결", "must_appear": true},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "자동차 변경등록", "must_appear": true},
-        {"category": "전기 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true
+        },
+        {
+          "category": "이사업체 분쟁해결",
+          "must_appear": true
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q029",
@@ -626,14 +1309,39 @@
         "is_foreigner": true
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "외국인등록 주소변경", "must_appear": true, "deadline_days": 14, "citation_hint": "출입국관리법"},
-        {"category": "자녀 전학", "must_appear": true},
-        {"category": "자동차 변경등록", "must_appear": true, "deadline_days": 30},
-        {"category": "전기 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "외국인등록 주소변경",
+          "must_appear": true,
+          "deadline_days": 14,
+          "citation_hint": "출입국관리법"
+        },
+        {
+          "category": "자녀 전학",
+          "must_appear": true
+        },
+        {
+          "category": "자동차 변경등록",
+          "must_appear": true,
+          "deadline_days": 30
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경"]
+      "must_not_include": [
+        "반려동물 주소변경"
+      ]
     },
     {
       "query_id": "Q030",
@@ -646,17 +1354,55 @@
         "has_pet": false,
         "has_car": false,
         "has_children": false,
-        "special_concerns": ["전세사기 의심", "보증금 반환 우려"]
+        "special_concerns": [
+          "전세사기 의심",
+          "보증금 반환 우려"
+        ]
       },
       "expected_items": [
-        {"category": "전입신고", "must_appear": true, "deadline_days": 14},
-        {"category": "확정일자", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "대항력·우선변제권 확보", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
-        {"category": "임차권등기명령 안내", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의3"},
-        {"category": "전기 명의변환", "must_appear": true},
-        {"category": "도시가스 명의변환", "must_appear": true}
+        {
+          "category": "전입신고",
+          "must_appear": true,
+          "deadline_days": 14
+        },
+        {
+          "category": "확정일자",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "대항력·우선변제권 확보",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의2"
+        },
+        {
+          "category": "임차권등기명령 안내",
+          "must_appear": true,
+          "citation_hint": "주택임대차보호법 제3조의3"
+        },
+        {
+          "category": "전기 명의변환",
+          "must_appear": true
+        },
+        {
+          "category": "도시가스 명의변환",
+          "must_appear": true
+        }
       ],
-      "must_not_include": ["반려동물 주소변경", "자동차 변경등록", "아이 전학"]
+      "must_not_include": [
+        "반려동물 주소변경",
+        "자동차 변경등록",
+        "아이 전학"
+      ]
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "Golden Query 평가 시나리오",
+    "authority": "MoveWise 팀",
+    "source_url": "팀 자체 작성",
+    "license": "프로젝트 소유",
+    "update_cycle": "수동",
+    "how_collected": "팀 작성 30건",
+    "last_annotated": "2026-04-14"
+  }
 }

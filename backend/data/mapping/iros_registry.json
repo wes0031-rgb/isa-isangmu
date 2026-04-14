@@ -34,5 +34,14 @@
   ],
   "tip": "계약 전 하루 이내 발급본이 가장 안전. 임대인이 보여주는 등기부는 구본일 수 있으니 본인이 직접 발급 권장.",
   "source": "https://www.iros.go.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "대법원 인터넷등기소",
+    "authority": "대법원 / 법원행정처",
+    "source_url": "https://www.iros.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

@@ -186,5 +186,15 @@
       "title": "조정결과의 통지",
       "content": "제35조(조정결과의 통지)\n① 조정위원회는 조정절차가 종료되면 그 결과를 당사자에게 통지하여야 한다.\n② 조정위원회는 법 제26조제4항에 따른 조정서가 작성된 경우 조정서 정본을 지체 없이 당사자에게 교부 또는 송달하여야 한다."
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "법률 원본",
+    "authority": "법제처",
+    "source_url": "https://www.law.go.kr/DRF/lawService.do",
+    "api_name": "국가법령정보 Open API (DRF)",
+    "license": "공공누리 제1유형 (출처 표시)",
+    "update_cycle": "시행일 기준 즉시 반영",
+    "how_collected": "backend/scripts/ingest_laws.py (LAW_OC 인증키)",
+    "last_annotated": "2026-04-14"
+  }
 }

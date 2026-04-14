@@ -21,5 +21,14 @@
   "tip": "법적으로 공개 대상이 된 임대인만 조회 가능. 공개 대상 아니어도 위험할 수 있으니 등기부등본·안심전세 앱 병행 확인.",
   "fee": "무료",
   "source": "주택도시보증공사 공식 (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "HUG 안심전세 / 임대인 공개",
+    "authority": "주택도시보증공사 (HUG)",
+    "source_url": "https://www.khug.or.kr, https://jeonse.khug.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

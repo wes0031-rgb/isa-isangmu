@@ -179,5 +179,14 @@
       "company": "㈜제주도시가스",
       "class_hint": "company_019"
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "도시가스 지역별 공급사",
+    "authority": "한국도시가스협회",
+    "source_url": "http://www.citygas.or.kr/company/situation.jsp",
+    "license": "공개 페이지 기반 재가공",
+    "update_cycle": "연 1회",
+    "how_collected": "ingest_citygas.py (34 회사 · 전국)",
+    "last_annotated": "2026-04-14"
+  }
 }

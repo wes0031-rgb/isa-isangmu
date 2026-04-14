@@ -22,5 +22,14 @@
   "income_criteria": "소송구조는 중위소득 125% 이하 또는 기초생활수급자 대상. 단순 상담은 소득 무관 무료.",
   "tip": "임대차 분쟁은 전국에서 가장 흔한 민사 사건이라 132 상담원이 매우 숙련됨. 분쟁조정위원회 신청 전 132 먼저 상담 권장.",
   "source": "https://www.klac.or.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "대한법률구조공단 132",
+    "authority": "법무부 산하 공공기관",
+    "source_url": "https://www.klac.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

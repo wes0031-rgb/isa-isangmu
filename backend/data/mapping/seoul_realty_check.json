@@ -15,5 +15,14 @@
   ],
   "note": "서울 거주자 또는 서울 지역 계약 시 유용. 다른 지역은 HUG 안심전세 앱 권장.",
   "source": "https://rent.seoul.go.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "서울시 전월세 정보몽땅",
+    "authority": "서울특별시",
+    "source_url": "https://rent.seoul.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

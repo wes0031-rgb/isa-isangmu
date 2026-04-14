@@ -21,5 +21,14 @@
   "advantage": "은행·카드사 각각 개별 변경하면 10곳 이상 전화해야 함. 어카운트인포로 한 번에 처리 가능.",
   "caveat": "모든 금융사가 자동 변경되는 건 아님. 제2금융권 일부 · 보험사는 별도. 자동이체 변경은 별도 메뉴.",
   "source": "https://www.payinfo.or.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "금융결제원 내계좌한눈에",
+    "authority": "금융결제원 (KFTC)",
+    "source_url": "https://www.payinfo.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

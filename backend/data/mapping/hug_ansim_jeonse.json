@@ -27,5 +27,14 @@
   "fee": "무료 (보증보험 가입은 별도 유료)",
   "tip": "계약서 작성 '전'에 반드시 조회. 보증 가입 불가 물건은 피해야 함.",
   "source": "https://www.khug.or.kr / https://jeonse.khug.or.kr",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "HUG 안심전세 / 임대인 공개",
+    "authority": "주택도시보증공사 (HUG)",
+    "source_url": "https://www.khug.or.kr, https://jeonse.khug.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

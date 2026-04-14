@@ -76,5 +76,14 @@
     "계약 갱신 거절 통지는 만료 2개월 전까지 (묵시적 갱신 방지)",
     "이사 당일 보증금 수령 → 키 반납 순서 엄수",
     "집 상태 사진·동영상 이사 전날·당일 기록 (원상회복 분쟁 대비)"
-  ]
+  ],
+  "_source_metadata": {
+    "category": "보증금 반환 분쟁 5단계 가이드",
+    "authority": "법무부 · 주택임대차분쟁조정위원회 · 대한법률구조공단 참고",
+    "source_url": "https://www.hldcc.or.kr, https://www.klac.or.kr",
+    "license": "원본 법률은 공공누리, 편집본은 프로젝트 소유",
+    "update_cycle": "수동",
+    "how_collected": "ingest_moveout.py",
+    "last_annotated": "2026-04-14"
+  }
 }

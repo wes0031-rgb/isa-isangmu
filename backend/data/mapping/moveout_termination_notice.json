@@ -47,5 +47,14 @@
     "문자·카톡도 효력 있으나 발송 스크린샷 보관 필수",
     "전화 통화는 증거 남지 않으므로 반드시 문자로 확정",
     "통지서에는 날짜·서명·주소 모두 명시"
-  ]
+  ],
+  "_source_metadata": {
+    "category": "계약 해지·갱신 통지 템플릿",
+    "authority": "법무부 주택임대차 표준 양식 기반",
+    "source_url": "https://www.moj.go.kr",
+    "license": "표준 양식 재배포 가능",
+    "update_cycle": "수동",
+    "how_collected": "ingest_moveout.py",
+    "last_annotated": "2026-04-14"
+  }
 }

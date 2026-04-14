@@ -2393,5 +2393,15 @@
       "start": 915.959,
       "duration": 3.32
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "유튜브 자막 원본",
+    "authority": "각 채널 귀속",
+    "source_url": "https://www.youtube.com",
+    "api_name": "youtube-transcript-api (무료)",
+    "license": "영상별 채널 저작권. 프로젝트 내부용 가공만 허용",
+    "update_cycle": "수동",
+    "how_collected": "ingest_youtube.py",
+    "last_annotated": "2026-04-14"
+  }
 }

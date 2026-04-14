@@ -113,5 +113,15 @@
       "name": "기독탄신일",
       "is_holiday": true
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "공휴일",
+    "authority": "한국천문연구원",
+    "source_url": "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService",
+    "api_name": "특일정보 API",
+    "license": "공공누리 제1유형",
+    "update_cycle": "연 1회 (연말)",
+    "how_collected": "ingest_holidays.py (2026년 22건)",
+    "last_annotated": "2026-04-14"
+  }
 }

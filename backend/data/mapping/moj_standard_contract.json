@@ -20,5 +20,14 @@
   "legal_basis": "주택임대차보호법 제30조 (표준계약서 권장)",
   "tip": "표준계약서 사용은 의무는 아니지만, 법적 분쟁 시 표준계약서 기준으로 해석되므로 임차인 보호에 유리. 특약 란에 '세금 체납 없음 확인' 명시 권장.",
   "source": "법무부 공식 (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "법무부 표준 임대차계약서",
+    "authority": "법무부 / 국토교통부",
+    "source_url": "https://www.moj.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

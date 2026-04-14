@@ -19,5 +19,14 @@
   "legal_basis": "동물보호법 제15조 (등록대상동물 등록·변경신고)",
   "note": "이사뿐만 아니라 소유자 변경, 잃어버림, 사망 등도 30일 이내 신고 필수. 내장칩(마이크로칩) 또는 외장 태그 등록 여부 확인.",
   "source": "https://www.animal.go.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "반려동물 등록 주소변경",
+    "authority": "농림축산검역본부 · 동물보호관리시스템",
+    "source_url": "https://www.animal.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services.py",
+    "last_annotated": "2026-04-14"
+  }
 }

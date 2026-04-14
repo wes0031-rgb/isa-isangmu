@@ -36,5 +36,14 @@
     "주택임대차보호법 제6조 제1항",
     "주택임대차보호법 제6조 제3항"
   ],
-  "fetched_at": "2026-04-13"
+  "fetched_at": "2026-04-13",
+  "_source_metadata": {
+    "category": "행정 절차 원본 스크랩",
+    "authority": "법제처 (찾기쉬운 생활법령정보)",
+    "source_url": "https://easylaw.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)",
+    "last_annotated": "2026-04-14"
+  }
 }

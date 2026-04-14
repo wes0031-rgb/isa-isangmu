@@ -17,5 +17,14 @@
   "tip": "이사 후 1~2주 내 바로 신청 권장. 3개월 동안 이전 주소로 오는 우편물만 전달되니 은행·카드 등 주요 기관은 별도로 주소변경도 해야 함.",
   "legal_basis": "우편법 및 우편법 시행령 (우편물 전송 서비스)",
   "source": "https://service.epost.go.kr (2026-04 확인)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "우편물 주소이전 서비스",
+    "authority": "우정사업본부",
+    "source_url": "https://service.epost.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services.py",
+    "last_annotated": "2026-04-14"
+  }
 }

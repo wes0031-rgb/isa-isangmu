@@ -158,5 +158,14 @@
   ],
   "legal_basis": "초·중등교육법 제13조 (전학)",
   "source": "교육부 및 각 시·도 교육청 공식 페이지",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "자녀 전학",
+    "authority": "교육부 · 시·도 교육청",
+    "source_url": "https://www.moe.go.kr + 각 교육청",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services.py (17 교육청)",
+    "last_annotated": "2026-04-14"
+  }
 }

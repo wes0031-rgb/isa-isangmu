@@ -21,5 +21,14 @@
   "legal_basis": "병역법 제11조 (주소 이동 신고 의무)",
   "tip": "전입신고 완료 후 1주 내 병무청 사이트에서 주소 확인 권장",
   "source": "https://www.mma.go.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "병무청 주소변경",
+    "authority": "병무청",
+    "source_url": "https://www.mma.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }

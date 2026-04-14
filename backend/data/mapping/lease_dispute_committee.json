@@ -24,5 +24,14 @@
   "legal_basis": "주택임대차보호법 제14조~제20조 (분쟁조정위원회)",
   "advantage": "소송보다 빠르고(60일) 저렴 (수천 원~5만원), 판결과 같은 집행력. 보증금 반환 미이행 1순위 해결 경로.",
   "source": "https://www.hldcc.or.kr (2026-04)",
-  "generated_at": "2026-04-14"
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "주택임대차분쟁조정위원회",
+    "authority": "법무부 / 대한법률구조공단",
+    "source_url": "https://www.hldcc.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "ingest_services_v2.py",
+    "last_annotated": "2026-04-14"
+  }
 }
