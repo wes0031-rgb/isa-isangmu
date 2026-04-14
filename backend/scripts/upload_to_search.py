@@ -79,17 +79,9 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def create_index(schema_path: Path) -> None:
-    from azure.core.credentials import AzureKeyCredential
-    from azure.search.documents.indexes import SearchIndexClient
-    from azure.search.documents.indexes.models import SearchIndex
-
     s = get_settings()
-    client = SearchIndexClient(
-        endpoint=s.azure_search_endpoint,
-        credential=AzureKeyCredential(s.azure_search_api_key),
-    )
     schema = json.loads(schema_path.read_text())
-    # Azure SDK expects SearchIndex obj; here we send raw via REST layer for brevity
+    # Raw REST 직접 호출 — Azure SDK 대신 httpx 사용 (더 단순)
     import httpx
 
     headers = {

@@ -1,4 +1,4 @@
-# MoveWise backend — FastAPI on Python 3.12 slim
+# 이사이상무 backend — FastAPI on Python 3.12 slim
 FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

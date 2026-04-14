@@ -4,12 +4,13 @@ Loads `index_b_chunks_curated.jsonl` (행정 절차) and `index_a_chunks.jsonl`
 (법률 조문) once, and performs simple keyword scoring. This keeps `/checklist`
 and `/safecontract` functional during local development before Azure setup.
 
-모든 데이터는 로드 시점에 한자 병기 제거(_clean_hanja)를 거침.
+모든 데이터는 로드 시점에 한자 병기 제거(clean_hanja)를 거침.
 """
 from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
@@ -25,12 +26,13 @@ _HANJA_PARENS_RE = re.compile(
 def clean_hanja(text: str) -> str:
     """한국 법조문에서 한자 병기·잔여 한자 전부 제거.
 
-    예) '집행권원(執行權原)' → '집행권원'
-        '賃貸借' → ''  (단독 한자도 제거)
-        '「민사집행법」' → '「민사집행법」' (유지)
-        '(예시)' → '(예시)' (유지)
+    추가로 macOS/Windows 간 한글 자모 분리(NFD) 불일치를 막기 위해
+    NFC 정규화를 항상 먼저 적용한다.
     """
-    if not text or not _HANJA_RE.search(text):
+    if not text:
+        return text
+    text = unicodedata.normalize("NFC", text)
+    if not _HANJA_RE.search(text):
         return text
     cleaned = _HANJA_PARENS_RE.sub("", text)
     cleaned = _HANJA_RE.sub("", cleaned)

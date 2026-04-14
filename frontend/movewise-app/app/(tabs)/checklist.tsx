@@ -36,7 +36,7 @@ import {
   loadChecklist,
   loadCompletions,
   saveChecklist,
-  toggleCompletion,
+  setCompletion,
 } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
@@ -80,6 +80,10 @@ export default function ChecklistScreen() {
   const [hasChildren, setHasChildren] = useState(false);
   const [schoolLevel, setSchoolLevel] = useState<SchoolLevel | null>(null);
   const [isForeigner, setIsForeigner] = useState(false);
+  const [isApartment, setIsApartment] = useState(false);
+  const [isEmployed, setIsEmployed] = useState(false);
+  const [receivesWelfare, setReceivesWelfare] = useState(false);
+  const [needsIdReissue, setNeedsIdReissue] = useState(false);
   const [concernLabels, setConcernLabels] = useState<string[]>([]);
 
   // Modals
@@ -112,6 +116,10 @@ export default function ChecklistScreen() {
           setHasChildren(req.has_children);
           setSchoolLevel(req.children_school_level ?? null);
           setIsForeigner(req.is_foreigner ?? false);
+          setIsApartment(req.is_apartment ?? false);
+          setIsEmployed(req.is_employed ?? false);
+          setReceivesWelfare(req.receives_welfare ?? false);
+          setNeedsIdReissue(req.needs_id_reissue ?? false);
           setConcernLabels(req.special_concerns ?? []);
           setMode('result');
           const comp = await loadCompletions();
@@ -155,6 +163,10 @@ export default function ChecklistScreen() {
       has_children: hasChildren,
       children_school_level: hasChildren ? schoolLevel : null,
       is_foreigner: isForeigner,
+      is_apartment: isApartment,
+      is_employed: isEmployed,
+      receives_welfare: receivesWelfare,
+      needs_id_reissue: needsIdReissue,
       special_concerns: concernLabels,
     };
     try {
@@ -170,15 +182,23 @@ export default function ChecklistScreen() {
     }
   }
 
-  async function handleToggle(item: ChecklistItem) {
-    const map = await toggleCompletion(itemKey(item));
-    setCompletions({ ...map });
+  function handleToggle(item: ChecklistItem) {
+    // Optimistic UI — state 먼저 업데이트하고 저장은 백그라운드로
+    const key = itemKey(item);
+    setCompletions((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      setCompletion(key, next[key]).catch(() => {
+        // 저장 실패 시 상태 롤백
+        setCompletions((p) => ({ ...p, [key]: !next[key] }));
+      });
+      return next;
+    });
   }
 
   async function handleShare() {
     if (!result) return;
     const lines = [
-      `[MoveWise 이사 체크리스트]`,
+      `[이사이상무 이사 체크리스트]`,
       `이사일: ${moveDate} · ${region} · ${household} · ${contracts.join('/')}`,
       '',
       ...result.items.map((it, idx) => {
@@ -243,6 +263,14 @@ export default function ChecklistScreen() {
               setSchoolLevel={setSchoolLevel}
               isForeigner={isForeigner}
               setIsForeigner={setIsForeigner}
+              isApartment={isApartment}
+              setIsApartment={setIsApartment}
+              isEmployed={isEmployed}
+              setIsEmployed={setIsEmployed}
+              receivesWelfare={receivesWelfare}
+              setReceivesWelfare={setReceivesWelfare}
+              needsIdReissue={needsIdReissue}
+              setNeedsIdReissue={setNeedsIdReissue}
               concernLabels={concernLabels}
               toggleConcern={toggleConcern}
               loading={loading}
@@ -309,6 +337,14 @@ interface FormViewProps {
   setSchoolLevel: (v: SchoolLevel | null) => void;
   isForeigner: boolean;
   setIsForeigner: (v: boolean) => void;
+  isApartment: boolean;
+  setIsApartment: (v: boolean) => void;
+  isEmployed: boolean;
+  setIsEmployed: (v: boolean) => void;
+  receivesWelfare: boolean;
+  setReceivesWelfare: (v: boolean) => void;
+  needsIdReissue: boolean;
+  setNeedsIdReissue: (v: boolean) => void;
   concernLabels: string[];
   toggleConcern: (label: string) => void;
   loading: boolean;
@@ -336,6 +372,14 @@ function FormView(props: FormViewProps) {
     setSchoolLevel,
     isForeigner,
     setIsForeigner,
+    isApartment,
+    setIsApartment,
+    isEmployed,
+    setIsEmployed,
+    receivesWelfare,
+    setReceivesWelfare,
+    needsIdReissue,
+    setNeedsIdReissue,
     concernLabels,
     toggleConcern,
     loading,
@@ -441,6 +485,12 @@ function FormView(props: FormViewProps) {
             active={isForeigner}
             onPress={() => setIsForeigner(!isForeigner)}
           />
+          <ToggleChip
+            icon="business"
+            label="아파트·오피스텔"
+            active={isApartment}
+            onPress={() => setIsApartment(!isApartment)}
+          />
         </View>
       </Section>
 
@@ -453,6 +503,29 @@ function FormView(props: FormViewProps) {
           />
         </Section>
       )}
+
+      <Section label="선택 항목 (해당자만)">
+        <View style={styles.toggles}>
+          <ToggleChip
+            icon="briefcase"
+            label="직장인"
+            active={isEmployed}
+            onPress={() => setIsEmployed(!isEmployed)}
+          />
+          <ToggleChip
+            icon="heart"
+            label="복지급여 수급자"
+            active={receivesWelfare}
+            onPress={() => setReceivesWelfare(!receivesWelfare)}
+          />
+          <ToggleChip
+            icon="card"
+            label="신분증 재발급 필요"
+            active={needsIdReissue}
+            onPress={() => setNeedsIdReissue(!needsIdReissue)}
+          />
+        </View>
+      </Section>
 
       <Section label={`특이 상황${concernLabels.length > 0 ? ` · ${concernLabels.length}개 선택됨` : ''}`}>
         <View style={styles.concernGroups}>

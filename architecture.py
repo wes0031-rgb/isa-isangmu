@@ -1,4 +1,4 @@
-"""MoveWise System Architecture Diagram.
+"""이사이상무 System Architecture Diagram.
 
 Generates `movewise_architecture.png` in the same folder.
 Run: python3 architecture.py
@@ -96,7 +96,7 @@ SUB_STORAGE = {
 
 
 with Diagram(
-    "MoveWise — System Architecture",
+    "이사이상무 — System Architecture",
     filename="/Users/sa/Desktop/2차프로젝트/movewise_architecture",
     outformat="png",
     show=False,

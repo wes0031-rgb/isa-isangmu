@@ -7,7 +7,7 @@ from datetime import date
 from .azure_clients import get_openai_client, get_search_client_procedure
 from .config import get_settings
 from .date_utils import compute_deadline, compute_start_date
-from .local_search import clean_hanja, find_law_article
+from .local_search import find_law_article
 from .local_search import search as local_search
 from .models import (
     ChecklistCitation,
@@ -16,9 +16,6 @@ from .models import (
     ChecklistResponse,
 )
 from .region_services import enrich_item_with_region
-
-# Legacy alias — 외부 import 가 있을 수 있어 유지
-_clean_hanja = clean_hanja
 
 
 def _enrich_citation(cite: dict) -> dict:
@@ -111,7 +108,7 @@ def build_queries_llm(req: ChecklistRequest) -> list[str]:
                 {"role": "user", "content": user_prompt},
             ],
             response_format={"type": "json_object"},
-            timeout=20,
+            timeout=10,
         )
     except Exception as exc:
         import logging
@@ -201,7 +198,7 @@ def structure_checklist_llm(
                 {"role": "user", "content": f"조건:\n{req.model_dump_json()}\n\n검색결과:\n{context}"},
             ],
             response_format={"type": "json_object"},
-            timeout=30,
+            timeout=20,
         )
     except Exception as exc:
         _logger.warning(
@@ -362,6 +359,30 @@ def structure_checklist_fallback(
             "description": "service.epost.go.kr에서 주소이전 서비스 신청. 유효기간 3개월.",
             "d_day_offset": 3,
             "has_legal_deadline": False,
+        },
+        {
+            "category": "건강보험 주소변경",
+            "title": "건강보험 주소 반영 확인",
+            "description": (
+                "전입신고 시 국민건강보험공단에 자동 반영되는 것이 원칙. "
+                "직장가입자는 회사 주소 기준이라 별도 변경 불필요. "
+                "지역가입자는 '국민건강보험공단 앱' 또는 ☎ 1577-1000 에서 확인 권장."
+            ),
+            "d_day_offset": 7,
+            "has_legal_deadline": False,
+            "method": "국민건강보험공단 앱 또는 ☎ 1577-1000",
+        },
+        {
+            "category": "금융기관 주소변경",
+            "title": "은행·카드사 주소변경",
+            "description": (
+                "주거래 은행·카드사 앱에서 주소 변경. 미변경 시 우편물 미수령으로 "
+                "카드 갱신·대출 심사 지연 가능. 금융결제원 '내계좌한눈에' "
+                "(payinfo.or.kr)에서 본인 명의 계좌 일괄 조회 후 각 앱에서 변경."
+            ),
+            "d_day_offset": 7,
+            "has_legal_deadline": False,
+            "method": "각 금융기관 앱 · 금융결제원 내계좌한눈에 payinfo.or.kr",
         },
     ]
 
@@ -549,6 +570,85 @@ def structure_checklist_fallback(
             "deadline_days": 14,
             "citations": [{"law_name": "출입국관리법", "article": "제36조"}],
         })
+
+    if req.is_employed:
+        items.append({
+            "category": "직장 주소변경 신고",
+            "title": "회사 인사팀에 주소변경 신고",
+            "description": (
+                "재직 중이라면 회사 인사팀·인사 시스템에 주소 변경 통지. "
+                "원천징수·연말정산·4대보험 주소 반영에 필요. "
+                "대부분 사내 시스템에서 셀프 수정 가능."
+            ),
+            "d_day_offset": 3,
+            "has_legal_deadline": False,
+            "method": "사내 인사 시스템 또는 인사팀",
+        })
+    if req.receives_welfare:
+        items.append({
+            "category": "복지급여 주소변경",
+            "title": "복지급여 주소변경",
+            "description": (
+                "기초생활수급자·장애인연금·아동수당·한부모가족지원 등 복지급여 수급자는 "
+                "이사 시 주소 반영 확인 필수. 대부분 전입신고로 자동 연계되지만 "
+                "수급자격은 관할 자치단체 심사가 필요한 경우가 있어 누락되면 급여 중단 리스크. "
+                "복지로(bokjiro.go.kr) 에서 확인 권장."
+            ),
+            "d_day_offset": 7,
+            "has_legal_deadline": False,
+            "method": "복지로(bokjiro.go.kr) 또는 읍·면·동 주민센터 (☎ 129)",
+            "citations": [{"law_name": "국민기초생활보장법", "article": "제23조"}],
+        })
+    if req.needs_id_reissue:
+        items.append({
+            "category": "주민등록증 재발급",
+            "title": "주민등록증 재발급",
+            "description": (
+                "주소 변경은 전입신고로 자동 반영되므로 재발급 의무는 없음. "
+                "10년 이상 경과·분실·훼손·사진 변경 시에만 신청. "
+                "수수료 5,000원, 6개월 이내 촬영 규격 사진 필요."
+            ),
+            "d_day_offset": 14,
+            "has_legal_deadline": False,
+            "method": "정부24(gov.kr) 또는 주민센터 방문",
+            "citations": [{"law_name": "주민등록법", "article": "제24조"}],
+        })
+
+    if req.is_apartment:
+        items.append({
+            "category": "관리사무소 입주 신고",
+            "title": "관리사무소 입주자 카드 작성 (아파트·오피스텔)",
+            "description": (
+                "입주 당일 단지 관리사무소 방문하여 입주자 카드 작성. "
+                "세대주·가족 인원·연락처·차량 정보 등록. "
+                "관리비 고지서·승강기 카드·입주민 앱 이용에 필요."
+            ),
+            "d_day_offset": 0,
+            "has_legal_deadline": False,
+            "method": "단지 관리사무소 방문",
+        })
+        items.append({
+            "category": "우편함 명패 교체",
+            "title": "우편함·현관 명패 교체",
+            "description": (
+                "이전 거주자 명의가 남아있으면 우편물 오배송·분실 리스크. "
+                "관리사무소에 명패 교체 요청 또는 직접 교체."
+            ),
+            "d_day_offset": 3,
+            "has_legal_deadline": False,
+        })
+        if req.has_car:
+            items.append({
+                "category": "단지 주차 등록",
+                "title": "단지 주차 등록 (차량 보유자)",
+                "description": (
+                    "차량 번호·모델·사진 등록 후 입주민 주차 스티커 발급. "
+                    "미등록 차량은 견인 또는 과태료 대상."
+                ),
+                "d_day_offset": 1,
+                "has_legal_deadline": False,
+                "method": "관리사무소 주차 등록 창구",
+            })
 
     # special_concerns 기반 추가 항목
     concerns = " ".join(req.special_concerns).lower()

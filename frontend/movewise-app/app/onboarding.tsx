@@ -32,7 +32,7 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.logo}>MoveWise</Text>
+        <Text style={styles.logo}>이사이상무</Text>
         <Text style={styles.subtitle}>이사부터 정착까지, 한 곳에서</Text>
       </View>
 

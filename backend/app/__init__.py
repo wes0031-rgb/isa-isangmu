@@ -1,1 +1,1 @@
-"""MoveWise backend application."""
+"""이사이상무 backend application."""

@@ -1,4 +1,4 @@
-"""MoveWise Streamlit demo UI — calls FastAPI backend.
+"""이사이상무 Streamlit demo UI — calls FastAPI backend.
 
 Run:
   cd 2차프로젝트
@@ -17,7 +17,7 @@ import streamlit as st
 DEFAULT_API = os.environ.get("MOVEWISE_API", "http://127.0.0.1:8765")
 
 st.set_page_config(
-    page_title="MoveWise",
+    page_title="이사이상무",
     page_icon="🏠",
     layout="centered",
     initial_sidebar_state="collapsed",
@@ -96,7 +96,7 @@ with st.sidebar:
         st.error("❌ 백엔드 연결 실패 — uvicorn 실행 확인")
 
 # ---------- Main ----------
-st.title("🏠 MoveWise")
+st.title("🏠 이사이상무")
 st.caption("이사 여정 가이드 — 체크리스트 + SafeContract")
 
 tab_checklist, tab_safe = st.tabs(["📋 이사 체크리스트", "📄 SafeContract"])

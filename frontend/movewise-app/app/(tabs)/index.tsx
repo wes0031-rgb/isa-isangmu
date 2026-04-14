@@ -112,7 +112,7 @@ export default function Home() {
             />
             <Text style={styles.welcome}>어서와요</Text>
           </View>
-          <Text style={styles.userName}>MoveWise</Text>
+          <Text style={styles.userName}>이사이상무</Text>
         </View>
 
         {/* D-day hero card */}

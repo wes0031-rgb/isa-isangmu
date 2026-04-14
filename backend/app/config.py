@@ -16,29 +16,29 @@ class Settings(BaseSettings):
 
     # ===== Azure OpenAI =====
     azure_openai_endpoint: str = Field(default="", alias="AZURE_OPENAI_ENDPOINT")
-    azure_openai_api_key: str = Field(default="", alias="AZURE_OPENAI_API_KEY")
+    azure_openai_api_key: str = Field(default="", alias="AZURE_OPENAI_API_KEY", repr=False)
     azure_openai_deployment_name: str = Field(default="gpt-4o", alias="AZURE_OPENAI_DEPLOYMENT_NAME")
     azure_openai_api_version: str = Field(default="2024-10-21", alias="AZURE_OPENAI_API_VERSION")
     azure_openai_embed_deployment: str = Field(default="text-embedding-3-small", alias="AZURE_OPENAI_EMBED_DEPLOYMENT")
 
     # ===== Azure AI Search =====
     azure_search_endpoint: str = Field(default="", alias="AZURE_SEARCH_ENDPOINT")
-    azure_search_api_key: str = Field(default="", alias="AZURE_SEARCH_API_KEY")
+    azure_search_api_key: str = Field(default="", alias="AZURE_SEARCH_API_KEY", repr=False)
     azure_search_law_index: str = Field(default="moving-law-index", alias="AZURE_SEARCH_LAW_INDEX")
     azure_search_procedure_index: str = Field(default="moving-procedure-index", alias="AZURE_SEARCH_PROCEDURE_INDEX")
 
     # ===== Azure Document Intelligence =====
     azure_docintel_endpoint: str = Field(default="", alias="AZURE_DOCINTEL_ENDPOINT")
-    azure_docintel_api_key: str = Field(default="", alias="AZURE_DOCINTEL_API_KEY")
+    azure_docintel_api_key: str = Field(default="", alias="AZURE_DOCINTEL_API_KEY", repr=False)
 
     # ===== Azure Blob Storage =====
-    azure_blob_connection_string: str = Field(default="", alias="AZURE_BLOB_CONNECTION_STRING")
+    azure_blob_connection_string: str = Field(default="", alias="AZURE_BLOB_CONNECTION_STRING", repr=False)
     azure_blob_container_name: str = Field(default="moving-guide-docs", alias="AZURE_BLOB_CONTAINER_NAME")
 
     # ===== External APIs =====
-    data_go_kr_service_key: str = Field(default="", alias="DATA_GO_KR_SERVICE_KEY")
-    juso_api_key: str = Field(default="", alias="JUSO_API_KEY")
-    law_oc: str = Field(default="", alias="LAW_OC")
+    data_go_kr_service_key: str = Field(default="", alias="DATA_GO_KR_SERVICE_KEY", repr=False)
+    juso_api_key: str = Field(default="", alias="JUSO_API_KEY", repr=False)
+    law_oc: str = Field(default="", alias="LAW_OC", repr=False)
 
     @property
     def azure_ready(self) -> bool:

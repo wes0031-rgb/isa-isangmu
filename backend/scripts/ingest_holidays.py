@@ -6,8 +6,6 @@ Saves 2026 holidays as JSON for D-day calculation (법정 기한이 공휴일에
 from __future__ import annotations
 
 import json
-import os
-from datetime import date
 from pathlib import Path
 
 import requests

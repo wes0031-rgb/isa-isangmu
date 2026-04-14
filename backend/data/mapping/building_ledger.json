@@ -1,0 +1,42 @@
+{
+  "service": "건축물대장 발급 (정부24 / 세움터)",
+  "authority": "국토교통부 · 행정안전부 · 각 시·군·구청",
+  "category": "safecontract_referral",
+  "website": "https://www.gov.kr/portal/rcvfvrSvc/dtlEx/13100000036",
+  "sewoomteo_url": "https://cloud.eais.go.kr",
+  "call": "110",
+  "call_label": "정부민원안내콜센터",
+  "purpose": "불법 건축물·위반 건축물·용도 외 사용 여부 확인 (계약 전 필수, 무료)",
+  "fee_krw": 0,
+  "process": [
+    "정부24(gov.kr) 접속 → '건축물대장 등본/초본 발급'",
+    "주소 검색 → 본인 인증 없이 즉시 발급 가능 (무료)",
+    "또는 세움터(cloud.eais.go.kr)에서 PDF 다운로드",
+    "발급된 대장의 '위반 건축물' 표시 확인"
+  ],
+  "check_points": [
+    "표제부: 대지 면적·건축 면적·연면적·주용도",
+    "'위반건축물' 표시 여부 — 있으면 전세대출·보증보험 거부 가능",
+    "실제 방 구조와 도면(전유부분) 일치 여부 — 불법 쪼개기 여부",
+    "옥탑방·반지하·근생 전용 등 주거 용도 외 사용 표시",
+    "세대수와 실제 거주 세대수 불일치 (다가구·다세대 구분)"
+  ],
+  "legal_basis": "건축법 제38조·제79조 (건축물대장 기재사항·위반건축물 표시 의무)",
+  "tip": "근린생활시설(근생)을 주거로 쓰는 경우 전입신고는 되지만 전세보증보험 가입·주택담보대출이 거부될 수 있음. 계약 전 필수 확인.",
+  "risk_flags": [
+    "위반건축물 표시 → HUG·SGI 보증보험 가입 불가",
+    "근린생활시설·업무시설 → 주택임대차보호법 적용 여부 애매",
+    "무허가·미등기 건축물 → 대항력·우선변제권 주장 제한"
+  ],
+  "source": "https://www.gov.kr / https://cloud.eais.go.kr (2026-04)",
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "건축물대장 발급",
+    "authority": "국토교통부 · 행정안전부",
+    "source_url": "https://cloud.eais.go.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "이사이상무 팀 편집본 (정부24 + 세움터 공식 안내 기반)",
+    "last_annotated": "2026-04-14"
+  }
+}

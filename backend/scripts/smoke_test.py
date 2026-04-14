@@ -65,8 +65,8 @@ def test_root() -> bool:
     ok &= check("200 OK", r["status"] == 200)
     if isinstance(r["body"], dict):
         ok &= check(
-            "service=MoveWise",
-            str(r["body"].get("service", "")).lower() == "movewise",
+            "service=이사이상무",
+            str(r["body"].get("service", "")) == "이사이상무",
             f"got {r['body'].get('service')}",
         )
     return ok
@@ -163,7 +163,7 @@ def test_safecontract() -> bool:
 
 
 def main() -> int:
-    print(f"🔥 MoveWise backend smoke test → {BASE}")
+    print(f"🔥 이사이상무 backend smoke test → {BASE}")
     start = time.time()
     results = [
         test_root(),

@@ -343,6 +343,8 @@ export default function SafeContractScreen() {
                     style={styles.input}
                     onSubmitEditing={searchRegister}
                     returnKeyType="search"
+                    autoCapitalize="none"
+                    autoCorrect={false}
                   />
                   <Pressable
                     style={[

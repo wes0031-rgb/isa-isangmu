@@ -1,6 +1,6 @@
 """유튜브 자막 크롤링 → 청크 변환 → Index C JSONL 생성.
 
-MoveWise 챗봇의 추가 지식 소스(Index C)를 만드는 스크립트.
+이사이상무 챗봇의 추가 지식 소스(Index C)를 만드는 스크립트.
 youtube-transcript-api 로 무료로 공식/자동 자막을 받고,
 oEmbed 로 제목·채널을 가져와서 메타데이터 부착.
 
@@ -10,8 +10,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import re
-import sys
 import time
 from datetime import date
 from pathlib import Path
@@ -31,7 +29,7 @@ OUT_FILE = ROOT / "backend" / "data" / "indexes" / "index_c_youtube_chunks.jsonl
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# 수집 대상 영상 ID (MoveWise 이사/전세/전세사기 관련)
+# 수집 대상 영상 ID (이사이상무 이사/전세/전세사기 관련)
 VIDEO_IDS: list[str] = [
     "MIEObuovrSc",  # 이사 당일 체크 6가지
     "iY3d1JAQsKY",  # 똑똑한 정리

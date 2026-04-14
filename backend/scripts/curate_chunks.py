@@ -1,6 +1,6 @@
 """Apply curation filter to index_b_chunks.jsonl.
 
-Excludes documents that are out of MoveWise scope (집 구하기, 계약서, 경매, 세금 등)
+Excludes documents that are out of 이사이상무 scope (집 구하기, 계약서, 경매, 세금 등)
 and produces the final curated chunks file for Azure AI Search.
 """
 from __future__ import annotations

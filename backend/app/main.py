@@ -1,4 +1,4 @@
-"""MoveWise FastAPI entry point."""
+"""이사이상무 FastAPI entry point."""
 from __future__ import annotations
 
 import logging
@@ -37,7 +37,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    title="MoveWise API",
+    title="이사이상무 API",
     description="이사 여정 가이드 — 체크리스트 + SafeContract + 챗봇",
     version="0.2.0",
 )
@@ -74,7 +74,7 @@ async def perf_middleware(request: Request, call_next):
 def root() -> dict:
     settings = get_settings()
     return {
-        "service": "MoveWise",
+        "service": "이사이상무",
         "version": "0.2.0",
         "azure_ready": settings.azure_ready,
         "codef_ready": codef_client.is_configured(),

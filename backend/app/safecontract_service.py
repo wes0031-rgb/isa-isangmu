@@ -147,7 +147,6 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
 
 def _extract_rule_based(text: str) -> RegistryExtraction:
     """Very rough fallback — development only."""
-    mortgage = 0
     claim = 0
     seizure = 0
     seizure_total = 0
@@ -345,16 +344,34 @@ def _build_referrals() -> list[ServiceReferral]:
             description="보증보험 가입 가능 여부 + 깡통전세 자동 진단",
         ),
         ServiceReferral(
+            icon="🛡",
+            name="SGI 서울보증보험 전세보증",
+            url="https://www.sgic.co.kr",
+            description="HUG 가입 거부 시 대안. 임대인 동의 불요",
+        ),
+        ServiceReferral(
             icon="⚠",
             name="HUG 보증금 미반환 임대인 조회",
             url="https://www.khug.or.kr/hug/web/ig/dg/igdg000001.jsp",
             description="상습 미반환 임대인 공개 DB (본인 인증 필요)",
         ),
         ServiceReferral(
+            icon="🆔",
+            name="주민등록증 진위확인 (ARS 1382)",
+            url="https://www.gov.kr",
+            description="계약 전 임대인 신분증 진위 · 등기부 소유자명 일치 체크",
+        ),
+        ServiceReferral(
             icon="📋",
             name="대법원 인터넷등기소",
             url="https://www.iros.go.kr",
             description="등기부등본 원본 발급 (700원~1,000원)",
+        ),
+        ServiceReferral(
+            icon="🏗",
+            name="정부24 건축물대장 발급",
+            url="https://www.gov.kr/portal/rcvfvrSvc/dtlEx/13100000036",
+            description="불법·위반 건축물 여부 확인 (무료, 보증보험 가입 전 필수)",
         ),
         ServiceReferral(
             icon="💰",

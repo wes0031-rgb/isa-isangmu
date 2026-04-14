@@ -9,6 +9,7 @@
 import React from 'react';
 import { StyleSheet, Text as RNText, TextProps } from 'react-native';
 
+import { typography } from '../theme/colors';
 import { SCALE_FACTORS, useFontScaleLevel } from './fontScale';
 
 export function Text(props: TextProps) {
@@ -21,7 +22,9 @@ export function Text(props: TextProps) {
 
   const flat = StyleSheet.flatten(props.style) || {};
   const baseFontSize =
-    typeof (flat as any).fontSize === 'number' ? (flat as any).fontSize : 14;
+    typeof (flat as any).fontSize === 'number'
+      ? (flat as any).fontSize
+      : typography.body.fontSize;
   const baseLineHeight =
     typeof (flat as any).lineHeight === 'number'
       ? (flat as any).lineHeight

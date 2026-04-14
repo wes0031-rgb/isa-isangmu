@@ -313,11 +313,38 @@ SOURCES: list[dict] = [
         "update_cycle": "수동",
         "how_collected": "ingest_services_v2.py",
     },
+    {
+        "pattern": "mapping/building_ledger.json",
+        "category": "건축물대장 발급",
+        "authority": "국토교통부 · 행정안전부",
+        "source_url": "https://cloud.eais.go.kr",
+        "license": "공공누리 제1유형",
+        "update_cycle": "수동",
+        "how_collected": "이사이상무 팀 편집본 (정부24 + 세움터 기반)",
+    },
+    {
+        "pattern": "mapping/resident_id_reissue.json",
+        "category": "주민등록증 재발급",
+        "authority": "행정안전부",
+        "source_url": "https://www.gov.kr/portal/rcvfvrSvc/dtlEx/13100000023",
+        "license": "공공누리 제1유형",
+        "update_cycle": "수동",
+        "how_collected": "이사이상무 팀 편집본 (정부24 공식 안내)",
+    },
+    {
+        "pattern": "mapping/welfare_address_change.json",
+        "category": "복지급여 주소변경",
+        "authority": "보건복지부",
+        "source_url": "https://www.bokjiro.go.kr",
+        "license": "공공누리 제1유형",
+        "update_cycle": "수동",
+        "how_collected": "이사이상무 팀 편집본 (복지로 + 국민기초생활보장법)",
+    },
     # ----- 매핑: 퇴거 6종 -----
     {
         "pattern": "mapping/moveout_timeline.json",
         "category": "퇴거 타임라인 체크리스트",
-        "authority": "MoveWise 팀 편집본",
+        "authority": "이사이상무 팀 편집본",
         "source_url": "기반: 주택임대차보호법 + 공정위 분쟁해결기준 + 실무 사례",
         "license": "원본 법률·가이드는 공공누리, 편집본은 프로젝트 소유",
         "update_cycle": "수동",
@@ -381,7 +408,7 @@ SOURCES: list[dict] = [
     {
         "pattern": "indexes/golden_queries.json",
         "category": "Golden Query 평가 시나리오",
-        "authority": "MoveWise 팀",
+        "authority": "이사이상무 팀",
         "source_url": "팀 자체 작성",
         "license": "프로젝트 소유",
         "update_cycle": "수동",
@@ -390,7 +417,7 @@ SOURCES: list[dict] = [
     {
         "pattern": "indexes/evaluation_report.json",
         "category": "품질 평가 결과",
-        "authority": "MoveWise 팀 (evaluate_checklist.py 실행)",
+        "authority": "이사이상무 팀 (evaluate_checklist.py 실행)",
         "source_url": "N/A",
         "license": "프로젝트 소유",
         "update_cycle": "자동 (평가 재실행 시)",
@@ -466,7 +493,7 @@ def annotate_all_json() -> list[tuple[Path, dict]]:
 
 def build_catalog_md(annotated: list[tuple[Path, dict]]) -> str:
     lines = [
-        "# MoveWise 데이터 출처 카탈로그",
+        "# 이사이상무 데이터 출처 카탈로그",
         "",
         f"> 2026-04-14 기준 · 총 {len(annotated)} 파일 (JSON) + jsonl 인덱스 3종",
         "",

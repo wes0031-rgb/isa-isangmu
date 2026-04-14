@@ -215,7 +215,7 @@ def fetch_recent_deals(
         "numOfRows": num_rows,
         "pageNo": 1,
     }
-    resp = requests.get(url, params=params, timeout=15)
+    resp = requests.get(url, params=params, timeout=10)
 
     if resp.status_code == 403:
         raise RealtyApiNotAuthorized(

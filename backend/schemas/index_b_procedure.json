@@ -1,6 +1,6 @@
 {
   "name": "moving-procedure-index",
-  "description": "MoveWise Index B — 행정 절차 청크 (easylaw 이사/주택임대차 카테고리)",
+  "description": "이사이상무 Index B — 행정 절차 청크 (easylaw 이사/주택임대차 카테고리)",
   "fields": [
     {
       "name": "id",

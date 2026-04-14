@@ -1,5 +1,5 @@
 /**
- * MoveWise design tokens — 스티치 목업 색상/간격.
+ * 이사이상무 design tokens — 스티치 목업 색상/간격.
  */
 
 export const colors = {

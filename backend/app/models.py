@@ -1,4 +1,4 @@
-"""Pydantic request/response models for MoveWise."""
+"""Pydantic request/response models for 이사이상무."""
 from __future__ import annotations
 
 from datetime import date
@@ -30,6 +30,22 @@ class ChecklistRequest(BaseModel):
     children_count: int = 0
     children_school_level: Optional[SchoolLevel] = None
     is_foreigner: bool = False
+    is_apartment: bool = Field(
+        default=False,
+        description="아파트·오피스텔 거주 여부 (관리사무소·우편함·주차 등록 항목 트리거)",
+    )
+    is_employed: bool = Field(
+        default=False,
+        description="재직 중 여부 (회사 인사팀 주소변경 신고 항목 트리거)",
+    )
+    receives_welfare: bool = Field(
+        default=False,
+        description="기초수급자·장애인·아동수당 등 복지급여 수급 여부 (복지급여 주소변경 항목 트리거)",
+    )
+    needs_id_reissue: bool = Field(
+        default=False,
+        description="주민등록증 재발급 필요 여부 — 10년 경과·분실·사진 변경 등",
+    )
     deposit_krw: Optional[int] = None
     monthly_rent_krw: Optional[int] = None
     special_concerns: list[str] = Field(default_factory=list)
@@ -79,9 +95,10 @@ class SafeContractRequest(BaseModel):
         description="인터넷등기소에서 복사한 등기부등본 텍스트 (P0)",
     )
     # PDF 업로드는 multipart 엔드포인트로 별도 처리
-    deposit_krw: int = Field(description="계약 보증금 (원)")
+    deposit_krw: int = Field(gt=0, description="계약 보증금 (원)")
     expected_market_price_krw: int = Field(
-        description="해당 주택 예상 시세 (원). 0이면 region 으로 자동 조회 시도."
+        ge=0,
+        description="해당 주택 예상 시세 (원). 0이면 region 으로 자동 조회 시도.",
     )
     region: Optional[str] = Field(
         default=None,

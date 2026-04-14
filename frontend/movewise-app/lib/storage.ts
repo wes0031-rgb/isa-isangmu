@@ -36,8 +36,19 @@ export async function loadChecklist(): Promise<StoredChecklist | null> {
   const raw = await AsyncStorage.getItem(K.CHECKLIST);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as StoredChecklist;
+    const parsed = JSON.parse(raw) as StoredChecklist;
+    // 스키마 가드 — 구버전 또는 손상된 데이터면 자동 정리
+    if (
+      !parsed?.request?.move_date ||
+      !Array.isArray(parsed?.response?.items)
+    ) {
+      await AsyncStorage.removeItem(K.CHECKLIST);
+      await AsyncStorage.removeItem(K.COMPLETIONS);
+      return null;
+    }
+    return parsed;
   } catch {
+    await AsyncStorage.removeItem(K.CHECKLIST);
     return null;
   }
 }
@@ -59,13 +70,6 @@ export async function loadCompletions(): Promise<CompletionMap> {
   } catch {
     return {};
   }
-}
-
-export async function toggleCompletion(key: string): Promise<CompletionMap> {
-  const current = await loadCompletions();
-  current[key] = !current[key];
-  await AsyncStorage.setItem(K.COMPLETIONS, JSON.stringify(current));
-  return current;
 }
 
 export async function setCompletion(key: string, done: boolean): Promise<void> {

@@ -22,7 +22,7 @@ import {
   CompletionMap,
   loadChecklist,
   loadCompletions,
-  toggleCompletion,
+  setCompletion,
 } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
@@ -81,10 +81,16 @@ export default function TaskDetail() {
 
   const done = !!completions[itemKey(item)];
 
-  async function handleToggle() {
+  function handleToggle() {
     if (!item) return;
-    const map = await toggleCompletion(itemKey(item));
-    setCompletions({ ...map });
+    const key = itemKey(item);
+    setCompletions((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      setCompletion(key, next[key]).catch(() => {
+        setCompletions((p) => ({ ...p, [key]: !next[key] }));
+      });
+      return next;
+    });
   }
 
   async function handleShare() {
@@ -293,7 +299,18 @@ function LawArticleCard({
 
       {expanded && citation.article_text && (
         <View style={styles.lawBodyBox}>
-          <Text style={styles.lawBody}>{citation.article_text}</Text>
+          {citation.article_text
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean)
+            .map((line, i) => (
+              <Text
+                key={i}
+                style={[styles.lawBody, i > 0 && { marginTop: 6 }]}
+              >
+                {line}
+              </Text>
+            ))}
           <Pressable
             onPress={() => onOpenExternal(citation.law_name, citation.article)}
             hitSlop={8}

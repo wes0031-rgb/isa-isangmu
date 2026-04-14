@@ -346,7 +346,7 @@ def generate_chat_reply(question: str) -> ChatReply:
                     "content": f"질문: {question}\n\n검색 결과:\n{context}",
                 },
             ],
-            timeout=30,
+            timeout=15,
         )
         answer = (resp.choices[0].message.content or "").strip()
         if not answer:

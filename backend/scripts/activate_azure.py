@@ -18,6 +18,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
@@ -27,12 +28,12 @@ from backend.app.config import get_settings  # noqa: E402
 
 def step(num: int, total: int, label: str) -> None:
     print()
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print(f"[{num}/{total}] {label}")
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
-def fail(msg: str) -> "typing.NoReturn":
+def fail(msg: str) -> NoReturn:
     print(f"❌ {msg}")
     sys.exit(1)
 
@@ -42,7 +43,7 @@ def ok(msg: str) -> None:
 
 
 def main() -> None:
-    print("🚀 MoveWise Azure 활성화 시작")
+    print("🚀 이사이상무 Azure 활성화 시작")
     TOTAL = 7
 
     # 1. 환경변수 검증

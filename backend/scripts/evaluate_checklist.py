@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -26,7 +25,7 @@ GOLDEN = ROOT / "backend" / "data" / "indexes" / "golden_queries.json"
 REPORT = ROOT / "backend" / "data" / "indexes" / "evaluation_report.json"
 
 
-import re as _re
+import re as _re  # noqa: E402
 
 NOISE_TOKENS = {
     "방법", "절차", "안내", "관련", "신청", "등록", "하기",

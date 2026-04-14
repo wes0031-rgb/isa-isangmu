@@ -15,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE = "https://easylaw.go.kr/CSP/CnpClsMain.laf"
-HEADERS = {"User-Agent": "Mozilla/5.0 (MoveWise RAG data collector)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (isa-isangmu RAG data collector)"}
 OUT_DIR = Path("/Users/sa/Desktop/2차프로젝트/backend/data/procedures/easylaw")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

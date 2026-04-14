@@ -64,7 +64,7 @@ class CodefClient:
 
     def __init__(self, cfg: CodefConfig):
         self.cfg = cfg
-        self._http = httpx.Client(timeout=30.0)
+        self._http = httpx.Client(timeout=15.0)
 
     # ---------- OAuth ----------
 
@@ -166,7 +166,7 @@ class CodefClient:
     ) -> dict[str, Any]:
         """
         1차 — 주소 기반 등기부 후보 목록 조회.
-        반환 dict 는 원본 CODEF 응답을 그대로 포함하며, MoveWise 에서는 `data.extraInfo.resAddrList`
+        반환 dict 는 원본 CODEF 응답을 그대로 포함하며, 이사이상무 에서는 `data.extraInfo.resAddrList`
         를 꺼내 사용자에게 선택지로 보여준다.
 
         개발환경 필수 값:

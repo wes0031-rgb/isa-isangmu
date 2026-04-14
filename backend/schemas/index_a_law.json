@@ -1,6 +1,6 @@
 {
   "name": "moving-law-index",
-  "description": "MoveWise Index A — 법률 원문 조문 단위 청크 (주택임대차보호법, 주민등록법, 동물보호법 등)",
+  "description": "이사이상무 Index A — 법률 원문 조문 단위 청크 (주택임대차보호법, 주민등록법, 동물보호법 등)",
   "fields": [
     {
       "name": "id",

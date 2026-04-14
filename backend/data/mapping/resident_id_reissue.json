@@ -1,0 +1,36 @@
+{
+  "service": "주민등록증 재발급",
+  "authority": "행정안전부 · 각 시·군·구청 주민센터",
+  "website": "https://www.gov.kr/portal/rcvfvrSvc/dtlEx/13100000023",
+  "call": "110",
+  "call_label": "정부민원안내콜센터",
+  "purpose": "분실·훼손·10년 이상 경과·사진 변경 등 해당 시 재발급. 주소 변경은 전입신고 시 자동 반영되므로 재발급 불필요.",
+  "fee_krw": 5000,
+  "process": [
+    "정부24(gov.kr) → '주민등록증 재발급 신청' 또는 주민센터 방문",
+    "6개월 이내 촬영한 규격 사진(3.5×4.5cm) 1매 준비",
+    "수수료 5,000원 납부",
+    "신청 후 2~3주 뒤 등기 수령 또는 본인 직접 수령"
+  ],
+  "required_docs": [
+    "규격 사진 1매 (6개월 이내 촬영)",
+    "본인 신분 확인 서류 (여권·운전면허증 등 대체 가능)",
+    "분실 시 별도 신고 불필요 (재발급 신청이 곧 분실 신고)"
+  ],
+  "note": "이사(주소 변경) 자체로는 재발급 의무 없음. 주민등록증 뒷면 주소가 비어 있어도 전입신고가 완료된 이상 법적으로 유효. 10년 이상 경과했거나 사진 변경이 필요한 경우에만 신청 권장.",
+  "deadline_days": null,
+  "penalty": null,
+  "is_optional": true,
+  "legal_basis": "주민등록법 제24조 (주민등록증의 재발급·정정)",
+  "source": "https://www.gov.kr (2026-04)",
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "주민등록증 재발급",
+    "authority": "행정안전부",
+    "source_url": "https://www.gov.kr/portal/rcvfvrSvc/dtlEx/13100000023",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "이사이상무 팀 편집본 (정부24 공식 안내 기반)",
+    "last_annotated": "2026-04-14"
+  }
+}

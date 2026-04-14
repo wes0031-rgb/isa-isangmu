@@ -1,5 +1,5 @@
 /**
- * FastAPI backend client for MoveWise.
+ * FastAPI backend client for 이사이상무.
  */
 import Constants from 'expo-constants';
 
@@ -40,6 +40,10 @@ export interface ChecklistRequest {
   children_count?: number;
   children_school_level?: SchoolLevel | null;
   is_foreigner?: boolean;
+  is_apartment?: boolean;
+  is_employed?: boolean;
+  receives_welfare?: boolean;
+  needs_id_reissue?: boolean;
   deposit_krw?: number | null;
   monthly_rent_krw?: number | null;
   special_concerns?: string[];

@@ -16,7 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 
 URL = "http://www.citygas.or.kr/company/situation.jsp"
-HEADERS = {"User-Agent": "Mozilla/5.0 (MoveWise RAG collector)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (isa-isangmu RAG collector)"}
 
 MAPPING_OUT = Path("/Users/sa/Desktop/2차프로젝트/backend/data/mapping/gas_region_company.json")
 COMPANIES_OUT = Path("/Users/sa/Desktop/2차프로젝트/backend/data/procedures/utility/gas_companies.json")

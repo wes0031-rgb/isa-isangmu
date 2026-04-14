@@ -18,7 +18,7 @@ export default function Splash() {
 
   return (
     <View style={styles.root}>
-      <Text style={styles.logo}>MoveWise</Text>
+      <Text style={styles.logo}>이사이상무</Text>
       <Text style={styles.tagline}>이사 여정 가이드</Text>
       <ActivityIndicator color="#ffffff" style={{ marginTop: spacing.xl }} />
     </View>

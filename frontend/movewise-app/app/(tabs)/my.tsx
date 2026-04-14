@@ -159,7 +159,7 @@ export default function MyScreen() {
         </View>
 
         <Text style={styles.footer}>
-          © 2026 MSAI09 2차 프로젝트 · MoveWise
+          © 2026 MSAI09 2차 프로젝트 · 이사이상무
         </Text>
       </ScrollView>
     </SafeAreaView>

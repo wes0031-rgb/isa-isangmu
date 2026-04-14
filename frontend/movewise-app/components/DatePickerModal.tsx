@@ -83,7 +83,13 @@ export function DatePickerModal({
   const selected = value ? parseYmd(value) : null;
   const minParsed = minDate ? parseYmd(minDate) : null;
 
+  const canPrev =
+    !minParsed ||
+    year > minParsed.y ||
+    (year === minParsed.y && month > minParsed.m);
+
   function prevMonth() {
+    if (!canPrev) return;
     if (month === 0) {
       setYear(year - 1);
       setMonth(11);
@@ -120,7 +126,12 @@ export function DatePickerModal({
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
-            <Pressable onPress={prevMonth} hitSlop={12}>
+            <Pressable
+              onPress={prevMonth}
+              hitSlop={12}
+              disabled={!canPrev}
+              style={!canPrev && { opacity: 0.25 }}
+            >
               <Ionicons name="chevron-back" size={22} color={colors.primary} />
             </Pressable>
             <Text style={styles.headerTitle}>

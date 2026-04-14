@@ -1,4 +1,4 @@
-# MoveWise — Azure 연결 셋업 가이드
+# 이사이상무 — Azure 연결 셋업 가이드
 
 > 이 문서 하나만 따라가면 팀원이 로컬에서 Azure 5종을 연결해 `azure_ready=true` 상태까지 완성합니다.
 
@@ -29,8 +29,8 @@
 ## 🚀 Step 1 — 레포 clone + 의존성 설치
 
 ```bash
-git clone https://github.com/wes0031-rgb/movewise.git
-cd movewise
+git clone https://github.com/wes0031-rgb/isa-isangmu.git
+cd isa-isangmu
 
 # Python 의존성
 pip install -r backend/requirements.txt --break-system-packages --user
@@ -38,7 +38,7 @@ pip install -r backend/requirements.txt --break-system-packages --user
 # 로컬 백엔드 부팅 검증 (fallback 모드)
 python3 -m uvicorn backend.app.main:app --port 8765 --reload &
 curl http://127.0.0.1:8765/
-# → {"service":"MoveWise", ..., "azure_ready":false}   ← fallback 모드 정상
+# → {"service":"이사이상무", ..., "azure_ready":false}   ← fallback 모드 정상
 ```
 
 ---
@@ -147,7 +147,7 @@ python3 -m uvicorn backend.app.main:app --port 8765 --reload &
 
 # 헬스체크 — azure_ready 가 true 여야 함
 curl http://127.0.0.1:8765/
-# → {"service":"MoveWise", ..., "azure_ready":true}
+# → {"service":"이사이상무", ..., "azure_ready":true}
 
 # 스모크 테스트 (5/5 여야 함)
 python3 backend/scripts/smoke_test.py
