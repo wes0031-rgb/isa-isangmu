@@ -32,6 +32,7 @@ import {
 } from '../../lib/api';
 import { Text } from '../../lib/AppText';
 import { alertAsync } from '../../lib/confirm';
+import { REGISTRY_SAMPLES, RegistrySample } from '../../lib/sampleRegistry';
 import { loadChecklist } from '../../lib/storage';
 import { useRotatingText } from '../../lib/useRotatingText';
 import { colors, radius, spacing, typography } from '../../theme/colors';
@@ -307,6 +308,28 @@ export default function SafeContractScreen() {
                     style={styles.textarea}
                     textAlignVertical="top"
                   />
+
+                  {/* 데모용 가상 샘플 로드 */}
+                  <View style={styles.sampleRow}>
+                    <Text style={styles.sampleLabel}>데모 샘플 (가상 데이터)</Text>
+                    <View style={styles.sampleBtnRow}>
+                      {REGISTRY_SAMPLES.map((s: RegistrySample) => (
+                        <AppPressable
+                          key={s.label}
+                          style={styles.sampleBtn}
+                          onPress={() => {
+                            setText(s.text);
+                            setDeposit(s.deposit);
+                            setMarket(s.market);
+                            setRegion(s.region);
+                          }}
+                        >
+                          <Text style={styles.sampleBtnLabel}>{s.label}</Text>
+                          <Text style={styles.sampleBtnDesc}>{s.description}</Text>
+                        </AppPressable>
+                      ))}
+                    </View>
+                  </View>
                 </>
               )}
               {mode === 'pdf' && (
@@ -933,6 +956,41 @@ const styles = StyleSheet.create({
     minHeight: 140,
     borderWidth: 1,
     borderColor: colors.borderLight,
+  },
+  sampleRow: {
+    marginTop: spacing.sm,
+  },
+  sampleLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMute,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sampleBtnRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  sampleBtn: {
+    flex: 1,
+    backgroundColor: colors.accentBg,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    borderRadius: radius.md,
+    padding: spacing.sm + 2,
+    alignItems: 'flex-start',
+  },
+  sampleBtnLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: 2,
+  },
+  sampleBtnDesc: {
+    fontSize: 11,
+    color: colors.textSub,
+    fontWeight: '500',
   },
   pdfDropzone: {
     backgroundColor: colors.cardBg,
