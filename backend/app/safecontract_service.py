@@ -150,8 +150,8 @@ def _extract_rule_based(text: str) -> RegistryExtraction:
     claim = 0
     seizure = 0
     seizure_total = 0
-    for m in re.finditer(r"근저당권\s*설정[^\n]*?금\s*([\d,억만원\s]+)", text):
-        raw = re.sub(r"[^\d억만]", "", m.group(1))
+    for m in re.finditer(r"근저당권\s*설정[^\n]*?금\s*([\d,억만천원\s]+)", text):
+        raw = re.sub(r"[^\d억만천]", "", m.group(1))
         claim += _parse_korean_amount(raw)
     for _ in re.finditer(r"가압류", text):
         seizure += 1
