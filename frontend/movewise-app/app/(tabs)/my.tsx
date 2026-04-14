@@ -1,51 +1,28 @@
 /**
- * MY page — 서비스 정보 + 설정 (API URL, 사용자 이름).
+ * 마이 — 시스템 상태 + 서비스 정보 + 데이터 초기화.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { api, getApiUrl, setApiUrl } from '../../lib/api';
+import { api } from '../../lib/api';
 import { alertAsync, confirmAsync } from '../../lib/confirm';
-import {
-  clearChecklist,
-  loadApiUrl,
-  loadUserName,
-  saveApiUrl,
-  saveUserName,
-} from '../../lib/storage';
+import { clearChecklist } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
 export default function MyScreen() {
-  const [apiInput, setApiInput] = useState(getApiUrl());
-  const [userName, setUserName] = useState('');
   const [health, setHealth] = useState<
     { service: string; version: string; azure_ready: boolean } | null
   >(null);
   const [healthError, setHealthError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  // Load persisted settings once
-  useEffect(() => {
-    (async () => {
-      const savedUrl = await loadApiUrl();
-      if (savedUrl) {
-        setApiInput(savedUrl);
-        setApiUrl(savedUrl);
-      }
-      const savedName = await loadUserName();
-      if (savedName) setUserName(savedName);
-    })();
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -58,28 +35,6 @@ export default function MyScreen() {
         .catch((e) => setHealthError(e.message));
     }, []),
   );
-
-  async function handleSaveApi() {
-    setSaving(true);
-    setApiUrl(apiInput);
-    await saveApiUrl(apiInput);
-    try {
-      const h = await api.health();
-      setHealth(h);
-      setHealthError(null);
-      alertAsync('저장 완료', `${h.service} v${h.version} 연결 확인됨`);
-    } catch (e: any) {
-      setHealthError(e.message);
-      alertAsync('연결 실패', e.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSaveName() {
-    await saveUserName(userName);
-    alertAsync('저장됨', `이름: ${userName || '(빈 값)'}`);
-  }
 
   async function handleClearData() {
     const confirmed = await confirmAsync(
@@ -95,67 +50,35 @@ export default function MyScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.h1}>MY</Text>
-        <Text style={styles.h1Sub}>계정 · 설정</Text>
+        <Text style={styles.h1}>마이</Text>
+        <Text style={styles.h1Sub}>시스템 상태 · 서비스 정보</Text>
 
-        {/* 프로필 */}
+        {/* 시스템 상태 (읽기 전용) */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>프로필</Text>
-          <Text style={styles.label}>이름</Text>
-          <TextInput
-            value={userName}
-            onChangeText={setUserName}
-            placeholder="이름 입력 (선택)"
-            style={styles.input}
-          />
-          <Pressable style={styles.saveBtn} onPress={handleSaveName}>
-            <Text style={styles.saveText}>저장</Text>
-          </Pressable>
-        </View>
-
-        {/* 백엔드 설정 */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>백엔드 설정</Text>
-          <Text style={styles.label}>API URL</Text>
-          <TextInput
-            value={apiInput}
-            onChangeText={setApiInput}
-            placeholder="https://..."
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={styles.input}
-          />
-          <Pressable
-            style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-            onPress={handleSaveApi}
-            disabled={saving}
-          >
-            <Text style={styles.saveText}>
-              {saving ? '확인 중...' : '저장 & 연결 확인'}
-            </Text>
-          </Pressable>
+          <Text style={styles.sectionTitle}>시스템 상태</Text>
           <View style={styles.statusRow}>
             {healthError ? (
               <>
                 <Ionicons
                   name="alert-circle"
-                  size={16}
+                  size={18}
                   color={colors.danger}
                 />
                 <Text style={[styles.statusText, { color: colors.danger }]}>
-                  {healthError}
+                  서버 연결 실패
                 </Text>
               </>
             ) : health ? (
               <>
                 <Ionicons
                   name={health.azure_ready ? 'sparkles' : 'construct'}
-                  size={16}
-                  color={colors.success}
+                  size={18}
+                  color={health.azure_ready ? colors.primary : colors.textSub}
                 />
                 <Text style={styles.statusText}>
-                  {health.service} v{health.version} ·{' '}
-                  {health.azure_ready ? 'Azure' : 'Local fallback'}
+                  {health.azure_ready
+                    ? 'Azure LLM 모드 · 고도화된 RAG'
+                    : 'Local fallback 모드 · 데이터 기반 자동 응답'}
                 </Text>
               </>
             ) : (

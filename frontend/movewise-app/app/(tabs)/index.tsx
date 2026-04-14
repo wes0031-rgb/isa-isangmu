@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { api } from '../../lib/api';
+import { api, MarketEstimate } from '../../lib/api';
 import {
   StoredChecklist,
   CompletionMap,
@@ -21,6 +21,15 @@ import {
   loadCompletions,
 } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
+
+function fmtKoreanAmount(krw: number | null | undefined): string {
+  if (!krw) return '-';
+  const eok = Math.floor(krw / 100_000_000);
+  const man = Math.floor((krw % 100_000_000) / 10_000);
+  if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
+  if (eok > 0) return `${eok}억원`;
+  return `${man.toLocaleString()}만원`;
+}
 
 function daysUntil(dateStr: string): number {
   const target = new Date(dateStr);
@@ -43,6 +52,7 @@ export default function Home() {
   const [healthError, setHealthError] = useState<string | null>(null);
   const [saved, setSaved] = useState<StoredChecklist | null>(null);
   const [completions, setCompletions] = useState<CompletionMap>({});
+  const [realty, setRealty] = useState<MarketEstimate | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -50,7 +60,16 @@ export default function Home() {
         .health()
         .then(setHealth)
         .catch((e) => setHealthError(e.message));
-      loadChecklist().then(setSaved);
+      loadChecklist().then((s) => {
+        setSaved(s);
+        // 저장된 체크리스트 region 으로 실거래가 자동 조회
+        if (s?.request.region) {
+          api
+            .realtySummary(s.request.region)
+            .then(setRealty)
+            .catch(() => setRealty(null));
+        }
+      });
       loadCompletions().then(setCompletions);
     }, []),
   );
@@ -169,6 +188,35 @@ export default function Home() {
             <Text style={styles.statusText}>백엔드 확인 중...</Text>
           )}
         </View>
+
+        {/* 내 지역 실거래가 카드 */}
+        {realty && realty.median_price_krw && (
+          <Pressable
+            style={styles.realtyCard}
+            onPress={() => router.push('/(tabs)/safecontract')}
+          >
+            <View style={styles.realtyHeader}>
+              <Ionicons name="trending-up" size={16} color={colors.primary} />
+              <Text style={styles.realtyHeaderText}>내 지역 최근 시세</Text>
+              <Text style={styles.realtyBadge}>
+                {realty.query_ym?.slice(0, 4)}.{realty.query_ym?.slice(4)}
+              </Text>
+            </View>
+            <Text style={styles.realtyRegion}>{realty.region}</Text>
+            <View style={styles.realtyValues}>
+              <Text style={styles.realtyMedian}>
+                중위 {fmtKoreanAmount(realty.median_price_krw)}
+              </Text>
+              <Text style={styles.realtyRange}>
+                {fmtKoreanAmount(realty.min_price_krw)} ~{' '}
+                {fmtKoreanAmount(realty.max_price_krw)}
+              </Text>
+            </View>
+            <Text style={styles.realtyFooter}>
+              아파트 매매 {realty.total_count}건 · 국토부 실거래가 API · 탭하여 상세 →
+            </Text>
+          </Pressable>
+        )}
 
         {/* Upcoming deadlines */}
         {upcomingDeadlines.length > 0 && (
@@ -394,6 +442,63 @@ const styles = StyleSheet.create({
   statusText: { ...typography.captionBold, flex: 1 },
   statusVersion: { ...typography.caption, color: colors.textMute },
   statusError: { ...typography.captionBold, color: colors.danger, flex: 1 },
+
+  // 실거래가 카드
+  realtyCard: {
+    backgroundColor: colors.primaryBg,
+    borderRadius: radius.md,
+    padding: spacing.md + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+  },
+  realtyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  realtyHeaderText: {
+    ...typography.captionBold,
+    color: colors.primary,
+    flex: 1,
+  },
+  realtyBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primary,
+    backgroundColor: 'rgba(0, 58, 117, 0.08)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  realtyRegion: {
+    ...typography.bodyBold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  realtyValues: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  realtyMedian: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.primary,
+    letterSpacing: -0.5,
+  },
+  realtyRange: {
+    ...typography.caption,
+    fontWeight: '600',
+  },
+  realtyFooter: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMute,
+    marginTop: 2,
+  },
 
   // Upcoming
   sectionBlock: { marginBottom: spacing.lg },

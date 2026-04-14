@@ -121,6 +121,21 @@ export interface ServiceReferral {
   description: string;
 }
 
+export interface ChatCitation {
+  source_type: 'law' | 'procedure' | 'youtube';
+  title: string;
+  content_snippet: string;
+  url?: string | null;
+  meta?: Record<string, any>;
+}
+
+export interface ChatResponse {
+  answer: string;
+  mode: 'fallback' | 'azure';
+  citations: ChatCitation[];
+  used_queries: string[];
+}
+
 export interface SafeContractResponse {
   extraction: Record<string, unknown>;
   jeontse_ratio: number;
@@ -178,11 +193,46 @@ export const api = {
     if (!res.ok) throw new Error(`health ${res.status}`);
     return res.json();
   },
+  async realtySummary(region: string): Promise<MarketEstimate> {
+    const res = await fetch(
+      `${getApiUrl()}/realty/summary?region=${encodeURIComponent(region)}`,
+    );
+    if (!res.ok) throw new Error(`realty ${res.status}`);
+    const d = await res.json();
+    return {
+      source: '국토교통부 실거래가',
+      region: d.region,
+      lawd_cd: d.lawd_cd,
+      query_ym: d.query_ym,
+      total_count: d.total_count,
+      median_price_krw: d.median_price_krw,
+      min_price_krw: d.min_price_krw,
+      max_price_krw: d.max_price_krw,
+      recent_deals: (d.recent_deals || []).map((x: any) => ({
+        apt_name: x.apt_name,
+        deal_amount_krw: x.deal_amount_krw,
+        deal_date: x.deal_date,
+        area_m2: x.area_m2,
+        floor: x.floor,
+        dong: x.dong ?? '',
+      })),
+      error: d.error,
+    };
+  },
   checklist(req: ChecklistRequest) {
     return post<ChecklistRequest, ChecklistResponse>('/checklist', req);
   },
   safecontract(req: SafeContractRequest) {
     return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);
+  },
+  chat(question: string) {
+    return post<{ question: string }, ChatResponse>('/chat', { question });
+  },
+  async chatPresets(): Promise<string[]> {
+    const res = await fetch(`${getApiUrl()}/chat/presets`);
+    if (!res.ok) throw new Error(`chat presets ${res.status}`);
+    const d = await res.json();
+    return d.questions || [];
   },
   async safecontractUpload(params: SafeContractUploadParams): Promise<SafeContractResponse> {
     const form = new FormData();

@@ -128,6 +128,25 @@ class ServiceReferral(BaseModel):
     description: str
 
 
+class ChatRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+
+
+class ChatCitationModel(BaseModel):
+    source_type: Literal["law", "procedure", "youtube"]
+    title: str
+    content_snippet: str
+    url: Optional[str] = None
+    meta: dict = Field(default_factory=dict)
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    mode: Literal["fallback", "azure"]
+    citations: list[ChatCitationModel] = Field(default_factory=list)
+    used_queries: list[str] = Field(default_factory=list)
+
+
 class SafeContractResponse(BaseModel):
     extraction: RegistryExtraction
     jeontse_ratio: float = Field(description="(근저당액 + 보증금) / 시세")

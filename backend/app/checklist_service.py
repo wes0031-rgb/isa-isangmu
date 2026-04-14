@@ -101,15 +101,25 @@ def build_queries_llm(req: ChecklistRequest) -> list[str]:
         f"특이사항: {req.special_concerns}\n"
         "→ JSON 배열로만 응답. 예: [\"전입신고\", \"확정일자 월세\", ...]"
     )
-    resp = client.chat.completions.create(
-        model=settings.azure_openai_deployment_name,
-        temperature=0,
-        messages=[
-            {"role": "system", "content": QUERY_SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-        response_format={"type": "json_object"},
-    )
+    # 429/timeout 자동 fallback
+    try:
+        resp = client.chat.completions.create(
+            model=settings.azure_openai_deployment_name,
+            temperature=0,
+            messages=[
+                {"role": "system", "content": QUERY_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+            timeout=20,
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger("movewise").warning(
+            f"Azure OpenAI query LLM failed ({type(exc).__name__}): {exc} — falling back to rule-based"
+        )
+        return build_queries_rule_based(req)
+
     raw = resp.choices[0].message.content or "[]"
     try:
         parsed = json.loads(raw)
@@ -180,15 +190,25 @@ def structure_checklist_llm(
         for c in chunks[:20]
     )
 
-    resp = client.chat.completions.create(
-        model=settings.azure_openai_deployment_name,
-        temperature=0,
-        messages=[
-            {"role": "system", "content": STRUCTURE_SYSTEM_PROMPT},
-            {"role": "user", "content": f"조건:\n{req.model_dump_json()}\n\n검색결과:\n{context}"},
-        ],
-        response_format={"type": "json_object"},
-    )
+    import logging as _log
+    _logger = _log.getLogger("movewise")
+    try:
+        resp = client.chat.completions.create(
+            model=settings.azure_openai_deployment_name,
+            temperature=0,
+            messages=[
+                {"role": "system", "content": STRUCTURE_SYSTEM_PROMPT},
+                {"role": "user", "content": f"조건:\n{req.model_dump_json()}\n\n검색결과:\n{context}"},
+            ],
+            response_format={"type": "json_object"},
+            timeout=30,
+        )
+    except Exception as exc:
+        _logger.warning(
+            f"structure LLM failed ({type(exc).__name__}): {exc} — falling back"
+        )
+        return structure_checklist_fallback(req, chunks)
+
     raw = resp.choices[0].message.content or '{"items": []}'
     try:
         parsed = json.loads(raw)
@@ -198,8 +218,8 @@ def structure_checklist_llm(
             items.append(_item_from_dict(d, req.move_date))
         return items
     except (json.JSONDecodeError, ValueError) as exc:
-        print(f"structure_checklist_llm parse error: {exc}")
-        return structure_checklist_fallback(req)
+        _logger.warning(f"structure LLM parse error: {exc} — falling back")
+        return structure_checklist_fallback(req, chunks)
 
 
 def _item_from_dict(d: dict, move_date: date) -> ChecklistItem:
@@ -305,6 +325,18 @@ def structure_checklist_fallback(
             "has_legal_deadline": False,
         },
         {
+            "category": "대형폐기물 배출",
+            "title": "불필요한 가구·가전 폐기 신청",
+            "description": (
+                "버릴 가구·가전은 시·구청 폐기물 신고 시스템에서 미리 신청. "
+                "수수료 2,000~15,000원. TV·냉장고·세탁기·에어컨은 한국전자제품자원순환공제조합 "
+                "(1599-0903) 통해 무상 수거 가능."
+            ),
+            "d_day_offset": -14,
+            "has_legal_deadline": False,
+            "method": "시·구청 폐기물 시스템 / 전자제품 무상수거 1599-0903",
+        },
+        {
             "category": "인터넷 이전 설치",
             "title": "인터넷·TV 이전 설치",
             "description": "KT(100), SK브로드밴드(106), LG U+(101) 이전 신청.",
@@ -320,9 +352,11 @@ def structure_checklist_fallback(
         },
     ]
 
-    # 임차인 보호: 전세/월세일 때만 확정일자·대항력 추가 (자가 제외)
+    # 임차인 보호: 전세/월세일 때만 확정일자·대항력·퇴거 관련 추가 (자가 제외)
     contracts = _effective_contracts(req)
-    if any(c in ("전세", "월세") for c in contracts):
+    is_tenant = any(c in ("전세", "월세") for c in contracts)
+
+    if is_tenant:
         base.insert(1, {
             "category": "확정일자/임차권",
             "title": "확정일자 취득",
@@ -332,6 +366,107 @@ def structure_checklist_fallback(
             "method": "주민센터 방문 또는 인터넷등기소",
             "citations": [{"law_name": "주택임대차보호법", "article": "제3조의2"}],
         })
+
+        # === 이전 집 퇴거 항목 (음수 d_day) ===
+        base.extend([
+            {
+                "category": "계약 해지 통지",
+                "title": "임대인에게 계약 종료 통지",
+                "description": (
+                    "계약 만료 6개월~2개월 전에 서면(문자·카톡 포함)으로 종료 의사 통지. "
+                    "통지 안 하면 묵시적 갱신되어 이사 곤란."
+                ),
+                "d_day_offset": -60,
+                "has_legal_deadline": True,
+                "penalty": "묵시적 갱신 (2년 자동 연장)",
+                "citations": [{"law_name": "주택임대차보호법", "article": "제6조"}],
+            },
+            {
+                "category": "보증금 반환 일정 확인",
+                "title": "임대인에게 보증금 반환 일정 재확인",
+                "description": (
+                    "이사 당일 보증금 반환이 원칙. 임대인이 미루면 "
+                    "분쟁 조정 또는 임차권등기명령 준비."
+                ),
+                "d_day_offset": -30,
+                "has_legal_deadline": False,
+                "method": "주택임대차분쟁조정위원회 1600-2571",
+                "citations": [{"law_name": "주택임대차보호법", "article": "제4조"}],
+            },
+            {
+                "category": "사전 퇴실 점검",
+                "title": "임대인과 1차 점검 + 퇴실 점검표 준비",
+                "description": (
+                    "이사 전 임대인과 함께 집 상태 사전 확인, 공제 항목 미리 합의. "
+                    "'퇴실점검표' 양식 준비하여 방·거실·주방·욕실·가전 상태 체크."
+                ),
+                "d_day_offset": -7,
+                "has_legal_deadline": False,
+                "method": "문자·카톡 기록 보관 필수",
+            },
+            {
+                "category": "계량기 촬영",
+                "title": "전기·수도·가스 계량기 사진+영상 기록",
+                "description": (
+                    "이사 당일 아침 계량기 숫자를 사진과 영상으로 기록. "
+                    "임대인과 함께 확인. 요금 정산 분쟁의 결정적 증거."
+                ),
+                "d_day_offset": 0,
+                "has_legal_deadline": False,
+                "method": "사진 + 1~2초 영상 (조작 의심 차단)",
+            },
+            {
+                "category": "최종 퇴실 점검",
+                "title": "임대인과 함께 집 상태 최종 점검 + 양측 서명",
+                "description": (
+                    "D-7 에 준비한 퇴실 점검표로 방별 체크. "
+                    "합의 내용에 양측 서명. 원상회복 기준은 대법원 판례 참고 "
+                    "(5년 이상 거주 시 벽지·장판은 통상 마모)."
+                ),
+                "d_day_offset": 0,
+                "has_legal_deadline": False,
+                "method": "양측 서명 점검표 1부 보관",
+                "citations": [
+                    {"law_name": "민법", "article": "제615조"},
+                    {"law_name": "민법", "article": "제623조"},
+                ],
+            },
+            {
+                "category": "보증금 수령 후 키 반납",
+                "title": "보증금 입금 확인 후 열쇠 인계",
+                "description": (
+                    "원칙: 보증금 계좌 입금 확인 → 정산서 수령 → 열쇠 인계. "
+                    "절대 반환 전에 열쇠 넘기지 말 것. "
+                    "임대인이 '입금했다' 해도 본인 계좌 앱에서 직접 확인."
+                ),
+                "d_day_offset": 0,
+                "has_legal_deadline": False,
+                "citations": [{"law_name": "주택임대차보호법", "article": "제3조의2"}],
+            },
+            {
+                "category": "장기수선충당금 반환",
+                "title": "관리사무소에서 납부확인서 발급 → 임대인 반환",
+                "description": (
+                    "공동주택(아파트·오피스텔)의 장기수선충당금은 법적으로 소유자(임대인) 부담. "
+                    "임차인이 관리비에 포함해 낸 금액은 퇴거 시 반환 청구 가능."
+                ),
+                "d_day_offset": 0,
+                "has_legal_deadline": False,
+                "method": "관리사무소 → 납부확인서 → 임대인 보증금에서 공제 또는 별도 입금",
+                "citations": [{"law_name": "공동주택관리법", "article": "제30조"}],
+            },
+            {
+                "category": "관리비 예치금 반환",
+                "title": "관리비예치금 반환 신청",
+                "description": (
+                    "입주 시 선납한 관리비예치금(10~30만원)은 이사 후 1~2주 내 반환. "
+                    "관리사무소에 반환 신청 → 계좌 입금."
+                ),
+                "d_day_offset": 7,
+                "has_legal_deadline": False,
+                "citations": [{"law_name": "공동주택관리법", "article": "제24조"}],
+            },
+        ])
         base.append({
             "category": "대항력·우선변제권 확보",
             "title": "대항력·우선변제권 확보",

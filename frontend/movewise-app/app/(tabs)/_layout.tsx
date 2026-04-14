@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import { colors, typography } from '../../theme/colors';
 
@@ -67,6 +67,22 @@ export default function TabsLayout() {
               color={color}
               size={24}
             />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: '꽉꽉봇',
+          tabBarIcon: ({ focused }) => (
+            <Text
+              style={{
+                fontSize: focused ? 28 : 22,
+                opacity: focused ? 1 : 0.5,
+              }}
+            >
+              🐤
+            </Text>
           ),
         }}
       />

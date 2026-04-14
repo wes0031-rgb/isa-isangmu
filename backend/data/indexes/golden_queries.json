@@ -1394,6 +1394,126 @@
         "자동차 변경등록",
         "아이 전학"
       ]
+    },
+    {
+      "query_id": "Q031",
+      "scenario": "퇴거 — 월세 계약 종료 2개월 전 해지 통지",
+      "user_input": {"household": "자취", "contract": "월세", "region": "서울특별시 강남구", "move_date": "2026-06-30"},
+      "expected_items": [
+        {"category": "계약 해지 통지", "must_appear": true, "citation_hint": "주택임대차보호법 제6조"},
+        {"category": "보증금 반환 일정", "must_appear": true},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경", "자동차 변경등록"]
+    },
+    {
+      "query_id": "Q032",
+      "scenario": "퇴거 — 전세 사전 점검",
+      "user_input": {"household": "신혼", "contract": "전세", "region": "경기도 성남시 분당구", "move_date": "2026-07-10"},
+      "expected_items": [
+        {"category": "사전 퇴실 점검", "must_appear": true},
+        {"category": "계약 해지 통지", "must_appear": true},
+        {"category": "계량기 촬영", "must_appear": true},
+        {"category": "최종 퇴실 점검", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q033",
+      "scenario": "퇴거 — D-day 보증금 반환 + 키 반납",
+      "user_input": {"household": "가족", "contract": "전세", "region": "서울특별시 송파구", "move_date": "2026-07-15", "has_children": true, "children_school_level": "초등"},
+      "expected_items": [
+        {"category": "보증금 수령 후 키 반납", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의2"},
+        {"category": "최종 퇴실 점검", "must_appear": true},
+        {"category": "계량기 촬영", "must_appear": true},
+        {"category": "자녀 전학", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q034",
+      "scenario": "퇴거 — 장기수선충당금 반환 (아파트)",
+      "user_input": {"household": "가족", "contract": "전세", "region": "경기도 수원시 영통구", "move_date": "2026-08-01"},
+      "expected_items": [
+        {"category": "장기수선충당금 반환", "must_appear": true, "citation_hint": "공동주택관리법"},
+        {"category": "관리비 예치금 반환", "must_appear": true},
+        {"category": "보증금 수령 후 키 반납", "must_appear": true},
+        {"category": "사전 퇴실 점검", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q035",
+      "scenario": "퇴거 — 대형폐기물 배출",
+      "user_input": {"household": "자취", "contract": "월세", "region": "서울특별시 마포구", "move_date": "2026-06-15"},
+      "expected_items": [
+        {"category": "대형폐기물 배출", "must_appear": true},
+        {"category": "계약 해지 통지", "must_appear": true},
+        {"category": "계량기 촬영", "must_appear": true},
+        {"category": "전입신고", "must_appear": true}
+      ],
+      "must_not_include": ["반려동물 주소변경"]
+    },
+    {
+      "query_id": "Q036",
+      "scenario": "퇴거 — 보증금 미반환 우려 + 임차권등기",
+      "user_input": {"household": "자취", "contract": "전세", "region": "서울특별시 관악구", "move_date": "2026-07-20", "special_concerns": ["보증금 반환 우려", "임차권등기"]},
+      "expected_items": [
+        {"category": "임차권등기명령", "must_appear": true, "citation_hint": "주택임대차보호법 제3조의3"},
+        {"category": "보증금 반환 일정", "must_appear": true},
+        {"category": "보증금 수령 후 키 반납", "must_appear": true},
+        {"category": "대항력·우선변제권", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q037",
+      "scenario": "퇴거 — 원상회복 분쟁 대비 (하자)",
+      "user_input": {"household": "신혼", "contract": "월세", "region": "서울특별시 서초구", "move_date": "2026-08-10", "special_concerns": ["하자", "수선"]},
+      "expected_items": [
+        {"category": "사전 퇴실 점검", "must_appear": true},
+        {"category": "최종 퇴실 점검", "must_appear": true, "citation_hint": "민법 제615조"},
+        {"category": "주택수리 하자", "must_appear": true},
+        {"category": "임대인 수선의무", "must_appear": true, "citation_hint": "민법 제623조"}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q038",
+      "scenario": "퇴거 — 공과금 명의해제 + 계량기",
+      "user_input": {"household": "가족", "contract": "전세", "region": "인천광역시 연수구", "move_date": "2026-07-25"},
+      "expected_items": [
+        {"category": "전기 명의변환", "must_appear": true},
+        {"category": "수도 명의변환", "must_appear": true},
+        {"category": "도시가스 명의변환", "must_appear": true},
+        {"category": "계량기 촬영", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q039",
+      "scenario": "퇴거 — 관리비 예치금 반환 D+7",
+      "user_input": {"household": "자취", "contract": "월세", "region": "부산광역시 해운대구", "move_date": "2026-06-05"},
+      "expected_items": [
+        {"category": "관리비 예치금 반환", "must_appear": true},
+        {"category": "장기수선충당금 반환", "must_appear": true},
+        {"category": "보증금 수령 후 키 반납", "must_appear": true},
+        {"category": "최종 퇴실 점검", "must_appear": true}
+      ],
+      "must_not_include": []
+    },
+    {
+      "query_id": "Q040",
+      "scenario": "퇴거 — 계약 갱신 거절 후 이사",
+      "user_input": {"household": "신혼", "contract": "전세", "region": "대전광역시 유성구", "move_date": "2026-09-01", "special_concerns": ["갱신요구권"]},
+      "expected_items": [
+        {"category": "계약 해지 통지", "must_appear": true, "citation_hint": "주택임대차보호법 제6조"},
+        {"category": "임대차 갱신요구권", "must_appear": true},
+        {"category": "전입신고", "must_appear": true},
+        {"category": "확정일자", "must_appear": true}
+      ],
+      "must_not_include": []
     }
   ],
   "_source_metadata": {
