@@ -20,7 +20,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, ChatCitation, ChatResponse } from '../../lib/api';
+import { buildMobileLawUrl, parseLawTitle } from '../../lib/lawUrl';
 import { colors, radius, spacing, typography } from '../../theme/colors';
+
+/** citation 을 모바일 친화 URL 로 변환. law 타입은 m.law.go.kr 사용. */
+function resolveCitationUrl(c: ChatCitation): string | null {
+  if (c.source_type === 'law') {
+    const { law_name, article } = parseLawTitle(c.title);
+    return buildMobileLawUrl(law_name, article);
+  }
+  return c.url || null;
+}
 
 interface ChatMessage {
   role: 'user' | 'bot';
@@ -72,7 +82,6 @@ export default function ChatScreen() {
       ]);
     } finally {
       setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }
 
@@ -94,6 +103,10 @@ export default function ChatScreen() {
           ref={scrollRef}
           style={{ flex: 1 }}
           contentContainerStyle={styles.messages}
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: true })
+          }
+          keyboardShouldPersistTaps="handled"
         >
           {messages.map((m, i) => (
             <MessageBubble key={i} message={m} />
@@ -194,7 +207,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             <Pressable
               key={i}
               style={styles.citationChip}
-              onPress={() => c.url && Linking.openURL(c.url)}
+              onPress={() => {
+                const url = resolveCitationUrl(c);
+                if (url) Linking.openURL(url);
+              }}
             >
               <Ionicons
                 name={
@@ -232,7 +248,7 @@ const styles = StyleSheet.create({
   h1Sub: { ...typography.caption, marginTop: spacing.xs },
   messages: {
     padding: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   bubbleWrap: {
     maxWidth: '85%',

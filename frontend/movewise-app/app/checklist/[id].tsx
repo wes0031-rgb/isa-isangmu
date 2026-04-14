@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChecklistItem, Citation } from '../../lib/api';
 import { alertAsync } from '../../lib/confirm';
+import { buildMobileLawUrl } from '../../lib/lawUrl';
 import {
   CompletionMap,
   loadChecklist,
@@ -106,9 +107,8 @@ export default function TaskDetail() {
     }
   }
 
-  function openLaw(lawName: string) {
-    const query = encodeURIComponent(lawName);
-    const url = `https://www.law.go.kr/법령/${query}`;
+  function openLaw(lawName: string, article?: string | null) {
+    const url = buildMobileLawUrl(lawName, article);
     Linking.openURL(url).catch(() =>
       alertAsync('링크 열기 실패', '기본 브라우저로 열어주세요.'),
     );
@@ -249,7 +249,7 @@ function LawArticleCard({
   onOpenExternal,
 }: {
   citation: Citation;
-  onOpenExternal: (lawName: string) => void;
+  onOpenExternal: (lawName: string, article?: string | null) => void;
 }) {
   const hasText = !!citation.article_text;
   // 본문이 있으면 기본 펼침 — 사용자가 바로 조항 내용 확인 가능
@@ -257,7 +257,7 @@ function LawArticleCard({
 
   const handleToggle = () => {
     if (hasText) setExpanded((prev) => !prev);
-    else onOpenExternal(citation.law_name);
+    else onOpenExternal(citation.law_name, citation.article);
   };
 
   return (
@@ -295,12 +295,12 @@ function LawArticleCard({
         <View style={styles.lawBodyBox}>
           <Text style={styles.lawBody}>{citation.article_text}</Text>
           <Pressable
-            onPress={() => onOpenExternal(citation.law_name)}
+            onPress={() => onOpenExternal(citation.law_name, citation.article)}
             hitSlop={8}
             style={styles.lawExternalBtn}
           >
             <Ionicons name="open-outline" size={14} color={colors.primary} />
-            <Text style={styles.lawExternalText}>전문 보기 (law.go.kr)</Text>
+            <Text style={styles.lawExternalText}>전문 보기 · 국가법령정보 모바일</Text>
           </Pressable>
         </View>
       )}
