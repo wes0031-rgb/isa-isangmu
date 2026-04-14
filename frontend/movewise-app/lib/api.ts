@@ -82,6 +82,29 @@ export interface SafeContractRequest {
   text: string;
   deposit_krw: number;
   expected_market_price_krw: number;
+  region?: string;
+}
+
+export interface MarketDeal {
+  apt_name: string;
+  deal_amount_krw: number;
+  deal_date: string;
+  area_m2: number;
+  floor: number;
+  dong: string;
+}
+
+export interface MarketEstimate {
+  source: string;
+  region: string;
+  lawd_cd?: string | null;
+  query_ym: string;
+  total_count: number;
+  median_price_krw?: number | null;
+  min_price_krw?: number | null;
+  max_price_krw?: number | null;
+  recent_deals: MarketDeal[];
+  error?: string | null;
 }
 
 export interface RiskItem {
@@ -105,6 +128,7 @@ export interface SafeContractResponse {
   risks: RiskItem[];
   referrals: ServiceReferral[];
   disclaimer: string;
+  market_estimate?: MarketEstimate | null;
 }
 
 // ===== Client =====

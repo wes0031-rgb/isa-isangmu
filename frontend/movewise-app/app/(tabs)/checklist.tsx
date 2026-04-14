@@ -625,6 +625,22 @@ function ChecklistCard({
             </Text>
           </View>
         )}
+        {item.region_hint && (
+          <View style={styles.metaRow}>
+            <Ionicons name="location" size={12} color={colors.primary} />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {item.region_hint}
+            </Text>
+          </View>
+        )}
+        {item.contact && (
+          <View style={styles.metaRow}>
+            <Ionicons name="call" size={12} color={colors.success} />
+            <Text style={styles.metaContact} numberOfLines={1}>
+              {item.contact}
+            </Text>
+          </View>
+        )}
         {item.citations.length > 0 && (
           <View style={styles.citationShortRow}>
             <Ionicons name="library" size={12} color={colors.primaryLight} />
@@ -923,5 +939,23 @@ const styles = StyleSheet.create({
   citationShort: {
     ...typography.caption,
     flex: 1,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+  metaText: {
+    ...typography.caption,
+    flex: 1,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  metaContact: {
+    ...typography.caption,
+    flex: 1,
+    fontWeight: '700',
+    color: colors.success,
   },
 });

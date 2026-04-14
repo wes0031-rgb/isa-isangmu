@@ -4,8 +4,8 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,8 +20,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { api, RiskItem, SafeContractResponse } from '../../lib/api';
+import { RegionPickerModal } from '../../components/RegionPickerModal';
+import {
+  api,
+  MarketEstimate,
+  RiskItem,
+  SafeContractResponse,
+} from '../../lib/api';
 import { alertAsync } from '../../lib/confirm';
+import { loadChecklist } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
 type InputMode = 'text' | 'pdf' | 'photo';
@@ -58,10 +65,25 @@ export default function SafeContractScreen() {
   const [text, setText] = useState('');
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
   const [deposit, setDeposit] = useState('100000000');
-  const [market, setMarket] = useState('300000000');
+  const [market, setMarket] = useState('0');
+  const [region, setRegion] = useState<string>('');
+  const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SafeContractResponse | null>(null);
+
+  // 체크리스트에 저장된 region 을 기본값으로 자동 불러옴
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        if (region) return;
+        const saved = await loadChecklist();
+        if (saved?.request.region) {
+          setRegion(saved.request.region);
+        }
+      })();
+    }, [region]),
+  );
 
   async function submit() {
     setError(null);
@@ -80,6 +102,7 @@ export default function SafeContractScreen() {
           text,
           deposit_krw: depositN,
           expected_market_price_krw: marketN,
+          region: region || undefined,
         });
         setResult(res);
       } catch (e: any) {
@@ -266,6 +289,25 @@ export default function SafeContractScreen() {
                 </>
               )}
 
+              {/* 지역 (실거래가 자동 조회용) */}
+              <Text style={styles.sectionLabel}>지역 (자동 시세 조회)</Text>
+              <Pressable
+                style={styles.regionSelector}
+                onPress={() => setRegionPickerOpen(true)}
+              >
+                <Ionicons name="location-outline" size={18} color={colors.primary} />
+                <Text
+                  style={[
+                    styles.regionText,
+                    !region && { color: colors.textMute },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {region || '지역을 선택하면 국토부 실거래가 자동 조회'}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMute} />
+              </Pressable>
+
               {/* 보증금·시세 */}
               <View style={styles.row}>
                 <View style={{ flex: 1 }}>
@@ -282,16 +324,20 @@ export default function SafeContractScreen() {
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.sectionLabel}>예상 시세</Text>
+                  <Text style={styles.sectionLabel}>예상 시세 (선택)</Text>
                   <TextInput
                     value={formatNumber(market)}
                     onChangeText={(v) => setMarket(v.replace(/\D/g, ''))}
                     keyboardType="numeric"
                     style={styles.input}
-                    placeholder="300,000,000"
+                    placeholder="비워두면 자동"
                   />
                   <Text style={styles.amountHint}>
-                    {formatKoreanAmount(market) || '금액 입력'}
+                    {parseInt(market, 10) > 0
+                      ? formatKoreanAmount(market)
+                      : region
+                      ? '지역 기반 자동 추정'
+                      : '지역 선택 또는 직접 입력'}
                   </Text>
                 </View>
               </View>
@@ -350,6 +396,13 @@ export default function SafeContractScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <RegionPickerModal
+        visible={regionPickerOpen}
+        value={region}
+        onClose={() => setRegionPickerOpen(false)}
+        onSelect={setRegion}
+      />
     </SafeAreaView>
   );
 }
@@ -443,6 +496,11 @@ function ResultView({
         <Text style={styles.ratioSummary}>{result.summary}</Text>
       </View>
 
+      {/* 실거래가 자동 조회 결과 */}
+      {result.market_estimate && (
+        <MarketEstimateCard estimate={result.market_estimate} />
+      )}
+
       {/* 위험 항목 아코디언 */}
       <View style={styles.sectionHRow}>
         <Ionicons name="warning" size={18} color={colors.danger} />
@@ -494,6 +552,81 @@ function ResultView({
       </Pressable>
 
       <Text style={styles.disclaimer}>{result.disclaimer}</Text>
+    </View>
+  );
+}
+
+function fmtKoreanAmount(krw: number): string {
+  if (!krw) return '-';
+  const eok = Math.floor(krw / 100_000_000);
+  const man = Math.floor((krw % 100_000_000) / 10_000);
+  if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
+  if (eok > 0) return `${eok}억원`;
+  return `${man.toLocaleString()}만원`;
+}
+
+function MarketEstimateCard({ estimate }: { estimate: MarketEstimate }) {
+  if (estimate.error) {
+    return (
+      <View style={styles.marketCardError}>
+        <Ionicons name="information-circle-outline" size={16} color={colors.warning} />
+        <Text style={styles.marketErrorText}>{estimate.error}</Text>
+      </View>
+    );
+  }
+  if (!estimate.median_price_krw) return null;
+
+  return (
+    <View style={styles.marketCard}>
+      <View style={styles.marketHeader}>
+        <Ionicons name="trending-up" size={16} color={colors.primary} />
+        <Text style={styles.marketHeaderText}>
+          국토부 실거래가 자동 조회
+        </Text>
+        <Text style={styles.marketBadge}>{estimate.query_ym.slice(0, 4)}.{estimate.query_ym.slice(4)}</Text>
+      </View>
+      <Text style={styles.marketRegion}>{estimate.region}</Text>
+      <View style={styles.marketStats}>
+        <View style={styles.marketStatItem}>
+          <Text style={styles.marketStatLabel}>중위가</Text>
+          <Text style={styles.marketStatValue}>
+            {fmtKoreanAmount(estimate.median_price_krw)}
+          </Text>
+        </View>
+        <View style={styles.marketStatDivider} />
+        <View style={styles.marketStatItem}>
+          <Text style={styles.marketStatLabel}>범위</Text>
+          <Text style={styles.marketStatRange}>
+            {fmtKoreanAmount(estimate.min_price_krw || 0)} ~{' '}
+            {fmtKoreanAmount(estimate.max_price_krw || 0)}
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.marketTotalText}>
+        이번 달 거래 {estimate.total_count}건 · 아파트 매매 기준
+      </Text>
+      {estimate.recent_deals.length > 0 && (
+        <View style={styles.marketDealsBox}>
+          <Text style={styles.marketDealsTitle}>최근 거래 상위 {estimate.recent_deals.length}</Text>
+          {estimate.recent_deals.slice(0, 5).map((d, i) => (
+            <View key={i} style={styles.marketDealRow}>
+              <Text style={styles.marketDealDate}>{d.deal_date.slice(5)}</Text>
+              <Text style={styles.marketDealName} numberOfLines={1}>
+                {d.apt_name}
+              </Text>
+              <Text style={styles.marketDealArea}>
+                {d.area_m2.toFixed(0)}㎡ {d.floor}층
+              </Text>
+              <Text style={styles.marketDealPrice}>
+                {fmtKoreanAmount(d.deal_amount_krw)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <Text style={styles.marketSourceNote}>
+        출처: 공공데이터포털 · 국토교통부 아파트 매매 실거래가 API
+      </Text>
     </View>
   );
 }
@@ -673,6 +806,152 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSub,
     marginTop: 2,
+  },
+  regionSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginBottom: spacing.md,
+  },
+  regionText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  marketCard: {
+    backgroundColor: colors.primaryBg,
+    borderRadius: radius.md,
+    padding: spacing.md + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+  },
+  marketCardError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: '#FFF4E6',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  marketErrorText: {
+    ...typography.caption,
+    color: colors.warning,
+    flex: 1,
+  },
+  marketHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  marketHeaderText: {
+    ...typography.captionBold,
+    color: colors.primary,
+    flex: 1,
+  },
+  marketBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primary,
+    backgroundColor: 'rgba(0, 58, 117, 0.08)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  marketRegion: {
+    ...typography.subtitle,
+    fontSize: 15,
+    marginBottom: spacing.sm,
+  },
+  marketStats: {
+    flexDirection: 'row',
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.sm,
+    padding: spacing.sm + 2,
+    marginBottom: spacing.sm,
+  },
+  marketStatItem: {
+    flex: 1,
+  },
+  marketStatDivider: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.sm,
+  },
+  marketStatLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSub,
+    marginBottom: 2,
+  },
+  marketStatValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: -0.5,
+  },
+  marketStatRange: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  marketTotalText: {
+    ...typography.caption,
+    marginBottom: spacing.sm,
+  },
+  marketDealsBox: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.sm,
+    padding: spacing.sm + 2,
+    marginTop: spacing.xs,
+  },
+  marketDealsTitle: {
+    ...typography.captionBold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+  marketDealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: 3,
+  },
+  marketDealDate: {
+    fontSize: 11,
+    color: colors.textSub,
+    width: 38,
+  },
+  marketDealName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
+    flex: 1,
+  },
+  marketDealArea: {
+    fontSize: 10,
+    color: colors.textMute,
+    width: 50,
+  },
+  marketDealPrice: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.primary,
+    textAlign: 'right',
+    minWidth: 60,
+  },
+  marketSourceNote: {
+    fontSize: 10,
+    color: colors.textMute,
+    marginTop: spacing.xs,
+    textAlign: 'right',
   },
   input: {
     backgroundColor: colors.cardBg,
