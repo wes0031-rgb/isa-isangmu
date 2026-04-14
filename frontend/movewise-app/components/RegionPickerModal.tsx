@@ -8,11 +8,11 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 
+import { Text } from '../lib/AppText';
 import { REGIONS, formatRegion, parseRegion } from '../lib/regions';
 import { colors, radius, spacing, typography } from '../theme/colors';
 

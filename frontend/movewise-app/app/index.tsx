@@ -3,8 +3,9 @@
  */
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { Text } from '../lib/AppText';
 import { colors, spacing, typography } from '../theme/colors';
 
 export default function Splash() {

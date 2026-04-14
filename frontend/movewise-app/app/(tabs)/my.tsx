@@ -8,13 +8,18 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api } from '../../lib/api';
+import { Text } from '../../lib/AppText';
 import { alertAsync, confirmAsync } from '../../lib/confirm';
+import {
+  FontScaleLevel,
+  SCALE_LABELS,
+  useFontScaleLevel,
+} from '../../lib/fontScale';
 import { clearChecklist } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
@@ -23,6 +28,7 @@ export default function MyScreen() {
     { service: string; version: string; azure_ready: boolean } | null
   >(null);
   const [healthError, setHealthError] = useState<string | null>(null);
+  const [fontLevel, setFontLevel] = useFontScaleLevel();
 
   useFocusEffect(
     useCallback(() => {
@@ -52,6 +58,35 @@ export default function MyScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.h1}>마이</Text>
         <Text style={styles.h1Sub}>시스템 상태 · 서비스 정보</Text>
+
+        {/* 글자 크기 설정 (접근성) */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>글자 크기</Text>
+          <Text style={styles.label}>아이·노약자 분은 글자를 크게 설정하세요</Text>
+          <View style={styles.scaleRow}>
+            {(['normal', 'large', 'xlarge'] as FontScaleLevel[]).map((lv) => (
+              <Pressable
+                key={lv}
+                style={[
+                  styles.scaleBtn,
+                  fontLevel === lv && styles.scaleBtnActive,
+                ]}
+                onPress={() => setFontLevel(lv)}
+              >
+                <Text
+                  style={[
+                    styles.scaleBtnText,
+                    fontLevel === lv && styles.scaleBtnTextActive,
+                    lv === 'large' && { fontSize: 15 },
+                    lv === 'xlarge' && { fontSize: 17 },
+                  ]}
+                >
+                  {SCALE_LABELS[lv]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         {/* 시스템 상태 (읽기 전용) */}
         <View style={styles.card}>
@@ -174,6 +209,32 @@ const styles = StyleSheet.create({
     ...typography.captionBold,
     color: colors.text,
     marginBottom: spacing.xs,
+  },
+  scaleRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  scaleBtn: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cardBg,
+    alignItems: 'center',
+  },
+  scaleBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  scaleBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  scaleBtnTextActive: {
+    color: '#fff',
   },
   input: {
     backgroundColor: colors.bg,

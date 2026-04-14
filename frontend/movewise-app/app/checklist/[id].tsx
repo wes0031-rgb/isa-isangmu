@@ -10,12 +10,12 @@ import {
   ScrollView,
   Share,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChecklistItem, Citation } from '../../lib/api';
+import { Text } from '../../lib/AppText';
 import { alertAsync } from '../../lib/confirm';
 import { buildMobileLawUrl } from '../../lib/lawUrl';
 import {

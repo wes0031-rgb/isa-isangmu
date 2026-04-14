@@ -8,12 +8,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, MarketEstimate } from '../../lib/api';
+import { Text } from '../../lib/AppText';
 import {
   StoredChecklist,
   CompletionMap,

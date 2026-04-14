@@ -3,9 +3,10 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '../lib/AppText';
 import { colors, radius, spacing, typography } from '../theme/colors';
 
 const FEATURES = [

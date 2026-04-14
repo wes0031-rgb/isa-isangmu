@@ -12,13 +12,13 @@ import {
   ScrollView,
   Share,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DatePickerModal } from '../../components/DatePickerModal';
 import { RegionPickerModal } from '../../components/RegionPickerModal';
+import { Text } from '../../lib/AppText';
 import { alertAsync, confirmAsync } from '../../lib/confirm';
 import {
   api,
@@ -612,7 +612,9 @@ function ChecklistCard({
           >
             <Text style={styles.dDayText}>{dDay}</Text>
           </View>
-          <Text style={[styles.itemTitle, done && styles.strike]}>
+          <Text
+            style={[styles.itemTitle, done && styles.strike]}
+          >
             {item.title}
           </Text>
         </View>

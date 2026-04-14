@@ -14,7 +14,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
@@ -27,6 +26,7 @@ import {
   RiskItem,
   SafeContractResponse,
 } from '../../lib/api';
+import { Text } from '../../lib/AppText';
 import { alertAsync } from '../../lib/confirm';
 import { loadChecklist } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';

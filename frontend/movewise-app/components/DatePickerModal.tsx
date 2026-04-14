@@ -8,10 +8,10 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 
+import { Text } from '../lib/AppText';
 import { colors, radius, spacing, typography } from '../theme/colors';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -35,6 +35,16 @@ function parseYmd(s: string): { y: number; m: number; d: number } {
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * 손 없는 날 — 민간 풍습 기준 양력 끝자리 9·0 인 날.
+ * (9일, 10일, 19일, 20일, 29일, 30일)
+ * 이사 수요가 몰려서 업체 예약 어렵고 비용 비쌈.
+ */
+function isSonEopsNeunNal(day: number): boolean {
+  const last = day % 10;
+  return last === 9 || last === 0;
 }
 
 export function DatePickerModal({
@@ -150,6 +160,7 @@ export function DatePickerModal({
                 const disabled = isBeforeMin(year, month, d);
                 const isSun = di === 0;
                 const isSat = di === 6;
+                const isSonEopsEul = isSonEopsNeunNal(d);
                 return (
                   <Pressable
                     key={di}
@@ -174,11 +185,27 @@ export function DatePickerModal({
                     >
                       {d}
                     </Text>
+                    {isSonEopsEul && !isSelected && (
+                      <View style={styles.sonEopsDot} />
+                    )}
                   </Pressable>
                 );
               })}
             </View>
           ))}
+
+          {/* 범례 */}
+          <View style={styles.legend}>
+            <View style={styles.legendItem}>
+              <View style={styles.legendDot} />
+              <Text style={styles.legendText}>
+                손 없는 날 (9·10·19·20·29·30일)
+              </Text>
+            </View>
+            <Text style={styles.legendHint}>
+              이사 수요가 몰려 업체 예약이 어렵고 비용이 더 들 수 있어요
+            </Text>
+          </View>
 
           <Pressable onPress={onClose} style={styles.closeBtn}>
             <Text style={styles.closeText}>닫기</Text>
@@ -246,6 +273,43 @@ const styles = StyleSheet.create({
   dayTextSelected: {
     color: '#fff',
     fontWeight: '700',
+  },
+  sonEopsDot: {
+    position: 'absolute',
+    bottom: 4,
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.warning,
+  },
+  legend: {
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.warning,
+  },
+  legendText: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.warning,
+  },
+  legendHint: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMute,
+    marginTop: 2,
+    lineHeight: 15,
   },
   closeBtn: {
     marginTop: spacing.md,

@@ -14,13 +14,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { api, ChatCitation, ChatResponse } from '../../lib/api';
+import { Text } from '../../lib/AppText';
 import { buildMobileLawUrl, parseLawTitle } from '../../lib/lawUrl';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
