@@ -337,6 +337,19 @@ def structure_checklist_fallback(
             "method": "시·구청 폐기물 시스템 / 전자제품 무상수거 1599-0903",
         },
         {
+            "category": "이사업체 피해예방",
+            "title": "이사업체 견적 비교 + 허가업체 확인",
+            "description": (
+                "이사 3~4주 전 최소 3개 업체 방문 견적 비교. "
+                "전국화물자동차운송주선사업연합회(allmaeul.or.kr)에서 '화물자동차 운송주선' "
+                "허가업체 여부 반드시 확인. 계약금은 총액의 10% 이내, 견적서에 품목·옵션·"
+                "추가요금 조건 모두 서면 명시. 피해 시 소비자상담센터 1372."
+            ),
+            "d_day_offset": -21,
+            "has_legal_deadline": False,
+            "method": "allmaeul.or.kr 허가업체 조회 · 소비자상담센터 1372",
+        },
+        {
             "category": "인터넷 이전 설치",
             "title": "인터넷·TV 이전 설치",
             "description": "KT(100), SK브로드밴드(106), LG U+(101) 이전 신청.",
@@ -497,6 +510,24 @@ def structure_checklist_fallback(
             "has_legal_deadline": True,
             "deadline_days": 30,
             "citations": [{"law_name": "자동차등록령", "article": "제22조"}],
+        })
+        items.append({
+            "category": "운전면허 주소변경",
+            "title": "운전면허증 기재사항 변경",
+            "description": "전입신고 시 자동 반영되는 게 원칙이지만 전산 누락이 있어 2~3주 후 safedriving.or.kr 에서 직접 확인 권장.",
+            "d_day_offset": 14,
+            "has_legal_deadline": True,
+            "deadline_days": 30,
+            "penalty": "2만원 이하 과태료",
+            "citations": [{"law_name": "도로교통법", "article": "제87조"}],
+        })
+        items.append({
+            "category": "자동차보험 주소변경",
+            "title": "자동차보험 주소·차고지 변경",
+            "description": "가입 보험사에 주소·차고지 변경을 알리지 않으면 사고 시 '고지의무 위반'으로 보험금 삭감 가능. 자동차 변경등록과는 별개 절차.",
+            "d_day_offset": 14,
+            "has_legal_deadline": False,
+            "citations": [{"law_name": "상법", "article": "제652조"}],
         })
     if req.has_children:
         level = req.children_school_level or "자녀"

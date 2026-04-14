@@ -232,6 +232,41 @@ def get_animal_service() -> dict:
     }
 
 
+def get_driver_license_info() -> dict:
+    data = _load("driver_license")
+    return {
+        "website": data.get("website"),
+        "online_url": data.get("online_url"),
+        "phone": data.get("call"),
+        "deadline_days": data.get("deadline_days"),
+        "penalty": data.get("penalty"),
+        "note": data.get("note"),
+    }
+
+
+def get_auto_insurance_info() -> dict:
+    data = _load("auto_insurance")
+    return {
+        "website": data.get("website"),
+        "phone": data.get("call"),
+        "providers": data.get("providers", []),
+        "why_mandatory": data.get("why_mandatory", []),
+        "penalty": data.get("penalty"),
+    }
+
+
+def get_moving_company_consumer_info() -> dict:
+    data = _load("moving_company_consumer")
+    return {
+        "website": data.get("website"),
+        "phone": data.get("dispute_center"),
+        "licensed_mover_search": data.get("licensed_mover_search"),
+        "pre_contract_checklist": data.get("pre_contract_checklist", []),
+        "red_flags": data.get("red_flags", []),
+        "dispute_resolution": data.get("dispute_resolution", []),
+    }
+
+
 # ---------- 체크리스트 항목 enrichment ----------
 
 
@@ -325,7 +360,15 @@ def enrich_item_with_region(item: dict, region: Optional[str]) -> dict:
             f"({info.get('deadline_days')}일 내, {info.get('penalty')})"
         )
 
-    # 자동차
+    # 자동차보험 (더 구체적인 매칭을 먼저)
+    elif "자동차보험" in cat or "차고지" in cat:
+        info = get_auto_insurance_info()
+        out["contact"] = info.get("phone")
+        providers = info.get("providers", [])[:4]
+        summary = ", ".join(f"{p['name']} {p['call']}" for p in providers)
+        out["method"] = f"가입 보험사 고객센터 또는 앱에서 주소·차고지 변경 ({summary} 등)"
+
+    # 자동차 변경등록
     elif "자동차" in cat:
         info = find_car_office(region)
         if info:
@@ -351,5 +394,23 @@ def enrich_item_with_region(item: dict, region: Optional[str]) -> dict:
                 f"하이코리아(hikorea.go.kr) 또는 {info['name']} 방문 "
                 f"(공통 콜센터 1345)"
             )
+
+    # 운전면허증 주소변경
+    elif "운전면허" in cat:
+        info = get_driver_license_info()
+        out["contact"] = info.get("phone")
+        out["method"] = (
+            f"안전운전 통합민원 {info.get('online_url')} 또는 "
+            f"정부24 → 운전면허 기재사항 변경"
+        )
+
+    # 이사업체 피해예방
+    elif "이사업체" in cat:
+        info = get_moving_company_consumer_info()
+        out["contact"] = info.get("phone")
+        out["method"] = (
+            f"허가업체 조회: {info.get('licensed_mover_search')} · "
+            f"분쟁 시 소비자상담센터 1372"
+        )
 
     return out

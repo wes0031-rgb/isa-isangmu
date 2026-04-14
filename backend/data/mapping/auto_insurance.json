@@ -1,0 +1,80 @@
+{
+  "service": "자동차보험 주소·차고지 변경",
+  "authority": "금융감독원 · 손해보험협회 · 개별 보험사",
+  "website": "https://www.knia.or.kr",
+  "call": "1544-0570",
+  "call_label": "손해보험협회 소비자상담센터",
+  "process": [
+    "가입 보험사 고객센터 또는 앱에서 주소·차고지 변경 신청",
+    "차고지 주소와 운전자 주소가 다를 경우 모두 변경 (핵심)",
+    "변경 후 보험료 재산정 → 차액 환급 또는 추가 납입",
+    "증권 재발급은 선택 (모바일 증권 자동 반영)"
+  ],
+  "why_mandatory": [
+    "보험사에 알린 주소·차고지와 실제가 다르면 사고 시 '고지의무 위반'으로 보험금 삭감·부지급 가능",
+    "보험료는 지역(차고지)에 따라 차등 — 이사하면 재산정 대상",
+    "무보험차 확인 시 구상금 청구 근거가 될 수 있음"
+  ],
+  "providers": [
+    {
+      "name": "삼성화재 (애니카)",
+      "call": "1588-5114",
+      "move_url": "https://www.samsungfire.com"
+    },
+    {
+      "name": "현대해상 (하이카)",
+      "call": "1588-5656",
+      "move_url": "https://www.hi.co.kr"
+    },
+    {
+      "name": "DB손해보험 (프로미)",
+      "call": "1588-0100",
+      "move_url": "https://www.idbins.com"
+    },
+    {
+      "name": "KB손해보험",
+      "call": "1544-0114",
+      "move_url": "https://www.kbinsure.co.kr"
+    },
+    {
+      "name": "메리츠화재",
+      "call": "1566-7711",
+      "move_url": "https://www.meritzfire.com"
+    },
+    {
+      "name": "한화손해보험",
+      "call": "1566-8000",
+      "move_url": "https://www.hwgeneralins.com"
+    },
+    {
+      "name": "롯데손해보험",
+      "call": "1588-3344",
+      "move_url": "https://www.lotteins.co.kr"
+    },
+    {
+      "name": "AXA손해보험 (다이렉트)",
+      "call": "1566-1566",
+      "move_url": "https://www.axa.co.kr"
+    },
+    {
+      "name": "캐롯손해보험",
+      "call": "1566-0300",
+      "move_url": "https://www.carrotins.com"
+    }
+  ],
+  "deadline_days": 30,
+  "penalty": "법적 과태료 없음 · 다만 고지의무 위반 시 보험금 부지급·삭감 리스크",
+  "legal_basis": "상법 제652조 (위험변경·증가 통지의무), 자동차손해배상보장법",
+  "note": "자동차 변경등록(국토부)과 자동차보험 주소변경(보험사)은 별개 절차. 변경등록만 하고 보험사에 안 알리면 사고 시 불이익. 보험료는 대체로 시·군·구 변경보다 시·도 변경에서 크게 바뀜 (차고지 할증).",
+  "source": "https://www.knia.or.kr (2026-04)",
+  "generated_at": "2026-04-14",
+  "_source_metadata": {
+    "category": "자동차보험 주소변경",
+    "authority": "손해보험협회",
+    "source_url": "https://www.knia.or.kr",
+    "license": "공공누리 제1유형",
+    "update_cycle": "수동",
+    "how_collected": "manual",
+    "last_annotated": "2026-04-14"
+  }
+}
