@@ -1,0 +1,62 @@
+{
+  "service": "정부24 온라인 민원",
+  "authority": "행정안전부",
+  "main_url": "https://www.gov.kr",
+  "call": "110",
+  "call_label": "정부민원안내콜센터 110",
+  "services": [
+    {
+      "name": "전입신고",
+      "url": "https://www.gov.kr/portal/main/resident",
+      "deep_link": "https://www.gov.kr/mw/AA020InfoCappView.do?HighCtgCD=A01010&CappBizCD=13100000015",
+      "authentication": "공동인증서 / 간편인증 (카카오·네이버·토스·KB 등)",
+      "processing_time": "즉시 (온라인 신청 완료 시)",
+      "fee": "무료",
+      "deadline_days": 14,
+      "penalty": "5만원 이하 과태료",
+      "note": "정부24 전입신고 시 확정일자·자동차 주소변경·양육수당 주소변경도 연계 신청 가능"
+    },
+    {
+      "name": "확정일자 부여 신청",
+      "url": "https://www.gov.kr/portal/rcvfvrCn/mypagePtl/list",
+      "deep_link": "https://www.gov.kr/mw/AA020InfoCappView.do?HighCtgCD=A01010&CappBizCD=15000000019",
+      "authentication": "공동인증서 필수",
+      "processing_time": "즉시",
+      "fee": "600원 (온라인) / 1,000원 (방문)",
+      "deadline_days": 1,
+      "note": "전입신고 당일 확정일자 받아야 보증금 우선변제권 확보"
+    },
+    {
+      "name": "주민등록표 등본 발급",
+      "url": "https://www.gov.kr/portal/rcvfvrCn/mypagePtl",
+      "authentication": "공동인증서 또는 간편인증",
+      "fee": "무료 (온라인) / 400원 (발급기) / 500원 (방문)",
+      "note": "이사 후 각종 증명서로 필요"
+    },
+    {
+      "name": "반려동물 등록 변경신고",
+      "url": "https://www.gov.kr/portal/main/service/13100000170",
+      "deep_link": "https://www.gov.kr/mw/AA020InfoCappView.do?CappBizCD=13100000170",
+      "authentication": "공동인증서",
+      "deadline_days": 30,
+      "penalty": "50만원 이하 과태료",
+      "legal_basis": "동물보호법 제15조",
+      "note": "정부24 또는 시·군·구청 축산과 / 동물보호관리시스템 animal.go.kr"
+    },
+    {
+      "name": "자동차 변경등록 (주소)",
+      "url": "https://www.gov.kr/portal/main/service/13100000037",
+      "authentication": "공동인증서",
+      "deadline_days": 30,
+      "penalty": "50만원 이하 과태료",
+      "note": "전입신고 시 자동 반영 가능. 다른 시·도 이사인 경우 직접 신청 필요"
+    },
+    {
+      "name": "인감 주소변경",
+      "url": "https://www.gov.kr/portal/main/service/13100000029",
+      "note": "전입신고 시 자동 변경됨"
+    }
+  ],
+  "source": "정부24 공식 https://www.gov.kr (2026-04)",
+  "generated_at": "2026-04-14"
+}

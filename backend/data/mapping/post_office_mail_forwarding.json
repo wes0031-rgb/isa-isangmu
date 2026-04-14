@@ -1,0 +1,21 @@
+{
+  "service": "우편물 주소이전 서비스",
+  "authority": "우정사업본부 / 한국우편사업진흥원",
+  "call": "1588-1300",
+  "call_label": "우체국 콜센터 1588-1300",
+  "website": "https://service.epost.go.kr",
+  "online_url": "https://service.epost.go.kr/front.RetrieveAddressMoveLeafletMap.postal",
+  "process": [
+    "service.epost.go.kr 접속",
+    "메뉴 → 우편 → 주소이전 서비스",
+    "본인 인증 (공동인증서 또는 네이버/카카오)",
+    "이전 주소 + 새 주소 + 기간 입력 (최대 3개월)",
+    "신청 완료 → 해당 기간 동안 이전 주소로 오는 우편물이 새 주소로 전달"
+  ],
+  "validity_months": 3,
+  "fee": "무료",
+  "tip": "이사 후 1~2주 내 바로 신청 권장. 3개월 동안 이전 주소로 오는 우편물만 전달되니 은행·카드 등 주요 기관은 별도로 주소변경도 해야 함.",
+  "legal_basis": "우편법 및 우편법 시행령 (우편물 전송 서비스)",
+  "source": "https://service.epost.go.kr (2026-04 확인)",
+  "generated_at": "2026-04-14"
+}

@@ -1,0 +1,59 @@
+{
+  "service": "인터넷·TV·유선전화 이전 설치",
+  "providers": [
+    {
+      "name": "KT",
+      "short_call": "100",
+      "call_label": "KT 고객센터 100",
+      "english_call": "01485-100",
+      "website": "https://product.kt.com",
+      "move_url": "https://shop.kt.com/unit/moveInfo.do",
+      "app": "마이 KT 앱",
+      "process": [
+        "100 전화 → 상담사 연결 → '이사 합니다' 안내",
+        "또는 마이 KT 앱 → 나의 상품 → 이사 예약",
+        "또는 KT 매장 방문 (신분증 지참)"
+      ],
+      "lead_time_days": 7,
+      "fee_note": "이전 설치비 33,000원 (기사 방문 시), 약정 유지 시 무료",
+      "tip": "이사 7일 전에 예약해야 당일 설치 가능. 3일 전 미만이면 기사 배정 어려움."
+    },
+    {
+      "name": "SK브로드밴드 / SK텔레콤",
+      "short_call": "106",
+      "call_label": "SK브로드밴드 106 / SKT 114",
+      "english_call": "080-828-8288",
+      "website": "https://www.skbroadband.com",
+      "move_url": "https://www.skbroadband.com/customer/MoveInstall.do",
+      "app": "B 우리집 / T world",
+      "process": [
+        "106 (SKB) / 114 (SKT) 전화 → 이사 신청",
+        "또는 B우리집 앱 → 이사 예약",
+        "또는 온라인 MoveInstall 페이지에서 예약"
+      ],
+      "lead_time_days": 7,
+      "fee_note": "이전 설치비 33,000원, 약정 유지 시 무료",
+      "tip": "3일 전까지 예약 필수. 주말/월요일은 배정 어려움."
+    },
+    {
+      "name": "LG U+",
+      "short_call": "101",
+      "call_label": "LG U+ 고객센터 101",
+      "english_call": "1644-7000",
+      "website": "https://www.lguplus.com",
+      "move_url": "https://www.lguplus.com/support/moving",
+      "app": "당신의 U+",
+      "process": [
+        "101 전화 → 이사 상담",
+        "또는 당신의 U+ 앱 → 이사 예약",
+        "또는 홈페이지 지원센터 → 이사예약"
+      ],
+      "lead_time_days": 7,
+      "fee_note": "이전 설치비 33,000원, 약정 유지 시 무료",
+      "tip": "7일 전 권장. 단독주택은 현장 점검 필요할 수 있어 더 일찍."
+    }
+  ],
+  "common_tip": "모든 통신사는 '약정 기간이 남아 있으면 이전 설치 무료'가 원칙. 약정 해지 시 위약금 발생. 이사 가는 집이 통신사 신호 잡히는지 (특히 SKB 동축 케이블, LGU+ 광케이블) 미리 문의 필수.",
+  "source": "각 통신사 공식 홈페이지 및 2026년 4월 기준 상담 안내",
+  "generated_at": "2026-04-14"
+}
