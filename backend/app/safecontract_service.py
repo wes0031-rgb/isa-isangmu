@@ -3,18 +3,21 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Optional
 
 from .azure_clients import get_docintel_client, get_openai_client, get_search_client_law
 from .config import get_settings
 from .local_search import clean_hanja, find_law_article
 from .models import (
     ChecklistCitation,
+    MarketEstimate,
     RegistryExtraction,
     RiskItem,
     SafeContractRequest,
     SafeContractResponse,
     ServiceReferral,
 )
+from .realty_price import get_region_price_summary
 
 
 # ---------- PDF / 이미지 → 텍스트 (Azure Document Intelligence) ----------
@@ -332,44 +335,122 @@ def _explain_rule_based(extraction: RegistryExtraction, ratio: float) -> tuple[s
     return summary, risks
 
 
-def analyze_safecontract(req: SafeContractRequest) -> SafeContractResponse:
-    if not req.text:
-        raise ValueError("text is required (PDF 업로드는 /safecontract/upload 참고)")
-
-    extraction = _extract_with_llm(req.text)
-    ratio = _compute_jeontse_ratio(extraction, req.deposit_krw, req.expected_market_price_krw)
-    law_hits = _search_law_context(extraction)
-    summary, risks = _explain_with_llm(extraction, ratio, law_hits)
-
-    referrals = [
+def _build_referrals() -> list[ServiceReferral]:
+    """확장된 referrals — 기획서 3.5.5 기반 12개."""
+    return [
         ServiceReferral(
-            icon="🏛️",
+            icon="🏛",
             name="HUG 안심전세 앱",
             url="https://www.khug.or.kr",
-            description="보증보험 가입 가능 여부 확인",
+            description="보증보험 가입 가능 여부 + 깡통전세 자동 진단",
+        ),
+        ServiceReferral(
+            icon="⚠",
+            name="HUG 보증금 미반환 임대인 조회",
+            url="https://www.khug.or.kr/hug/web/ig/dg/igdg000001.jsp",
+            description="상습 미반환 임대인 공개 DB (본인 인증 필요)",
         ),
         ServiceReferral(
             icon="📋",
-            name="인터넷등기소",
+            name="대법원 인터넷등기소",
             url="https://www.iros.go.kr",
-            description="등기부등본 원본 직접 열람 (700원)",
+            description="등기부등본 원본 발급 (700원~1,000원)",
         ),
         ServiceReferral(
             icon="💰",
             name="국토교통부 실거래가",
             url="https://rt.molit.go.kr",
-            description="주변 시세 비교",
+            description="주변 시세 비교 (매매·전월세)",
+        ),
+        ServiceReferral(
+            icon="⚖",
+            name="주택임대차분쟁조정위원회",
+            url="https://www.hldcc.or.kr",
+            description="보증금 반환 분쟁 조정 (60일 내 해결, 수천원~5만원)",
+        ),
+        ServiceReferral(
+            icon="🆘",
+            name="전세피해지원센터 1533-8119",
+            url="https://jeonse119.molit.go.kr",
+            description="국토부 산하 전세사기 피해자 종합 지원 (무료)",
+        ),
+        ServiceReferral(
+            icon="📞",
+            name="대한법률구조공단 132",
+            url="https://www.klac.or.kr",
+            description="무료 법률 상담 (임대차 분쟁 1순위)",
+        ),
+        ServiceReferral(
+            icon="📄",
+            name="법무부 표준임대차계약서",
+            url="https://www.moj.go.kr/moj/215/subview.do",
+            description="법적 분쟁 시 임차인 보호에 유리한 공식 양식",
         ),
     ]
+
+
+def _fetch_market_estimate(region: Optional[str]) -> Optional[MarketEstimate]:
+    """사용자 지역으로 실거래가 API 자동 조회."""
+    if not region:
+        return None
+    try:
+        s = get_region_price_summary(region)
+    except Exception as exc:
+        return MarketEstimate(
+            source="국토교통부 아파트 매매 실거래가 API",
+            region=region,
+            query_ym="",
+            error=f"조회 실패: {exc}",
+        )
+    return MarketEstimate(
+        source="국토교통부 아파트 매매 실거래가 API (공공데이터포털)",
+        region=s.region,
+        lawd_cd=s.lawd_cd,
+        query_ym=s.query_ym,
+        total_count=s.total_count,
+        median_price_krw=s.median_price_krw,
+        min_price_krw=s.min_price_krw,
+        max_price_krw=s.max_price_krw,
+        recent_deals=[
+            {
+                "apt_name": d.apt_name,
+                "deal_amount_krw": d.deal_amount_krw,
+                "deal_date": f"{d.deal_year}-{d.deal_month:02d}-{d.deal_day:02d}",
+                "area_m2": d.area_m2,
+                "floor": d.floor,
+                "dong": d.dong,
+            }
+            for d in s.recent_deals[:5]
+        ],
+        error=s.error,
+    )
+
+
+def analyze_safecontract(req: SafeContractRequest) -> SafeContractResponse:
+    if not req.text:
+        raise ValueError("text is required (PDF 업로드는 /safecontract/upload 참고)")
+
+    extraction = _extract_with_llm(req.text)
+
+    # region 주어지고 expected_market_price_krw 가 0 또는 없으면 실거래가로 자동 추정
+    market = _fetch_market_estimate(req.region)
+    effective_market_price = req.expected_market_price_krw
+    if effective_market_price <= 0 and market and market.median_price_krw:
+        effective_market_price = market.median_price_krw
+
+    ratio = _compute_jeontse_ratio(extraction, req.deposit_krw, effective_market_price)
+    law_hits = _search_law_context(extraction)
+    summary, risks = _explain_with_llm(extraction, ratio, law_hits)
 
     return SafeContractResponse(
         extraction=extraction,
         jeontse_ratio=ratio,
         summary=summary,
         risks=risks,
-        referrals=referrals,
+        referrals=_build_referrals(),
         disclaimer=(
             "이 서비스는 법률 자문이 아닌 참고용 사전 검토 도구입니다. "
             "정확한 판단을 위해 전문가 상담을 권합니다."
         ),
+        market_estimate=market,
     )

@@ -1,0 +1,19 @@
+{
+  "service": "서울시 전월세 정보몽땅",
+  "authority": "서울특별시",
+  "category": "safecontract_referral",
+  "website": "https://rent.seoul.go.kr",
+  "call": "120",
+  "call_label": "서울 다산콜센터",
+  "purpose": "서울 지역 전월세 계약 시 종합 검토 도구 (서울 한정)",
+  "key_features": [
+    "집주인 정보 확인 (세금 체납 여부 등)",
+    "전세보증금 반환 능력 검토",
+    "등기부 분석 자동화",
+    "실거래가 비교",
+    "안심거래 서비스 (중개사 인증)"
+  ],
+  "note": "서울 거주자 또는 서울 지역 계약 시 유용. 다른 지역은 HUG 안심전세 앱 권장.",
+  "source": "https://rent.seoul.go.kr (2026-04)",
+  "generated_at": "2026-04-14"
+}

@@ -1,0 +1,25 @@
+{
+  "service": "금융결제원 내계좌 한눈에 (계좌·카드 일괄 주소변경)",
+  "authority": "금융결제원 (KFTC)",
+  "category": "admin_after_move",
+  "website": "https://www.payinfo.or.kr",
+  "call": "1577-5500",
+  "call_label": "어카운트인포 콜센터",
+  "online_url": "https://www.payinfo.or.kr/payinfo.html",
+  "purpose": "은행·카드·증권 계좌 주소를 한 번에 확인·변경",
+  "features": [
+    "전 은행 본인 명의 계좌 조회",
+    "카드 주소 일괄 변경",
+    "휴면 계좌 조회 및 환급",
+    "자동이체 출금계좌 변경"
+  ],
+  "process": [
+    "payinfo.or.kr 접속 → 공동인증서 또는 금융인증서 로그인",
+    "계좌 정보 변경 → 주소 변경",
+    "선택한 금융사 일괄 적용"
+  ],
+  "advantage": "은행·카드사 각각 개별 변경하면 10곳 이상 전화해야 함. 어카운트인포로 한 번에 처리 가능.",
+  "caveat": "모든 금융사가 자동 변경되는 건 아님. 제2금융권 일부 · 보험사는 별도. 자동이체 변경은 별도 메뉴.",
+  "source": "https://www.payinfo.or.kr (2026-04)",
+  "generated_at": "2026-04-14"
+}

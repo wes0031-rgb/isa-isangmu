@@ -1,0 +1,19 @@
+{
+  "service": "국민연금공단 주소변경",
+  "authority": "국민연금공단",
+  "category": "admin_after_move",
+  "website": "https://www.nps.or.kr",
+  "call": "1355",
+  "call_label": "국민연금 콜센터",
+  "online_url": "https://www.nps.or.kr/jsppage/service/minwon/minwon_05_01.jsp",
+  "purpose": "국민연금 가입자 주소 변경 (수령 알림 등 수신 확인)",
+  "process": [
+    "전입신고 시 자동 반영",
+    "자동 반영 안 된 경우: 국민연금 홈페이지 사이버민원 → 주소변경",
+    "지사 방문 또는 1355 전화"
+  ],
+  "importance": "연금 수급자 또는 추납·임의가입자는 주소 미갱신 시 중요 안내 우편 (보험료 고지·수급 관련)을 놓칠 수 있음.",
+  "tip": "납부 중인 가입자는 자동 연동되지만, 수급자(노령연금·장애연금)는 반드시 공단 지사에 직접 확인.",
+  "source": "https://www.nps.or.kr (2026-04)",
+  "generated_at": "2026-04-14"
+}

@@ -1,0 +1,31 @@
+{
+  "service": "HUG 안심전세 앱",
+  "authority": "주택도시보증공사 (HUG)",
+  "category": "safecontract_referral",
+  "website": "https://www.khug.or.kr",
+  "app_url": "https://jeonse.khug.or.kr",
+  "app_name": "안심전세 앱",
+  "app_store": {
+    "ios": "https://apps.apple.com/kr/app/안심전세/id6447189520",
+    "android": "https://play.google.com/store/apps/details?id=kr.co.khug.anxjeonse"
+  },
+  "call": "1566-9009",
+  "call_label": "HUG 고객상담센터",
+  "purpose": "계약 전 전세 물건의 시세·권리관계·보증 가능 여부를 종합 확인",
+  "key_features": [
+    "해당 물건 시세 조회 (KB·부동산원 기준)",
+    "등기부등본 권리 관계 자동 분석 (근저당·압류 등)",
+    "전세보증금 반환보증 가입 가능 여부 즉시 확인",
+    "깡통전세 위험 진단",
+    "임대인 HUG 블랙리스트 조회"
+  ],
+  "process": [
+    "안심전세 앱 설치 → 회원가입 (간편인증)",
+    "주소 입력 → 자동으로 시세·권리관계·보증 가능 여부 표시",
+    "결과 보고 계약 여부 판단"
+  ],
+  "fee": "무료 (보증보험 가입은 별도 유료)",
+  "tip": "계약서 작성 '전'에 반드시 조회. 보증 가입 불가 물건은 피해야 함.",
+  "source": "https://www.khug.or.kr / https://jeonse.khug.or.kr",
+  "generated_at": "2026-04-14"
+}

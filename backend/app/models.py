@@ -80,7 +80,27 @@ class SafeContractRequest(BaseModel):
     )
     # PDF 업로드는 multipart 엔드포인트로 별도 처리
     deposit_krw: int = Field(description="계약 보증금 (원)")
-    expected_market_price_krw: int = Field(description="해당 주택 예상 시세 (원)")
+    expected_market_price_krw: int = Field(
+        description="해당 주택 예상 시세 (원). 0이면 region 으로 자동 조회 시도."
+    )
+    region: Optional[str] = Field(
+        default=None,
+        description="시·군·구 지역명 (예: '서울특별시 강남구'). 실거래가 자동 조회용.",
+    )
+
+
+class MarketEstimate(BaseModel):
+    """국토부 실거래가 API 기반 시세 추정."""
+    source: str = Field(description="데이터 출처")
+    region: str
+    lawd_cd: Optional[str] = None
+    query_ym: str = Field(description="조회 기준 년월 (YYYYMM)")
+    total_count: int = 0
+    median_price_krw: Optional[int] = None
+    min_price_krw: Optional[int] = None
+    max_price_krw: Optional[int] = None
+    recent_deals: list[dict] = Field(default_factory=list)
+    error: Optional[str] = None
 
 
 class RegistryExtraction(BaseModel):
@@ -115,3 +135,7 @@ class SafeContractResponse(BaseModel):
     risks: list[RiskItem]
     referrals: list[ServiceReferral]
     disclaimer: str
+    market_estimate: Optional[MarketEstimate] = Field(
+        default=None,
+        description="국토부 실거래가 API 자동 조회 결과 (region 제공 시)",
+    )

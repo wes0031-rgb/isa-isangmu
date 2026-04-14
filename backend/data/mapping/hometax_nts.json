@@ -1,0 +1,24 @@
+{
+  "service": "국세청 홈택스 주소변경",
+  "authority": "국세청",
+  "category": "admin_after_move",
+  "website": "https://hometax.go.kr",
+  "call": "126",
+  "call_label": "국세청 세미래 콜센터 126",
+  "online_url": "https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml",
+  "purpose": "사업자·근로자 주소 변경 (세무 관련 문서 수신지)",
+  "target": [
+    "사업자: 사업장 주소 변경 (부가가치세·종합소득세 영향)",
+    "근로자: 거주지 주소 변경 (연말정산·주택공제 영향)",
+    "개인: 세금 고지서 수신 주소"
+  ],
+  "process": [
+    "홈택스 접속 → 공동인증서 로그인",
+    "신청·제출 → 신청·민원 → 주소변경 신청",
+    "즉시 처리 (변경 즉시 홈택스에 반영)"
+  ],
+  "importance": "연말정산 시 주택청약·월세 세액공제는 주소지 기준으로 판단. 주소 미변경 상태면 세액공제 증빙 어려울 수 있음.",
+  "tip": "전입신고해도 홈택스는 자동 연동 안 됨. 별도 신청 필수. 월세 세액공제 받으려면 확정일자 + 홈택스 주소 모두 일치해야 함.",
+  "source": "https://hometax.go.kr (2026-04)",
+  "generated_at": "2026-04-14"
+}

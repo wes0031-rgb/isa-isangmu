@@ -1,0 +1,23 @@
+{
+  "service": "국민건강보험공단 주소변경",
+  "authority": "국민건강보험공단",
+  "category": "admin_after_move",
+  "website": "https://www.nhis.or.kr",
+  "call": "1577-1000",
+  "call_label": "건강보험 고객센터",
+  "online_url": "https://www.nhis.or.kr/nhis/minwon/retrieveWbmcb07200lm01.do",
+  "purpose": "건강보험 가입자 주소 변경 (지역가입자는 보험료 영향 있음)",
+  "process": [
+    "전입신고 시 자동 반영 (대부분의 경우)",
+    "자동 반영 안 된 경우: 건강보험공단 사이버민원 또는 1577-1000",
+    "지역가입자는 주소에 따라 보험료 재산정 가능성 있음"
+  ],
+  "important_notes": [
+    "직장가입자: 회사 인사팀에 주소변경 별도 통보",
+    "지역가입자: 재산 기준 변경으로 보험료 조정 가능",
+    "피부양자: 주소이전 시 자동 연동"
+  ],
+  "tip": "이사 후 보험료 고지서에 새 주소 찍혔는지 확인. 안 되면 바로 연락.",
+  "source": "https://www.nhis.or.kr (2026-04)",
+  "generated_at": "2026-04-14"
+}
