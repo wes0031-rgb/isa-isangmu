@@ -15,6 +15,7 @@ from .models import (
     ChecklistRequest,
     ChecklistResponse,
 )
+from .region_services import enrich_item_with_region
 
 # Legacy alias — 외부 import 가 있을 수 있어 유지
 _clean_hanja = clean_hanja
@@ -457,6 +458,8 @@ def structure_checklist_fallback(
         })
 
     items = [enrich(d) for d in items]
+    # 지역 기반 매핑 주입 — 수도·가스·전기·통신·우편·전학 등 항목에 정확한 연락처/URL
+    items = [enrich_item_with_region(d, req.region) for d in items]
     return [_item_from_dict(d, req.move_date) for d in items]
 
 
