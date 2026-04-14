@@ -251,15 +251,27 @@ function LawArticleCard({
   citation: Citation;
   onOpenExternal: (lawName: string) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const hasText = !!citation.article_text;
+  // 본문이 있으면 기본 펼침 — 사용자가 바로 조항 내용 확인 가능
+  const [expanded, setExpanded] = useState(hasText);
+
+  const handleToggle = () => {
+    if (hasText) setExpanded((prev) => !prev);
+    else onOpenExternal(citation.law_name);
+  };
+
   return (
     <View style={styles.lawArticle}>
       <Pressable
-        onPress={() => hasText && setExpanded(!expanded)}
-        style={styles.lawHeader}
+        onPress={handleToggle}
+        hitSlop={8}
+        android_ripple={{ color: colors.primaryBg }}
+        style={({ pressed }) => [
+          styles.lawHeader,
+          pressed && { opacity: 0.6 },
+        ]}
       >
-        <Ionicons name="library" size={16} color={colors.primaryLight} />
+        <Ionicons name="library" size={18} color={colors.primaryLight} />
         <View style={{ flex: 1 }}>
           <Text style={styles.lawTitle}>
             {citation.law_name} {citation.article}
@@ -271,8 +283,8 @@ function LawArticleCard({
         {hasText ? (
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={colors.textMute}
+            size={18}
+            color={colors.primaryLight}
           />
         ) : (
           <Ionicons name="open-outline" size={14} color={colors.textMute} />
@@ -284,6 +296,7 @@ function LawArticleCard({
           <Text style={styles.lawBody}>{citation.article_text}</Text>
           <Pressable
             onPress={() => onOpenExternal(citation.law_name)}
+            hitSlop={8}
             style={styles.lawExternalBtn}
           >
             <Ionicons name="open-outline" size={14} color={colors.primary} />
