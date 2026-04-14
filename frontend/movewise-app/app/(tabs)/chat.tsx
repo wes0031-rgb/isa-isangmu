@@ -4,9 +4,10 @@
  * Azure 연결 후: GPT-4o 자연어 답변 (자동 전환)
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -39,17 +40,16 @@ interface ChatMessage {
   citations?: ChatCitation[];
 }
 
+const INITIAL_BOT_MESSAGE: ChatMessage = {
+  role: 'bot',
+  text: '안녕하세요! 이사·전월세 관련 궁금한 점을 물어보세요. 아래 프리셋을 선택하거나 직접 입력할 수 있어요.',
+};
+
 export default function ChatScreen() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'bot',
-      text: '안녕하세요! 이사·전월세 관련 궁금한 점을 물어보세요. 아래 프리셋을 선택하거나 직접 입력할 수 있어요.',
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_BOT_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [presets, setPresets] = useState<string[]>([]);
-  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     api
@@ -85,6 +85,12 @@ export default function ChatScreen() {
     }
   }
 
+  // FlatList inverted 용: 메시지 배열을 역순으로 (최신이 인덱스 0)
+  const invertedData: ChatMessage[] = [
+    ...(loading ? [{ role: 'bot' as const, text: '__loading__' }] : []),
+    ...[...messages].reverse(),
+  ];
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <KeyboardAvoidingView
@@ -99,25 +105,25 @@ export default function ChatScreen() {
           </Text>
         </View>
 
-        <ScrollView
-          ref={scrollRef}
+        <FlatList
           style={{ flex: 1 }}
-          contentContainerStyle={styles.messages}
-          onContentSizeChange={() =>
-            scrollRef.current?.scrollToEnd({ animated: true })
+          data={invertedData}
+          inverted
+          keyExtractor={(_, i) => `msg-${i}`}
+          renderItem={({ item }) =>
+            item.text === '__loading__' ? (
+              <View style={styles.loading}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.loadingText}>답변 생성 중...</Text>
+              </View>
+            ) : (
+              <MessageBubble message={item} />
+            )
           }
+          contentContainerStyle={styles.messages}
           keyboardShouldPersistTaps="handled"
-        >
-          {messages.map((m, i) => (
-            <MessageBubble key={i} message={m} />
-          ))}
-          {loading && (
-            <View style={styles.loading}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={styles.loadingText}>답변 생성 중...</Text>
-            </View>
-          )}
-        </ScrollView>
+          showsVerticalScrollIndicator={false}
+        />
 
         {/* 프리셋 질문 */}
         {presets.length > 0 && messages.length < 3 && (
