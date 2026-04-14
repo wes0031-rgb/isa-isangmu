@@ -300,7 +300,7 @@ function LawArticleCard({
             style={styles.lawExternalBtn}
           >
             <Ionicons name="open-outline" size={14} color={colors.primary} />
-            <Text style={styles.lawExternalText}>전문 보기 · 국가법령정보 모바일</Text>
+            <Text style={styles.lawExternalText}>전문 보기 (law.go.kr)</Text>
           </Pressable>
         </View>
       )}

@@ -1,29 +1,21 @@
 /**
- * 법령 URL 헬퍼 — PC 사이트 대신 모바일 사이트로 변환.
+ * 법령 URL 헬퍼 — 국가법령정보센터 PC 페이지로 이동.
  *
- * 앱은 폰에서만 보므로 m.law.go.kr / easylaw.go.kr/mob 같은
- * 모바일 최적화 페이지로 리다이렉트.
+ * m.law.go.kr 가 안정적이지 않아 www.law.go.kr 을 사용.
  */
 
-const M_LAW_BASE = 'https://m.law.go.kr/법령';
+const LAW_BASE = 'https://www.law.go.kr/법령';
 
 /**
- * 법령명 (+선택: 조문) → 모바일 국가법령정보센터 URL.
- *
- * 예)
- *   buildMobileLawUrl('주택임대차보호법') → https://m.law.go.kr/법령/주택임대차보호법
- *   buildMobileLawUrl('주택임대차보호법', '제3조의2') → https://m.law.go.kr/법령/주택임대차보호법/제3조의2
+ * 법령명 → 국가법령정보센터 URL.
+ * article 파라미터는 호환성 위해 남기지만 현재 URL 에는 포함하지 않음.
  */
 export function buildMobileLawUrl(
   lawName: string,
-  article?: string | null,
+  _article?: string | null,
 ): string {
   const lawEnc = encodeURIComponent(lawName.trim());
-  if (article) {
-    const artEnc = encodeURIComponent(article.trim());
-    return `${M_LAW_BASE}/${lawEnc}/${artEnc}`;
-  }
-  return `${M_LAW_BASE}/${lawEnc}`;
+  return `${LAW_BASE}/${lawEnc}`;
 }
 
 /**
