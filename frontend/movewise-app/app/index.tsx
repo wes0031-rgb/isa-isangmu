@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   tagline: {
-    color: '#B8D4EC',
+    color: colors.primaryMute,
     fontSize: 16,
     marginTop: spacing.sm,
   },

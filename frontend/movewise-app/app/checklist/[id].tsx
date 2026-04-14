@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -61,8 +62,13 @@ export default function TaskDetail() {
       <SafeAreaView style={styles.root}>
         <Stack.Screen options={{ title: '항목 상세' }} />
         <View style={styles.emptyBox}>
-          <Ionicons name="search-outline" size={48} color={colors.textMute} />
-          <Text style={styles.emptyText}>항목을 찾을 수 없습니다</Text>
+          <Image
+            source={require('../../assets/duck-confused.png')}
+            style={styles.emptyDuck}
+            resizeMode="contain"
+          />
+          <Text style={styles.emptyTitle}>음...?</Text>
+          <Text style={styles.emptyText}>찾으시는 항목이 없는 것 같아요</Text>
           <Pressable style={styles.backBtn} onPress={() => router.back()}>
             <Text style={styles.backBtnText}>돌아가기</Text>
           </Pressable>
@@ -356,10 +362,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xxl,
   },
+  emptyDuck: {
+    width: 120,
+    height: 140,
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    ...typography.title,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
   emptyText: {
-    ...typography.subtitle,
-    color: colors.textMute,
-    marginVertical: spacing.md,
+    ...typography.caption,
+    color: colors.textSub,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
   },
   backBtn: {
     backgroundColor: colors.primary,

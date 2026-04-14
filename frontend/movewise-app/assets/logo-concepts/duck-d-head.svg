@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Duck D: Head-only icon — most compact, profile view -->
+  <!-- Head -->
+  <circle cx="44" cy="50" r="32" fill="#003A75"/>
+  <!-- Beak -->
+  <path d="M 68 44 L 94 50 L 68 58 Z" fill="#F5A623" stroke="#003A75" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Beak line detail -->
+  <path d="M 72 50 L 88 50" stroke="#003A75" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <!-- Eye -->
+  <circle cx="50" cy="42" r="5.5" fill="#FFFFFF"/>
+  <circle cx="51" cy="42" r="2.8" fill="#003A75"/>
+  <!-- Tuft -->
+  <path d="M 38 14 L 40 6 M 44 12 L 46 4 M 50 14 L 52 6"
+        stroke="#003A75" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+</svg>

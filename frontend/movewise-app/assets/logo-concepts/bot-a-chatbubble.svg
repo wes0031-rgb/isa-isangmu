@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Option A: Ionicons-style chatbubble-ellipses. Monochrome, takes tint color. -->
+  <path d="M 50 14
+           C 72 14 88 28 88 46
+           C 88 64 72 78 50 78
+           L 36 78
+           L 22 90
+           L 26 76
+           C 16 71 12 60 12 46
+           C 12 28 28 14 50 14 Z"
+        fill="#003A75"/>
+  <circle cx="34" cy="46" r="5" fill="#FFFFFF"/>
+  <circle cx="50" cy="46" r="5" fill="#FFFFFF"/>
+  <circle cx="66" cy="46" r="5" fill="#FFFFFF"/>
+</svg>

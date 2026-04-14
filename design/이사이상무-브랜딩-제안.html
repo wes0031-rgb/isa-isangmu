@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>이사이상무 · 브랜딩 통합 제안</title>
+<style>
+  :root {
+    --navy: #003A75;
+    --navy-light: #1F6FD0;
+    --navy-bg: #E8F1FB;
+    --orange: #F5A623;
+    --bg: #F5F7FB;
+    --card: #FFFFFF;
+    --text: #0F1822;
+    --sub: #5A6573;
+    --mute: #9CA3AF;
+    --border: #E5E8EB;
+    --border-light: #F1F3F5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 48px 24px 120px;
+  }
+  .container { max-width: 1120px; margin: 0 auto; }
+  h1 {
+    font-size: 32px; font-weight: 800; margin: 0 0 8px; color: var(--navy);
+  }
+  .lead { color: var(--sub); font-size: 15px; margin: 0 0 48px; }
+  h2.section {
+    font-size: 22px; font-weight: 800; color: var(--navy);
+    margin: 48px 0 8px; padding-top: 16px; border-top: 2px solid var(--navy);
+  }
+  .section-desc { color: var(--sub); font-size: 14px; margin: 0 0 24px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 28px; box-shadow: 0 2px 8px rgba(0,58,117,0.04);
+  }
+  .grid5 {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+  }
+  .grid4 {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .grid3 {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .grid2 {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+  }
+  @media (max-width: 1100px) {
+    .grid5 { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .grid4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .grid5 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Concept exploration cards */
+  .concept-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 20px 16px 16px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,58,117,0.04);
+  }
+  .concept-card.selected {
+    border: 2px solid var(--orange);
+    box-shadow: 0 6px 24px rgba(245, 166, 35, 0.22);
+  }
+  .concept-card h3 {
+    margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--navy);
+  }
+  .concept-card .c-desc {
+    margin: 0 0 14px; font-size: 12px; color: var(--sub); line-height: 1.5;
+    min-height: 56px;
+  }
+  .concept-card .c-image {
+    display: flex; justify-content: center; align-items: center;
+    padding-top: 12px; border-top: 1px dashed var(--border);
+  }
+  .concept-card .c-image img {
+    width: 120px; height: 120px; border-radius: 26px;
+  }
+  .selected-badge {
+    position: absolute; top: -11px; right: 14px;
+    background: var(--orange); color: #fff; font-size: 11px; font-weight: 800;
+    padding: 4px 10px; border-radius: 12px; letter-spacing: 0.3px;
+    box-shadow: 0 2px 6px rgba(245,166,35,0.35);
+  }
+  .applied-badge {
+    display: inline-block; padding: 3px 10px;
+    background: #27AE60; color: #fff; font-size: 11px; font-weight: 800;
+    border-radius: 10px; vertical-align: middle; margin-left: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Final showcase */
+  .final-showcase {
+    display: grid; grid-template-columns: auto 1fr; gap: 36px;
+    padding: 36px 40px; background: linear-gradient(135deg, #E8F1FB 0%, #FFFFFF 100%);
+    border-radius: 24px; border: 1px solid var(--border);
+    align-items: center;
+  }
+  .final-showcase .big-icon { text-align: center; }
+  .final-showcase .big-icon img {
+    width: 180px; height: 180px; border-radius: 40px;
+    box-shadow: 0 12px 40px rgba(0, 58, 117, 0.22);
+    display: block;
+  }
+  .final-showcase .big-icon .cap {
+    font-size: 11px; color: var(--sub); margin-top: 14px; font-weight: 600;
+  }
+  .final-showcase .details h3 {
+    margin: 0 0 14px; font-size: 22px; color: var(--navy); font-weight: 800;
+  }
+  .final-showcase .details ul {
+    margin: 0 0 16px; padding-left: 18px; line-height: 1.8; font-size: 14px; color: var(--text);
+  }
+  .final-showcase .details b { color: var(--navy); }
+  .size-row {
+    display: flex; gap: 20px; align-items: flex-end;
+    padding-top: 16px; border-top: 1px dashed var(--border);
+  }
+  .size-row .s {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .size-row .s img { display: block; border-radius: 22%; }
+  .size-row .xl img { width: 96px; height: 96px; border-radius: 22px; }
+  .size-row .md img { width: 56px; height: 56px; border-radius: 13px; }
+  .size-row .sm img { width: 32px; height: 32px; border-radius: 7px; }
+  .size-row small { font-size: 10px; color: var(--sub); font-weight: 600; }
+  @media (max-width: 800px) {
+    .final-showcase { grid-template-columns: 1fr; text-align: center; }
+    .size-row { justify-content: center; }
+  }
+
+  /* ─── Tab bar mockup ─── */
+  .phone {
+    width: 340px; margin: 0 auto;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 28px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,58,117,0.08);
+  }
+  .phone-body {
+    background: var(--bg); min-height: 120px; padding: 24px;
+    text-align: center; color: var(--mute); font-size: 13px;
+  }
+  .tab-bar {
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 10px 0 18px; background: var(--card);
+    border-top: 1px solid var(--border-light);
+  }
+  .tab-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    color: var(--mute); font-size: 11px; font-weight: 700;
+    min-width: 54px;
+  }
+  .tab-item.active { color: var(--navy); }
+  .tab-item svg, .tab-item .emoji {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .tab-item svg .fg { fill: currentColor; }
+  .tab-item .dot { opacity: 0.55; }
+
+  /* ─── Bot option cards ─── */
+  .bot-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,58,117,0.04);
+  }
+  .bot-card h3 {
+    margin: 0 0 4px; font-size: 16px; font-weight: 800; color: var(--navy);
+  }
+  .bot-card .desc {
+    margin: 0 0 20px; font-size: 13px; color: var(--sub); line-height: 1.55;
+    min-height: 58px;
+  }
+  .bot-card .icon-row {
+    display: flex; gap: 16px; align-items: center; justify-content: center;
+    padding: 20px 0; border-top: 1px dashed var(--border);
+  }
+  .bot-card .icon-row > div {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .bot-card .icon-row img {
+    display: block; background: transparent;
+  }
+  .bot-card .i-lg img { width: 64px; height: 64px; }
+  .bot-card .i-md img { width: 32px; height: 32px; }
+  .bot-card .i-sm img { width: 24px; height: 24px; }
+  .bot-card small { font-size: 10px; color: var(--mute); }
+  .bot-card .tradeoff {
+    margin-top: 14px; padding: 10px 12px; border-radius: 8px;
+    font-size: 12px; background: var(--navy-bg); color: var(--navy);
+    display: flex; gap: 6px;
+  }
+  .bot-card .tradeoff b { font-weight: 800; }
+  .rec-badge {
+    display: inline-block; margin-left: 8px; padding: 2px 8px;
+    background: var(--orange); color: #fff; font-size: 11px; font-weight: 800;
+    border-radius: 10px; vertical-align: middle;
+  }
+
+  /* ─── Onboarding mockup ─── */
+  .onboard {
+    width: 340px; margin: 0 auto;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 28px; overflow: hidden; padding: 40px 24px 28px;
+    box-shadow: 0 4px 20px rgba(0,58,117,0.08);
+    min-height: 500px;
+  }
+  .onboard.before h1.brand {
+    text-align: center; color: var(--navy); font-size: 36px; font-weight: 900;
+    margin: 24px 0 8px; letter-spacing: -1.5px;
+  }
+  .onboard .tagline {
+    text-align: center; color: var(--sub); font-size: 13px; margin: 0 0 32px;
+  }
+  .onboard.after img { display: block; margin: 0 auto 8px; width: 180px; }
+  .onboard .feature {
+    background: var(--card); padding: 14px; border-radius: 12px;
+    margin-bottom: 12px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .onboard .feature-dot {
+    width: 28px; height: 28px; background: var(--navy-bg); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--navy-light); font-size: 16px; flex-shrink: 0;
+  }
+  .onboard .feature-text b { font-size: 14px; display: block; margin-bottom: 2px; }
+  .onboard .feature-text span { font-size: 12px; color: var(--sub); line-height: 1.45; }
+
+  /* ─── Lockup cards ─── */
+  .lockup-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px 24px;
+    text-align: center;
+  }
+  .lockup-card h3 {
+    margin: 0 0 20px; font-size: 16px; font-weight: 800; color: var(--navy);
+  }
+  .lockup-card img { max-width: 100%; }
+  .lockup-card.h img { max-width: 420px; }
+  .lockup-card.s img { max-width: 220px; }
+
+  .recommendation {
+    margin-top: 40px; padding: 24px 28px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: 20px; color: #fff;
+  }
+  .recommendation h2 { margin: 0 0 12px; font-size: 20px; color: #fff; }
+  .recommendation ul { margin: 0; padding-left: 20px; line-height: 1.7; font-size: 14px; }
+  .recommendation b { color: var(--orange); }
+
+  /* colored labels */
+  .label { color: var(--sub); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 8px; }
+
+  /* ───────────────────────── Part II: Improvement styles ───────────────────────── */
+  .part-divider {
+    margin: 80px 0 40px;
+    padding: 32px 36px;
+    background: linear-gradient(135deg, #FFF8EC 0%, #FFFFFF 100%);
+    border: 2px dashed var(--orange);
+    border-radius: 24px;
+  }
+  .part-divider .kicker {
+    font-size: 12px; font-weight: 800; color: var(--orange);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .part-divider h2 {
+    margin: 0 0 8px; font-size: 26px; color: var(--navy); border: 0; padding: 0;
+    font-weight: 900; letter-spacing: -0.5px;
+  }
+  .part-divider p { margin: 0; font-size: 14px; color: var(--sub); line-height: 1.6; }
+
+  h2.section .num {
+    display: inline-flex; width: 32px; height: 32px; border-radius: 16px;
+    background: var(--orange); color: #fff; font-size: 16px; font-weight: 900;
+    align-items: center; justify-content: center; margin-right: 10px;
+  }
+
+  .pair {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  }
+  @media (max-width: 820px) {
+    .pair { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px; box-shadow: 0 2px 8px rgba(0,58,117,0.04);
+  }
+  .panel .lbl {
+    display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+    text-transform: uppercase; padding: 3px 10px; border-radius: 10px;
+    margin-bottom: 14px;
+  }
+  .panel .lbl.before { background: #FEE; color: #E74C3C; }
+  .panel .lbl.after { background: #E8F5E9; color: #27AE60; }
+
+  .phone-demo {
+    background: var(--bg); border-radius: 18px; padding: 24px 16px;
+    border: 1px solid var(--border-light);
+  }
+
+  /* Duck mascot in mockups */
+  .duck-m { width: 96px; height: 108px; display: block; margin: 0 auto; }
+
+  /* Empty state cards */
+  .empty-card {
+    background: var(--card); border: 2px dashed var(--navy-bg);
+    border-radius: 16px; padding: 20px 14px; text-align: center;
+  }
+  .empty-card-after {
+    background: linear-gradient(180deg, #FFF8EC 0%, #FFFFFF 100%);
+    border: 2px dashed var(--orange);
+  }
+  .empty-card h4 {
+    margin: 10px 0 4px; font-size: 15px; font-weight: 800; color: var(--navy);
+  }
+  .empty-card p {
+    margin: 0 0 12px; font-size: 11px; color: var(--sub); line-height: 1.5;
+  }
+  .empty-card .btn {
+    display: inline-block; background: var(--navy); color: #fff;
+    padding: 8px 16px; border-radius: 18px; font-size: 12px; font-weight: 700;
+  }
+  .empty-card .btn.orange { background: var(--orange); }
+  .empty-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+
+  /* Touch feedback */
+  .demo-btn {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--navy); color: #fff; padding: 16px 24px;
+    border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: pointer; user-select: none; margin: 0 auto; max-width: 240px;
+    transition: none;
+  }
+  .demo-btn.press { transition: transform 0.12s ease, background 0.12s ease; }
+  .demo-btn.press:active { transform: scale(0.96); background: #002650; }
+  .demo-hint { text-align: center; font-size: 11px; color: var(--sub); margin-top: 10px; font-style: italic; }
+
+  /* Contrast samples */
+  .contrast-box { padding: 20px; border-radius: 12px; background: var(--bg); }
+  .contrast-sample { font-size: 13px; margin: 8px 0; }
+  .contrast-sample.old { color: #9CA3AF; }
+  .contrast-sample.new { color: #6B7280; }
+  .wcag {
+    display: inline-flex; gap: 6px; align-items: center;
+    padding: 4px 10px; border-radius: 10px;
+    font-size: 11px; font-weight: 800; margin-top: 12px;
+  }
+  .wcag.fail { background: #FEE; color: #E74C3C; }
+  .wcag.pass { background: #E8F5E9; color: #27AE60; }
+
+  /* Hero & stats */
+  .hero-card {
+    background: var(--navy); border-radius: 16px; padding: 24px; color: #fff;
+  }
+  .hero-card .hero-label { font-size: 13px; color: #B8D4EC; font-weight: 700; margin-bottom: 6px; }
+  .hero-card .hero-dday { font-size: 52px; font-weight: 900; letter-spacing: -2px; color: #fff; }
+  .hero-card.after .hero-dday { color: var(--orange); text-shadow: 0 2px 12px rgba(245,166,35,0.35); }
+  .hero-card.after { border-left: 4px solid var(--orange); }
+  .hero-date { font-size: 13px; color: #B8D4EC; margin-top: 4px; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 8px; text-align: center;
+  }
+  .stat-card .v { font-size: 24px; font-weight: 900; color: var(--navy); }
+  .stat-card.after .v { color: var(--orange); }
+  .stat-card .u { font-size: 10px; color: var(--sub); }
+  .stat-card .l { font-size: 11px; color: var(--sub); margin-top: 4px; font-weight: 600; }
+
+  /* Loading */
+  .loader {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; background: var(--card); border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .spinner {
+    width: 20px; height: 20px; border: 3px solid var(--navy-bg);
+    border-top-color: var(--navy); border-radius: 50%;
+    animation: spin 0.8s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .loader.after .loader-text::before {
+    content: '📄 문서 파싱 중...';
+    animation: textSwap 9s steps(1) infinite;
+  }
+  @keyframes textSwap {
+    0%, 33% { content: '📄 문서 파싱 중...'; }
+    34%, 66% { content: '⚖️ 법령 대조 중...'; }
+    67%, 100% { content: '🔍 위험 요소 추출 중...'; }
+  }
+
+  /* Swatches */
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+  .swatch {
+    border-radius: 12px; padding: 16px 12px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .swatch .color-box {
+    width: 100%; height: 48px; border-radius: 8px; margin-bottom: 8px;
+    border: 1px solid var(--border-light);
+  }
+  .swatch .name { font-size: 11px; font-weight: 800; color: var(--navy); }
+  .swatch .hex { font-size: 10px; color: var(--sub); font-family: 'SF Mono', monospace; margin-top: 2px; }
+  .swatch.hardcoded .name { color: #E74C3C; }
+
+  /* Card hierarchy */
+  .list-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; margin-bottom: 10px;
+  }
+  .list-card.before * { font-size: 13px !important; color: var(--text) !important; font-weight: 400 !important; }
+  .list-card.before .lc-meta { color: var(--sub) !important; }
+  .list-card.before .lc-cite { color: var(--sub) !important; }
+  .list-card.after { border-left: 3px solid var(--navy-light); box-shadow: 0 1px 4px rgba(0,58,117,0.05); }
+  .list-card.after .lc-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .list-card.after .lc-meta {
+    font-size: 11px; color: var(--sub); font-weight: 600; margin-bottom: 8px;
+    display: flex; gap: 10px;
+  }
+  .list-card.after .lc-cite {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--navy-bg); color: var(--navy);
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 8px;
+  }
+
+  .adopt {
+    margin-top: 16px; padding: 10px 14px;
+    background: var(--navy-bg); border-radius: 10px;
+    font-size: 12px; color: var(--navy); line-height: 1.5;
+  }
+  .adopt b { font-weight: 800; }
+  .adopt code {
+    background: rgba(0,58,117,0.08); padding: 1px 6px; border-radius: 4px;
+    font-family: 'SF Mono', monospace; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <!-- Duck C SVG symbol (reused across improvement mockups) -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="duckC" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="74" rx="30" ry="16" fill="#F5A623" stroke="#003A75" stroke-width="4"/>
+        <path d="M 38 88 L 32 94 L 44 94 Z" fill="#E67E22" stroke="#003A75" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M 62 88 L 56 94 L 68 94 Z" fill="#E67E22" stroke="#003A75" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="50" cy="42" r="26" fill="#F5A623" stroke="#003A75" stroke-width="4"/>
+        <circle cx="42" cy="38" r="5" fill="#FFFFFF" stroke="#003A75" stroke-width="2.5"/>
+        <circle cx="58" cy="38" r="5" fill="#FFFFFF" stroke="#003A75" stroke-width="2.5"/>
+        <circle cx="43" cy="39" r="2" fill="#003A75"/>
+        <circle cx="59" cy="39" r="2" fill="#003A75"/>
+        <path d="M 42 48 Q 50 44 58 48 L 56 56 Q 50 58 44 56 Z" fill="#E67E22" stroke="#003A75" stroke-width="2.5" stroke-linejoin="round"/>
+        <ellipse cx="34" cy="48" rx="3" ry="2" fill="#E74C3C" opacity="0.5"/>
+        <ellipse cx="66" cy="48" rx="3" ry="2" fill="#E74C3C" opacity="0.5"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="container">
+    <h1>이사이상무 · 전체 브랜딩 제안</h1>
+    <p class="lead">로고 컨셉 탐색부터 앱 내부 터치포인트까지 한 페이지에 정리. 팀 논의용 · <b style="color:var(--orange)">오렌지 태그</b>는 최종 선택 · <b style="color:#27AE60">초록 태그</b>는 코드에 이미 적용됨.</p>
+
+    <!-- ═══════════════════════ Section 1: Concept exploration ═══════════════════════ -->
+    <h2 class="section">1. 로고 컨셉 탐색 — 5가지 후보</h2>
+    <p class="section-desc">처음 제안한 5개 방향. 앱 아이콘으로서의 단순성·인지도·브랜드 의미 종합 고려 후 <b style="color:var(--orange)">#2 집 + 체크</b> 최종 채택.</p>
+
+    <div class="grid5">
+      <div class="concept-card">
+        <h3>1. 박스 + 체크</h3>
+        <p class="c-desc">아이소메트릭 이사 박스 + 체크. "짐 포장 완료" 의 직관적 시각화.</p>
+        <div class="c-image"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwM0E3NSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI1NiAyNjgpIj4KICAgIDwhLS0gQmFjayBsZWZ0IGZhY2UgKGRhcmtlcikgLS0+CiAgICA8cGF0aCBkPSJNIC0xNDAgLTUwIEwgMCAtMTIwIEwgMCAyMCBMIC0xNDAgOTAgWiIgZmlsbD0iI0Q4OEMwRiIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICAgIDwhLS0gQmFjayByaWdodCBmYWNlIC0tPgogICAgPHBhdGggZD0iTSAxNDAgLTUwIEwgMCAtMTIwIEwgMCAyMCBMIDE0MCA5MCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPCEtLSBUb3AgbGlkIC0tPgogICAgPHBhdGggZD0iTSAtMTQwIC01MCBMIDAgLTEyMCBMIDE0MCAtNTAgTCAwIDIwIFoiIGZpbGw9IiNGRkM3NjYiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICA8IS0tIFRhcGUgc2VhbSBvbiB0b3AgLS0+CiAgICA8cGF0aCBkPSJNIC03MCAtODUgTCA3MCAtODUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAgIDwhLS0gQ2hlY2ttYXJrIG9uIHJpZ2h0IGZhY2UgLS0+CiAgICA8cGF0aCBkPSJNIDIwIDMwIEwgNTUgNjUgTCAxMTUgLTE1IiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwvZz4KPC9zdmc+Cg==" alt=""></div>
+      </div>
+
+      <div class="concept-card selected">
+        <div class="selected-badge">⭐ 최종 선택</div>
+        <h3>2. 집 + 체크</h3>
+        <p class="c-desc">집 실루엣 안 큰 체크 마크. "새 집으로 이사 완료" 의미 + 작게 줄여도 또렷.</p>
+        <div class="c-image"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gSG91c2Ugb3V0bGluZSAtLT4KICA8cGF0aCBkPSJNIDI1NiAxMTAgTCAxMTAgMjQwIEwgMTEwIDQxMCBMIDQwMiA0MTAgTCA0MDIgMjQwIFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIFJvb2YgZmlsbCBhY2NlbnQgLS0+CiAgPHBhdGggZD0iTSAyNTYgMTEwIEwgMTEwIDI0MCBMIDQwMiAyNDAgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPCEtLSBCaWcgY2hlY2ttYXJrIGluc2lkZSBob3VzZSBib2R5IC0tPgogIDxwYXRoIGQ9Ik0gMTYwIDMyMCBMIDIzMCAzODAgTCAzNjUgMjUwIgogICAgICAgIHN0cm9rZT0iI0Y1QTYyMyIgc3Ryb2tlLXdpZHRoPSI0MCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt=""></div>
+      </div>
+
+      <div class="concept-card">
+        <h3>3. 방패 + 체크</h3>
+        <p class="c-desc">"이상무"의 군대식 확인 의미 + SafeContract 안전 메시지 정합.</p>
+        <div class="c-image"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iI0Y1QTYyMyIvPgogIDwhLS0gU2hpZWxkIC0tPgogIDxwYXRoIGQ9Ik0gMjU2IDkwCiAgICAgICAgICAgTCAzOTAgMTM1CiAgICAgICAgICAgTCAzOTAgMjgwCiAgICAgICAgICAgUSAzOTAgMzkwIDI1NiA0NDAKICAgICAgICAgICBRIDEyMiAzOTAgMTIyIDI4MAogICAgICAgICAgIEwgMTIyIDEzNSBaIgogICAgICAgIGZpbGw9IiMwMDNBNzUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gSW5uZXIgb3V0bGluZSAtLT4KICA8cGF0aCBkPSJNIDI1NiAxMjAKICAgICAgICAgICBMIDM2OCAxNTIKICAgICAgICAgICBMIDM2OCAyODAKICAgICAgICAgICBRIDM2OCAzNzIgMjU2IDQxNgogICAgICAgICAgIFEgMTQ0IDM3MiAxNDQgMjgwCiAgICAgICAgICAgTCAxNDQgMTUyIFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIG9wYWNpdHk9IjAuNCIvPgogIDwhLS0gQ2hlY2ttYXJrIC0tPgogIDxwYXRoIGQ9Ik0gMTc4IDI3MCBMIDIzOCAzMzAgTCAzNDIgMjAyIgogICAgICAgIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIzNCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt=""></div>
+      </div>
+
+      <div class="concept-card">
+        <h3>4. 이사 여정</h3>
+        <p class="c-desc">체크 마크를 옛집→새집 경로로 변환. 컨셉은 좋으나 작으면 디테일 약함.</p>
+        <div class="c-image"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iI0U4RjFGQiIvPgoKICA8IS0tIE9sZCBob3VzZSAobGVmdCwgc21hbGxlciwgbXV0ZWQpIC0tPgogIDxnIG9wYWNpdHk9IjAuNDUiPgogICAgPHBhdGggZD0iTSAxMjAgMzAwIEwgODAgMzMwIEwgODAgNDAwIEwgMTYwIDQwMCBMIDE2MCAzMzAgWiIKICAgICAgICAgIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPHJlY3QgeD0iMTA4IiB5PSIzNTUiIHdpZHRoPSIyNCIgaGVpZ2h0PSI0NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPC9nPgoKICA8IS0tIENoZWNrbWFyayBqb3VybmV5IHBhdGggKGZyb20gb2xkIGhvdXNlIOKGkiB1cCDihpIgbmV3IGhvdXNlKSAtLT4KICA8cGF0aCBkPSJNIDEzMCAzNDAgTCAyMjAgNDAwIEwgNDAwIDE4MCIKICAgICAgICBzdHJva2U9IiNGNUE2MjMiIHN0cm9rZS13aWR0aD0iNDIiIGZpbGw9Im5vbmUiCiAgICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CgogIDwhLS0gTmV3IGhvdXNlIChyaWdodCwgbGFyZ2VyLCBwcm9taW5lbnQpIC0tPgogIDxnPgogICAgPHBhdGggZD0iTSA0MDAgMTEwIEwgMzIwIDE4MCBMIDMyMCAyOTAgTCA0ODAgMjkwIEwgNDgwIDE4MCBaIgogICAgICAgICAgZmlsbD0iIzAwM0E3NSIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICA8cmVjdCB4PSIzODAiIHk9IjIyMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjcwIiBmaWxsPSIjRjVBNjIzIi8+CiAgPC9nPgo8L3N2Zz4K" alt=""></div>
+      </div>
+
+      <div class="concept-card">
+        <h3>5. 한글 워드마크</h3>
+        <p class="c-desc">"이사 / 이상무" 2단 타이포. 스플래시/헤더용 적합, 아이콘 단독은 약함.</p>
+        <div class="c-image"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iI0ZGRkZGRiIvPgogIDwhLS0gQWNjZW50IGJhciBiZWhpbmQgdGV4dCAtLT4KICA8cmVjdCB4PSI4OCIgeT0iMjM4IiB3aWR0aD0iMzM2IiBoZWlnaHQ9IjcwIiByeD0iMTIiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tICLsnbTsgqwiIG9uIG5hdnkgYmFyIC0tPgogIDx0ZXh0IHg9IjI1NiIgeT0iMjk0IgogICAgICAgIGZvbnQtZmFtaWx5PSInUHJldGVuZGFyZCcsICdBcHBsZSBTRCBHb3RoaWMgTmVvJywgJ05vdG8gU2FucyBLUicsIHNhbnMtc2VyaWYiCiAgICAgICAgZm9udC1zaXplPSI2MiIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0iI0ZGRkZGRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIKICAgICAgICBsZXR0ZXItc3BhY2luZz0iLTIiPuydtOyCrDwvdGV4dD4KICA8IS0tICLsnbTsg4HrrLQiIGJlbG93IGluIG5hdnkgLS0+CiAgPHRleHQgeD0iMjU2IiB5PSIzOTAiCiAgICAgICAgZm9udC1mYW1pbHk9IidQcmV0ZW5kYXJkJywgJ0FwcGxlIFNEIEdvdGhpYyBOZW8nLCAnTm90byBTYW5zIEtSJywgc2Fucy1zZXJpZiIKICAgICAgICBmb250LXNpemU9IjgyIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAzQTc1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIgogICAgICAgIGxldHRlci1zcGFjaW5nPSItMyI+7J207IOB66y0PC90ZXh0PgogIDwhLS0gQWNjZW50IGNoZWNrIG5leHQgdG8g66y0IC0tPgogIDxwYXRoIGQ9Ik0gMzcyIDE1MCBMIDM5OCAxNzggTCA0NDYgMTIwIgogICAgICAgIHN0cm9rZT0iI0Y1QTYyMyIgc3Ryb2tlLXdpZHRoPSIxOCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt=""></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ Section 2: Final production icon ═══════════════════════ -->
+    <h2 class="section">2. 최종 프로덕션 아이콘 <span class="applied-badge">✓ 적용 완료</span></h2>
+    <p class="section-desc">집 + 체크 컨셉을 Expo 앱 아이콘 / 스플래시 / Android Adaptive / Favicon 4종 PNG로 확장. <code>app.json</code> 연결 완료.</p>
+
+    <div class="final-showcase">
+      <div class="big-icon">
+        <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gSG91c2Ugb3V0bGluZSAtLT4KICA8cGF0aCBkPSJNIDI1NiAxMTAgTCAxMTAgMjQwIEwgMTEwIDQxMCBMIDQwMiA0MTAgTCA0MDIgMjQwIFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIFJvb2YgZmlsbCBhY2NlbnQgLS0+CiAgPHBhdGggZD0iTSAyNTYgMTEwIEwgMTEwIDI0MCBMIDQwMiAyNDAgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPCEtLSBCaWcgY2hlY2ttYXJrIGluc2lkZSBob3VzZSBib2R5IC0tPgogIDxwYXRoIGQ9Ik0gMTYwIDMyMCBMIDIzMCAzODAgTCAzNjUgMjUwIgogICAgICAgIHN0cm9rZT0iI0Y1QTYyMyIgc3Ryb2tlLXdpZHRoPSI0MCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt="최종 앱 아이콘">
+        <div class="cap">iOS / Android 앱 아이콘</div>
+      </div>
+      <div class="details">
+        <h3>집 + 체크 · 이사 완료의 시각화</h3>
+        <ul>
+          <li><b>icon.png</b> — 1024×1024 풀 스퀘어 navy 배경 (OS 자체 라운딩 적용)</li>
+          <li><b>splash-icon.png</b> — 투명 배경, navy 위 센터링</li>
+          <li><b>adaptive-icon.png</b> — 82% 스케일로 Android safe zone 맞춤</li>
+          <li><b>favicon.png</b> — 48×48 웹용</li>
+        </ul>
+        <div class="size-row">
+          <div class="s xl"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gSG91c2Ugb3V0bGluZSAtLT4KICA8cGF0aCBkPSJNIDI1NiAxMTAgTCAxMTAgMjQwIEwgMTEwIDQxMCBMIDQwMiA0MTAgTCA0MDIgMjQwIFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIFJvb2YgZmlsbCBhY2NlbnQgLS0+CiAgPHBhdGggZD0iTSAyNTYgMTEwIEwgMTEwIDI0MCBMIDQwMiAyNDAgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPCEtLSBCaWcgY2hlY2ttYXJrIGluc2lkZSBob3VzZSBib2R5IC0tPgogIDxwYXRoIGQ9Ik0gMTYwIDMyMCBMIDIzMCAzODAgTCAzNjUgMjUwIgogICAgICAgIHN0cm9rZT0iI0Y1QTYyMyIgc3Ryb2tlLXdpZHRoPSI0MCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>1024</small></div>
+          <div class="s md"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gSG91c2Ugb3V0bGluZSAtLT4KICA8cGF0aCBkPSJNIDI1NiAxMTAgTCAxMTAgMjQwIEwgMTEwIDQxMCBMIDQwMiA0MTAgTCA0MDIgMjQwIFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIFJvb2YgZmlsbCBhY2NlbnQgLS0+CiAgPHBhdGggZD0iTSAyNTYgMTEwIEwgMTEwIDI0MCBMIDQwMiAyNDAgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPCEtLSBCaWcgY2hlY2ttYXJrIGluc2lkZSBob3VzZSBib2R5IC0tPgogIDxwYXRoIGQ9Ik0gMTYwIDMyMCBMIDIzMCAzODAgTCAzNjUgMjUwIgogICAgICAgIHN0cm9rZT0iI0Y1QTYyMyIgc3Ryb2tlLXdpZHRoPSI0MCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>180</small></div>
+          <div class="s sm"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gSG91c2Ugb3V0bGluZSAtLT4KICA8cGF0aCBkPSJNIDI1NiAxMTAgTCAxMTAgMjQwIEwgMTEwIDQxMCBMIDQwMiA0MTAgTCA0MDIgMjQwIFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIFJvb2YgZmlsbCBhY2NlbnQgLS0+CiAgPHBhdGggZD0iTSAyNTYgMTEwIEwgMTEwIDI0MCBMIDQwMiAyNDAgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPCEtLSBCaWcgY2hlY2ttYXJrIGluc2lkZSBob3VzZSBib2R5IC0tPgogIDxwYXRoIGQ9Ik0gMTYwIDMyMCBMIDIzMCAzODAgTCAzNjUgMjUwIgogICAgICAgIHN0cm9rZT0iI0Y1QTYyMyIgc3Ryb2tlLXdpZHRoPSI0MCIgZmlsbD0ibm9uZSIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>40</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ Section 3: Tab Bar ═══════════════════════ -->
+    <h2 class="section">3. Tab Bar — Before / After <span class="applied-badge">✓ 적용 완료</span></h2>
+    <p class="section-desc">현재 tab bar는 Ionicons 4개 + 🐤 이모지 1개. 이모지 하나만 톤이 깨지므로 그것만 교체. 다른 4개는 유지.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="label">Before (현재)</div>
+        <div class="phone">
+          <div class="phone-body">앱 콘텐츠</div>
+          <div class="tab-bar">
+            <div class="tab-item active">
+              <svg viewBox="0 0 24 24"><path class="fg" d="M12 3 L3 10 L3 20 L9 20 L9 14 L15 14 L15 20 L21 20 L21 10 Z"/></svg>
+              <span>홈</span>
+            </div>
+            <div class="tab-item">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 9 L16 9 M8 12 L16 12 M8 15 L13 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>체크리스트</span>
+            </div>
+            <div class="tab-item">
+              <svg viewBox="0 0 24 24"><path d="M12 3 L20 5 L20 12 Q20 18 12 21 Q4 18 4 12 L4 5 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 12 L11 15 L16 9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>계약 전 체크</span>
+            </div>
+            <div class="tab-item" style="color:#000">
+              <span class="emoji">🐤</span>
+              <span style="color:var(--mute)">꽉꽉봇</span>
+            </div>
+            <div class="tab-item">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 19 Q12 14 18 19" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+              <span>마이</span>
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center; color:var(--sub); font-size:12px; margin: 16px 0 0;">🐤 만 래스터 이모지 → 다른 4개 벡터 아이콘과 톤 불일치</p>
+      </div>
+
+      <div class="card">
+        <div class="label">After — Option A 적용 예시</div>
+        <div class="phone">
+          <div class="phone-body">앱 콘텐츠</div>
+          <div class="tab-bar">
+            <div class="tab-item active">
+              <svg viewBox="0 0 24 24"><path class="fg" d="M12 3 L3 10 L3 20 L9 20 L9 14 L15 14 L15 20 L21 20 L21 10 Z"/></svg>
+              <span>홈</span>
+            </div>
+            <div class="tab-item">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 9 L16 9 M8 12 L16 12 M8 15 L13 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>체크리스트</span>
+            </div>
+            <div class="tab-item">
+              <svg viewBox="0 0 24 24"><path d="M12 3 L20 5 L20 12 Q20 18 12 21 Q4 18 4 12 L4 5 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 12 L11 15 L16 9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>계약 전 체크</span>
+            </div>
+            <div class="tab-item">
+              <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQTogTmF2eSBzaWxob3VldHRlIHdpdGggb3JhbmdlIGJlYWsg4oCUIG1pbmltYWxpc3QsIHJlYWRhYmxlIGF0IHNtYWxsIHNpemVzIC0tPgogIDwhLS0gQm9keSAtLT4KICA8ZWxsaXBzZSBjeD0iNDgiIGN5PSI2NCIgcng9IjM0IiByeT0iMjAiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzOCIgcj0iMTgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIE5lY2sgY29ubmVjdGlvbiBzbW9vdGhpbmcgLS0+CiAgPHBhdGggZD0iTSA1OCA0OCBRIDYyIDU4IDcyIDU2IEwgNzIgNDIgWiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDg0IDM2IEwgOTggNDAgTCA4NCA0NCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiNGNUE2MjMiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gRXllICh3aGl0ZSByaW5nICsgbmF2eSBjZW50ZXIpIC0tPgogIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzQiIHI9IjMuMiIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9Ijc1IiBjeT0iMzQiIHI9IjEuNiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVGFpbCB0aXAgLS0+CiAgPHBhdGggZD0iTSAxNCA1NiBMIDggNTIgTCAxNCA2MiBaIiBmaWxsPSIjMDAzQTc1Ii8+Cjwvc3ZnPgo=" style="width:26px;height:26px" alt="">
+              <span>꽉꽉봇</span>
+            </div>
+            <div class="tab-item">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 19 Q12 14 18 19" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+              <span>마이</span>
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center; color:var(--sub); font-size:12px; margin: 16px 0 0;">5개 tab 모두 선 두께·비율 통일</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ Section 4: Duck options ═══════════════════════ -->
+    <h2 class="section">4. 꽉꽉봇 오리 — 4개 스타일 <span class="applied-badge">✓ A + C 적용</span></h2>
+    <p class="section-desc">오리 시그니처 유지. 브랜드 팔레트(navy + orange)로 다시 그린 4가지 스타일. tab bar(24px) → chat 헤더(40~60px) → 웰컴 아바타(120px) 순으로 작게/크게 모두 작동해야 함.</p>
+
+    <div class="grid4">
+      <div class="bot-card">
+        <h3>A. 네이비 실루엣 <span class="rec-badge">추천</span></h3>
+        <p class="desc">측면 프로파일. Navy 단색 + 오렌지 부리. 16px에서도 또렷. Ionicons 와 가장 잘 어울림.</p>
+        <div class="icon-row">
+          <div class="i-lg"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQTogTmF2eSBzaWxob3VldHRlIHdpdGggb3JhbmdlIGJlYWsg4oCUIG1pbmltYWxpc3QsIHJlYWRhYmxlIGF0IHNtYWxsIHNpemVzIC0tPgogIDwhLS0gQm9keSAtLT4KICA8ZWxsaXBzZSBjeD0iNDgiIGN5PSI2NCIgcng9IjM0IiByeT0iMjAiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzOCIgcj0iMTgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIE5lY2sgY29ubmVjdGlvbiBzbW9vdGhpbmcgLS0+CiAgPHBhdGggZD0iTSA1OCA0OCBRIDYyIDU4IDcyIDU2IEwgNzIgNDIgWiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDg0IDM2IEwgOTggNDAgTCA4NCA0NCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiNGNUE2MjMiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gRXllICh3aGl0ZSByaW5nICsgbmF2eSBjZW50ZXIpIC0tPgogIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzQiIHI9IjMuMiIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9Ijc1IiBjeT0iMzQiIHI9IjEuNiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVGFpbCB0aXAgLS0+CiAgPHBhdGggZD0iTSAxNCA1NiBMIDggNTIgTCAxNCA2MiBaIiBmaWxsPSIjMDAzQTc1Ii8+Cjwvc3ZnPgo=" alt=""><small>64</small></div>
+          <div class="i-md"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQTogTmF2eSBzaWxob3VldHRlIHdpdGggb3JhbmdlIGJlYWsg4oCUIG1pbmltYWxpc3QsIHJlYWRhYmxlIGF0IHNtYWxsIHNpemVzIC0tPgogIDwhLS0gQm9keSAtLT4KICA8ZWxsaXBzZSBjeD0iNDgiIGN5PSI2NCIgcng9IjM0IiByeT0iMjAiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzOCIgcj0iMTgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIE5lY2sgY29ubmVjdGlvbiBzbW9vdGhpbmcgLS0+CiAgPHBhdGggZD0iTSA1OCA0OCBRIDYyIDU4IDcyIDU2IEwgNzIgNDIgWiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDg0IDM2IEwgOTggNDAgTCA4NCA0NCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiNGNUE2MjMiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gRXllICh3aGl0ZSByaW5nICsgbmF2eSBjZW50ZXIpIC0tPgogIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzQiIHI9IjMuMiIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9Ijc1IiBjeT0iMzQiIHI9IjEuNiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVGFpbCB0aXAgLS0+CiAgPHBhdGggZD0iTSAxNCA1NiBMIDggNTIgTCAxNCA2MiBaIiBmaWxsPSIjMDAzQTc1Ii8+Cjwvc3ZnPgo=" alt=""><small>32</small></div>
+          <div class="i-sm"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQTogTmF2eSBzaWxob3VldHRlIHdpdGggb3JhbmdlIGJlYWsg4oCUIG1pbmltYWxpc3QsIHJlYWRhYmxlIGF0IHNtYWxsIHNpemVzIC0tPgogIDwhLS0gQm9keSAtLT4KICA8ZWxsaXBzZSBjeD0iNDgiIGN5PSI2NCIgcng9IjM0IiByeT0iMjAiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNzAiIGN5PSIzOCIgcj0iMTgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIE5lY2sgY29ubmVjdGlvbiBzbW9vdGhpbmcgLS0+CiAgPHBhdGggZD0iTSA1OCA0OCBRIDYyIDU4IDcyIDU2IEwgNzIgNDIgWiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDg0IDM2IEwgOTggNDAgTCA4NCA0NCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiNGNUE2MjMiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gRXllICh3aGl0ZSByaW5nICsgbmF2eSBjZW50ZXIpIC0tPgogIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzQiIHI9IjMuMiIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9Ijc1IiBjeT0iMzQiIHI9IjEuNiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVGFpbCB0aXAgLS0+CiAgPHBhdGggZD0iTSAxNCA1NiBMIDggNTIgTCAxNCA2MiBaIiBmaWxsPSIjMDAzQTc1Ii8+Cjwvc3ZnPgo=" alt=""><small>24</small></div>
+        </div>
+        <div class="tradeoff"><b>베스트:</b>&nbsp;탭바</div>
+      </div>
+
+      <div class="bot-card">
+        <h3>B. 러버덕 클래식</h3>
+        <p class="desc">흰 몸통 + 네이비 아웃라인 + 오렌지 부리. 물결 포함. "오리"로 가장 직관적. 중형 사이즈에 최적.</p>
+        <div class="icon-row">
+          <div class="i-lg"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQjogQ2xhc3NpYyBydWJiZXItZHVjayBmZWVsIOKAlCB3aGl0ZSBib2R5LCBuYXZ5IG91dGxpbmUsIG9yYW5nZSBiZWFrIC0tPgogIDwhLS0gV2F0ZXIgcmlwcGxlcyAtLT4KICA8cGF0aCBkPSJNIDggODQgUSAyMiA4OCAzOCA4NCBRIDU0IDgwIDcwIDg0IFEgODIgODcgOTIgODQiCiAgICAgICAgc3Ryb2tlPSIjMUY2RkQwIiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEJvZHkgLS0+CiAgPGVsbGlwc2UgY3g9IjQ4IiBjeT0iNjYiIHJ4PSIzNCIgcnk9IjIwIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iNCIvPgogIDwhLS0gSGVhZCAtLT4KICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjM4IiByPSIxOCIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8IS0tIFdpbmcgLS0+CiAgPHBhdGggZD0iTSAzMiA2MiBRIDQ2IDc2IDYwIDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEV5ZSAtLT4KICA8Y2lyY2xlIGN4PSI3NiIgY3k9IjM1IiByPSIyLjgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEJlYWsgLS0+CiAgPHBhdGggZD0iTSA4NiAzNyBMIDk4IDQxIEwgODYgNDUgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDwhLS0gVHVmdCAtLT4KICA8cGF0aCBkPSJNIDY1IDE4IEwgNjYgMTAgTSA3MCAxNiBMIDcyIDggTSA3NSAxOCBMIDc3IDEwIgogICAgICAgIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>64</small></div>
+          <div class="i-md"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQjogQ2xhc3NpYyBydWJiZXItZHVjayBmZWVsIOKAlCB3aGl0ZSBib2R5LCBuYXZ5IG91dGxpbmUsIG9yYW5nZSBiZWFrIC0tPgogIDwhLS0gV2F0ZXIgcmlwcGxlcyAtLT4KICA8cGF0aCBkPSJNIDggODQgUSAyMiA4OCAzOCA4NCBRIDU0IDgwIDcwIDg0IFEgODIgODcgOTIgODQiCiAgICAgICAgc3Ryb2tlPSIjMUY2RkQwIiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEJvZHkgLS0+CiAgPGVsbGlwc2UgY3g9IjQ4IiBjeT0iNjYiIHJ4PSIzNCIgcnk9IjIwIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iNCIvPgogIDwhLS0gSGVhZCAtLT4KICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjM4IiByPSIxOCIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8IS0tIFdpbmcgLS0+CiAgPHBhdGggZD0iTSAzMiA2MiBRIDQ2IDc2IDYwIDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEV5ZSAtLT4KICA8Y2lyY2xlIGN4PSI3NiIgY3k9IjM1IiByPSIyLjgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEJlYWsgLS0+CiAgPHBhdGggZD0iTSA4NiAzNyBMIDk4IDQxIEwgODYgNDUgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDwhLS0gVHVmdCAtLT4KICA8cGF0aCBkPSJNIDY1IDE4IEwgNjYgMTAgTSA3MCAxNiBMIDcyIDggTSA3NSAxOCBMIDc3IDEwIgogICAgICAgIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>32</small></div>
+          <div class="i-sm"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQjogQ2xhc3NpYyBydWJiZXItZHVjayBmZWVsIOKAlCB3aGl0ZSBib2R5LCBuYXZ5IG91dGxpbmUsIG9yYW5nZSBiZWFrIC0tPgogIDwhLS0gV2F0ZXIgcmlwcGxlcyAtLT4KICA8cGF0aCBkPSJNIDggODQgUSAyMiA4OCAzOCA4NCBRIDU0IDgwIDcwIDg0IFEgODIgODcgOTIgODQiCiAgICAgICAgc3Ryb2tlPSIjMUY2RkQwIiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEJvZHkgLS0+CiAgPGVsbGlwc2UgY3g9IjQ4IiBjeT0iNjYiIHJ4PSIzNCIgcnk9IjIwIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iNCIvPgogIDwhLS0gSGVhZCAtLT4KICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjM4IiByPSIxOCIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8IS0tIFdpbmcgLS0+CiAgPHBhdGggZD0iTSAzMiA2MiBRIDQ2IDc2IDYwIDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8IS0tIEV5ZSAtLT4KICA8Y2lyY2xlIGN4PSI3NiIgY3k9IjM1IiByPSIyLjgiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEJlYWsgLS0+CiAgPHBhdGggZD0iTSA4NiAzNyBMIDk4IDQxIEwgODYgNDUgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDwhLS0gVHVmdCAtLT4KICA8cGF0aCBkPSJNIDY1IDE4IEwgNjYgMTAgTSA3MCAxNiBMIDcyIDggTSA3NSAxOCBMIDc3IDEwIgogICAgICAgIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>24</small></div>
+        </div>
+        <div class="tradeoff"><b>베스트:</b>&nbsp;chat 헤더</div>
+      </div>
+
+      <div class="bot-card">
+        <h3>C. 치비 마스코트</h3>
+        <p class="desc">정면 얼굴 큰 마스코트. 오렌지 몸통에 네이비 라인. 챗봇 웰컴 화면에 가장 친근함.</p>
+        <div class="icon-row">
+          <div class="i-lg"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQzogQ2hpYmkgbWFzY290IOKAlCBmcm9udC1mYWNpbmcsIGJpZyBoZWFkLCBmcmllbmRseSBjaGF0Ym90IGZlZWwgLS0+CiAgPCEtLSBCb2R5IC0tPgogIDxlbGxpcHNlIGN4PSI1MCIgY3k9Ijc0IiByeD0iMzAiIHJ5PSIxNiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8IS0tIEZlZXQgLS0+CiAgPHBhdGggZD0iTSAzOCA4OCBMIDMyIDk0IEwgNDQgOTQgWiIgZmlsbD0iI0U2N0UyMiIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0gNjIgODggTCA1NiA5NCBMIDY4IDk0IFoiIGZpbGw9IiNFNjdFMjIiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI0MiIgcj0iMjYiIGZpbGw9IiNGNUE2MjMiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPCEtLSBFeWUgd2hpdGVzIC0tPgogIDxjaXJjbGUgY3g9IjQyIiBjeT0iMzgiIHI9IjUiIGZpbGw9IiNGRkZGRkYiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8Y2lyY2xlIGN4PSI1OCIgY3k9IjM4IiByPSI1IiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPCEtLSBQdXBpbHMgLS0+CiAgPGNpcmNsZSBjeD0iNDMiIGN5PSIzOSIgcj0iMiIgZmlsbD0iIzAwM0E3NSIvPgogIDxjaXJjbGUgY3g9IjU5IiBjeT0iMzkiIHI9IjIiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEJlYWsgLS0+CiAgPHBhdGggZD0iTSA0MiA0OCBRIDUwIDQ0IDU4IDQ4IEwgNTYgNTYgUSA1MCA1OCA0NCA1NiBaIgogICAgICAgIGZpbGw9IiNFNjdFMjIiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8IS0tIENoZWVrIGJsdXNoIC0tPgogIDxlbGxpcHNlIGN4PSIzNCIgY3k9IjQ4IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNFNzRDM0MiIG9wYWNpdHk9IjAuNSIvPgogIDxlbGxpcHNlIGN4PSI2NiIgY3k9IjQ4IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNFNzRDM0MiIG9wYWNpdHk9IjAuNSIvPgo8L3N2Zz4K" alt=""><small>64</small></div>
+          <div class="i-md"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQzogQ2hpYmkgbWFzY290IOKAlCBmcm9udC1mYWNpbmcsIGJpZyBoZWFkLCBmcmllbmRseSBjaGF0Ym90IGZlZWwgLS0+CiAgPCEtLSBCb2R5IC0tPgogIDxlbGxpcHNlIGN4PSI1MCIgY3k9Ijc0IiByeD0iMzAiIHJ5PSIxNiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8IS0tIEZlZXQgLS0+CiAgPHBhdGggZD0iTSAzOCA4OCBMIDMyIDk0IEwgNDQgOTQgWiIgZmlsbD0iI0U2N0UyMiIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0gNjIgODggTCA1NiA5NCBMIDY4IDk0IFoiIGZpbGw9IiNFNjdFMjIiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI0MiIgcj0iMjYiIGZpbGw9IiNGNUE2MjMiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPCEtLSBFeWUgd2hpdGVzIC0tPgogIDxjaXJjbGUgY3g9IjQyIiBjeT0iMzgiIHI9IjUiIGZpbGw9IiNGRkZGRkYiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8Y2lyY2xlIGN4PSI1OCIgY3k9IjM4IiByPSI1IiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPCEtLSBQdXBpbHMgLS0+CiAgPGNpcmNsZSBjeD0iNDMiIGN5PSIzOSIgcj0iMiIgZmlsbD0iIzAwM0E3NSIvPgogIDxjaXJjbGUgY3g9IjU5IiBjeT0iMzkiIHI9IjIiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEJlYWsgLS0+CiAgPHBhdGggZD0iTSA0MiA0OCBRIDUwIDQ0IDU4IDQ4IEwgNTYgNTYgUSA1MCA1OCA0NCA1NiBaIgogICAgICAgIGZpbGw9IiNFNjdFMjIiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8IS0tIENoZWVrIGJsdXNoIC0tPgogIDxlbGxpcHNlIGN4PSIzNCIgY3k9IjQ4IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNFNzRDM0MiIG9wYWNpdHk9IjAuNSIvPgogIDxlbGxpcHNlIGN4PSI2NiIgY3k9IjQ4IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNFNzRDM0MiIG9wYWNpdHk9IjAuNSIvPgo8L3N2Zz4K" alt=""><small>32</small></div>
+          <div class="i-sm"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgQzogQ2hpYmkgbWFzY290IOKAlCBmcm9udC1mYWNpbmcsIGJpZyBoZWFkLCBmcmllbmRseSBjaGF0Ym90IGZlZWwgLS0+CiAgPCEtLSBCb2R5IC0tPgogIDxlbGxpcHNlIGN4PSI1MCIgY3k9Ijc0IiByeD0iMzAiIHJ5PSIxNiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8IS0tIEZlZXQgLS0+CiAgPHBhdGggZD0iTSAzOCA4OCBMIDMyIDk0IEwgNDQgOTQgWiIgZmlsbD0iI0U2N0UyMiIgc3Ryb2tlPSIjMDAzQTc1IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0gNjIgODggTCA1NiA5NCBMIDY4IDk0IFoiIGZpbGw9IiNFNjdFMjIiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8IS0tIEhlYWQgLS0+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI0MiIgcj0iMjYiIGZpbGw9IiNGNUE2MjMiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPCEtLSBFeWUgd2hpdGVzIC0tPgogIDxjaXJjbGUgY3g9IjQyIiBjeT0iMzgiIHI9IjUiIGZpbGw9IiNGRkZGRkYiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8Y2lyY2xlIGN4PSI1OCIgY3k9IjM4IiByPSI1IiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPCEtLSBQdXBpbHMgLS0+CiAgPGNpcmNsZSBjeD0iNDMiIGN5PSIzOSIgcj0iMiIgZmlsbD0iIzAwM0E3NSIvPgogIDxjaXJjbGUgY3g9IjU5IiBjeT0iMzkiIHI9IjIiIGZpbGw9IiMwMDNBNzUiLz4KICA8IS0tIEJlYWsgLS0+CiAgPHBhdGggZD0iTSA0MiA0OCBRIDUwIDQ0IDU4IDQ4IEwgNTYgNTYgUSA1MCA1OCA0NCA1NiBaIgogICAgICAgIGZpbGw9IiNFNjdFMjIiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8IS0tIENoZWVrIGJsdXNoIC0tPgogIDxlbGxpcHNlIGN4PSIzNCIgY3k9IjQ4IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNFNzRDM0MiIG9wYWNpdHk9IjAuNSIvPgogIDxlbGxpcHNlIGN4PSI2NiIgY3k9IjQ4IiByeD0iMyIgcnk9IjIiIGZpbGw9IiNFNzRDM0MiIG9wYWNpdHk9IjAuNSIvPgo8L3N2Zz4K" alt=""><small>24</small></div>
+        </div>
+        <div class="tradeoff"><b>베스트:</b>&nbsp;웰컴 아바타</div>
+      </div>
+
+      <div class="bot-card">
+        <h3>D. 머리만</h3>
+        <p class="desc">머리 + 부리만. 가장 축약적, 아이콘 같은 느낌. 24px 에서 가장 또렷하지만 "오리"보다 "새" 느낌 강함.</p>
+        <div class="icon-row">
+          <div class="i-lg"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgRDogSGVhZC1vbmx5IGljb24g4oCUIG1vc3QgY29tcGFjdCwgcHJvZmlsZSB2aWV3IC0tPgogIDwhLS0gSGVhZCAtLT4KICA8Y2lyY2xlIGN4PSI0NCIgY3k9IjUwIiByPSIzMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDY4IDQ0IEwgOTQgNTAgTCA2OCA1OCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gQmVhayBsaW5lIGRldGFpbCAtLT4KICA8cGF0aCBkPSJNIDcyIDUwIEwgODggNTAiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuNiIvPgogIDwhLS0gRXllIC0tPgogIDxjaXJjbGUgY3g9IjUwIiBjeT0iNDIiIHI9IjUuNSIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9IjUxIiBjeT0iNDIiIHI9IjIuOCIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVHVmdCAtLT4KICA8cGF0aCBkPSJNIDM4IDE0IEwgNDAgNiBNIDQ0IDEyIEwgNDYgNCBNIDUwIDE0IEwgNTIgNiIKICAgICAgICBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMy41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>64</small></div>
+          <div class="i-md"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgRDogSGVhZC1vbmx5IGljb24g4oCUIG1vc3QgY29tcGFjdCwgcHJvZmlsZSB2aWV3IC0tPgogIDwhLS0gSGVhZCAtLT4KICA8Y2lyY2xlIGN4PSI0NCIgY3k9IjUwIiByPSIzMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDY4IDQ0IEwgOTQgNTAgTCA2OCA1OCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gQmVhayBsaW5lIGRldGFpbCAtLT4KICA8cGF0aCBkPSJNIDcyIDUwIEwgODggNTAiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuNiIvPgogIDwhLS0gRXllIC0tPgogIDxjaXJjbGUgY3g9IjUwIiBjeT0iNDIiIHI9IjUuNSIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9IjUxIiBjeT0iNDIiIHI9IjIuOCIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVHVmdCAtLT4KICA8cGF0aCBkPSJNIDM4IDE0IEwgNDAgNiBNIDQ0IDEyIEwgNDYgNCBNIDUwIDE0IEwgNTIgNiIKICAgICAgICBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMy41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>32</small></div>
+          <div class="i-sm"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIER1Y2sgRDogSGVhZC1vbmx5IGljb24g4oCUIG1vc3QgY29tcGFjdCwgcHJvZmlsZSB2aWV3IC0tPgogIDwhLS0gSGVhZCAtLT4KICA8Y2lyY2xlIGN4PSI0NCIgY3k9IjUwIiByPSIzMiIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gQmVhayAtLT4KICA8cGF0aCBkPSJNIDY4IDQ0IEwgOTQgNTAgTCA2OCA1OCBaIiBmaWxsPSIjRjVBNjIzIiBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gQmVhayBsaW5lIGRldGFpbCAtLT4KICA8cGF0aCBkPSJNIDcyIDUwIEwgODggNTAiIHN0cm9rZT0iIzAwM0E3NSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuNiIvPgogIDwhLS0gRXllIC0tPgogIDxjaXJjbGUgY3g9IjUwIiBjeT0iNDIiIHI9IjUuNSIgZmlsbD0iI0ZGRkZGRiIvPgogIDxjaXJjbGUgY3g9IjUxIiBjeT0iNDIiIHI9IjIuOCIgZmlsbD0iIzAwM0E3NSIvPgogIDwhLS0gVHVmdCAtLT4KICA8cGF0aCBkPSJNIDM4IDE0IEwgNDAgNiBNIDQ0IDEyIEwgNDYgNCBNIDUwIDE0IEwgNTIgNiIKICAgICAgICBzdHJva2U9IiMwMDNBNzUiIHN0cm9rZS13aWR0aD0iMy41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==" alt=""><small>24</small></div>
+        </div>
+        <div class="tradeoff"><b>베스트:</b>&nbsp;축약 아이콘</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px; padding: 20px 24px;">
+      <div class="label">💡 조합 추천</div>
+      <p style="margin: 8px 0 0; font-size: 13px; color: var(--text); line-height: 1.6;">
+        실제로는 <b style="color: var(--navy)">A (탭바) + C (웰컴 아바타)</b> 조합이 가장 좋습니다. 탭바에서는 A의 단색 실루엣이 다른 Ionicons 와 톤 맞고, 채팅 화면 웰컴 카드에서는 C의 표정이 챗봇에 따뜻함을 줍니다. 같은 캐릭터의 두 포즈로 인식됨.
+      </p>
+    </div>
+
+    <!-- ═══════════════════════ Section 5: Logo lockup ═══════════════════════ -->
+    <h2 class="section">5. 로고 락업 (Logo Lockup)</h2>
+    <p class="section-desc">아이콘 + 워드마크 조합. Onboarding, Home 헤더, 외부 공유용. 2가지 제안.</p>
+
+    <div class="grid2">
+      <div class="lockup-card h">
+        <h3>수평형 (Horizontal) — Home 헤더/공유용</h3>
+        <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTYwIDE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIEljb24gbGVmdCAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMCAzMCkiPgogICAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMiIgZmlsbD0iIzAwM0E3NSIvPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTAgNTApIHNjYWxlKDAuMDk1KSB0cmFuc2xhdGUoLTUxMiAtNTEyKSI+CiAgICAgIDxwYXRoIGQ9Ik0gNTEyIDIyMCBMIDIyMCA0ODAgTCAyMjAgODIwIEwgODA0IDgyMCBMIDgwNCA0ODAgWiIKICAgICAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjQ0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAgICAgPHBhdGggZD0iTSA1MTIgMjIwIEwgMjIwIDQ4MCBMIDgwNCA0ODAgWiIgZmlsbD0iI0Y1QTYyMyIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjQ0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0gMzIwIDY0MCBMIDQ2MCA3NjAgTCA3MzAgNTAwIgogICAgICAgICAgICBzdHJva2U9IiNGNUE2MjMiIHN0cm9rZS13aWR0aD0iODAiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPC9nPgogIDwvZz4KICA8IS0tIFdvcmRtYXJrIC0tPgogIDx0ZXh0IHg9IjE0NSIgeT0iODgiCiAgICAgICAgZm9udC1mYW1pbHk9IidQcmV0ZW5kYXJkJywgJ0FwcGxlIFNEIEdvdGhpYyBOZW8nLCAnTm90byBTYW5zIEtSJywgc2Fucy1zZXJpZiIKICAgICAgICBmb250LXNpemU9IjU2IiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAzQTc1IiBsZXR0ZXItc3BhY2luZz0iLTIiPuydtOyCrOydtOyDgeustDwvdGV4dD4KICA8dGV4dCB4PSIxNDUiIHk9IjEyMiIKICAgICAgICBmb250LWZhbWlseT0iJ1ByZXRlbmRhcmQnLCAnQXBwbGUgU0QgR290aGljIE5lbycsICdOb3RvIFNhbnMgS1InLCBzYW5zLXNlcmlmIgogICAgICAgIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiM1QTY1NzMiIGxldHRlci1zcGFjaW5nPSItMC4zIj7snbTsgqzrtoDthLAg7KCV7LCp6rmM7KeALCDtlZwg6rOz7JeQ7IScPC90ZXh0Pgo8L3N2Zz4K" alt="">
+      </div>
+      <div class="lockup-card s">
+        <h3>수직형 (Stacked) — Onboarding/Splash용</h3>
+        <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYwIDQyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIEljb24gdG9wIGNlbnRlciAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMjUgMzApIj4KICAgIDxyZWN0IHdpZHRoPSIxMTAiIGhlaWdodD0iMTEwIiByeD0iMjQiIGZpbGw9IiMwMDNBNzUiLz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU1IDU1KSBzY2FsZSgwLjEwNSkgdHJhbnNsYXRlKC01MTIgLTUxMikiPgogICAgICA8cGF0aCBkPSJNIDUxMiAyMjAgTCAyMjAgNDgwIEwgMjIwIDgyMCBMIDgwNCA4MjAgTCA4MDQgNDgwIFoiCiAgICAgICAgICAgIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0gNTEyIDIyMCBMIDIyMCA0ODAgTCA4MDQgNDgwIFoiIGZpbGw9IiNGNUE2MjMiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgICA8cGF0aCBkPSJNIDMyMCA2NDAgTCA0NjAgNzYwIEwgNzMwIDUwMCIKICAgICAgICAgICAgc3Ryb2tlPSIjRjVBNjIzIiBzdHJva2Utd2lkdGg9IjgwIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICAgIDwvZz4KICA8L2c+CiAgPCEtLSBXb3JkbWFyayAtLT4KICA8dGV4dCB4PSIxODAiIHk9IjIyMCIKICAgICAgICBmb250LWZhbWlseT0iJ1ByZXRlbmRhcmQnLCAnQXBwbGUgU0QgR290aGljIE5lbycsICdOb3RvIFNhbnMgS1InLCBzYW5zLXNlcmlmIgogICAgICAgIGZvbnQtc2l6ZT0iNTQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiMwMDNBNzUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSItMiI+7J207IKs7J207IOB66y0PC90ZXh0PgogIDx0ZXh0IHg9IjE4MCIgeT0iMjYwIgogICAgICAgIGZvbnQtZmFtaWx5PSInUHJldGVuZGFyZCcsICdBcHBsZSBTRCBHb3RoaWMgTmVvJywgJ05vdG8gU2FucyBLUicsIHNhbnMtc2VyaWYiCiAgICAgICAgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzVBNjU3MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9Ii0wLjMiPuydtOyCrOu2gO2EsCDsoJXssKnquYzsp4AsIO2VnCDqs7Psl5DshJw8L3RleHQ+Cjwvc3ZnPgo=" alt="">
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ Section 6: Onboarding ═══════════════════════ -->
+    <h2 class="section">6. Onboarding 화면 — Before / After <span class="applied-badge">✓ 적용 완료</span></h2>
+    <p class="section-desc">현재 텍스트-only 헤더에 수직 락업(Stacked)을 붙이면 로고 인지도 ↑.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="label">Before (현재)</div>
+        <div class="onboard before">
+          <h1 class="brand">이사이상무</h1>
+          <p class="tagline">이사부터 정착까지, 한 곳에서</p>
+          <div class="feature"><div class="feature-dot">✓</div><div class="feature-text"><b>개인화 체크리스트</b><span>조건 입력만으로 D-day 타임라인과 법적 기한이 자동 생성</span></div></div>
+          <div class="feature"><div class="feature-dot">🛡</div><div class="feature-text"><b>SafeContract 해석</b><span>등기부등본을 쉬운 말로 해석하고 위험 요소 안내</span></div></div>
+          <div class="feature"><div class="feature-dot">📖</div><div class="feature-text"><b>법 조항 근거</b><span>모든 항목이 실제 법률 조항에 기반 — 출처 확인 가능</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">After (추천)</div>
+        <div class="onboard after">
+          <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYwIDQyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIEljb24gdG9wIGNlbnRlciAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMjUgMzApIj4KICAgIDxyZWN0IHdpZHRoPSIxMTAiIGhlaWdodD0iMTEwIiByeD0iMjQiIGZpbGw9IiMwMDNBNzUiLz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU1IDU1KSBzY2FsZSgwLjEwNSkgdHJhbnNsYXRlKC01MTIgLTUxMikiPgogICAgICA8cGF0aCBkPSJNIDUxMiAyMjAgTCAyMjAgNDgwIEwgMjIwIDgyMCBMIDgwNCA4MjAgTCA4MDQgNDgwIFoiCiAgICAgICAgICAgIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICAgIDxwYXRoIGQ9Ik0gNTEyIDIyMCBMIDIyMCA0ODAgTCA4MDQgNDgwIFoiIGZpbGw9IiNGNUE2MjMiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgICA8cGF0aCBkPSJNIDMyMCA2NDAgTCA0NjAgNzYwIEwgNzMwIDUwMCIKICAgICAgICAgICAgc3Ryb2tlPSIjRjVBNjIzIiBzdHJva2Utd2lkdGg9IjgwIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICAgIDwvZz4KICA8L2c+CiAgPCEtLSBXb3JkbWFyayAtLT4KICA8dGV4dCB4PSIxODAiIHk9IjIyMCIKICAgICAgICBmb250LWZhbWlseT0iJ1ByZXRlbmRhcmQnLCAnQXBwbGUgU0QgR290aGljIE5lbycsICdOb3RvIFNhbnMgS1InLCBzYW5zLXNlcmlmIgogICAgICAgIGZvbnQtc2l6ZT0iNTQiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiMwMDNBNzUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSItMiI+7J207IKs7J207IOB66y0PC90ZXh0PgogIDx0ZXh0IHg9IjE4MCIgeT0iMjYwIgogICAgICAgIGZvbnQtZmFtaWx5PSInUHJldGVuZGFyZCcsICdBcHBsZSBTRCBHb3RoaWMgTmVvJywgJ05vdG8gU2FucyBLUicsIHNhbnMtc2VyaWYiCiAgICAgICAgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzVBNjU3MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9Ii0wLjMiPuydtOyCrOu2gO2EsCDsoJXssKnquYzsp4AsIO2VnCDqs7Psl5DshJw8L3RleHQ+Cjwvc3ZnPgo=" alt="">
+          <div class="feature"><div class="feature-dot">✓</div><div class="feature-text"><b>개인화 체크리스트</b><span>조건 입력만으로 D-day 타임라인과 법적 기한이 자동 생성</span></div></div>
+          <div class="feature"><div class="feature-dot">🛡</div><div class="feature-text"><b>SafeContract 해석</b><span>등기부등본을 쉬운 말로 해석하고 위험 요소 안내</span></div></div>
+          <div class="feature"><div class="feature-dot">📖</div><div class="feature-text"><b>법 조항 근거</b><span>모든 항목이 실제 법률 조항에 기반 — 출처 확인 가능</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════ PART II — 디자인 개선 시안 ═══════════════════ -->
+    <!-- ═════════════════════════════════════════════════════════════════ -->
+
+    <div class="part-divider">
+      <div class="kicker">▸ Part II</div>
+      <h2>디자인 개선 7가지 · 추가 제안</h2>
+      <p>브랜드 통합 이후 발견된 시각적 개선 포인트. Before / After 로 비교, 원하는 것만 골라 적용 가능.</p>
+    </div>
+
+    <!-- ═══════════════════════ Improvement 1: Mascot empty states ═══════════════════════ -->
+    <h2 class="section"><span class="num">1</span>꽉꽉봇 마스코트를 빈 상태로 확장</h2>
+    <p class="section-desc">현재 빈 상태들은 평범한 아이콘 + 텍스트. 마스코트를 넣으면 3가지 감정(환영/안도/의아)으로 딜라이트 + 브랜드 일체감.</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before</span>
+        <div class="empty-row">
+          <div class="empty-card">
+            <div style="font-size:36px">📋</div>
+            <h4>체크리스트<br>시작하기</h4>
+            <p>조건 입력 → 타임라인 자동 생성</p>
+            <div class="btn">시작</div>
+          </div>
+          <div class="empty-card">
+            <div style="font-size:36px">✅</div>
+            <h4>위험 없음</h4>
+            <p>감지된 위험 요소가<br>없습니다</p>
+            <div class="btn">확인</div>
+          </div>
+          <div class="empty-card">
+            <div style="font-size:36px">🔍</div>
+            <h4>항목 없음</h4>
+            <p>항목을 찾을 수<br>없습니다</p>
+            <div class="btn">돌아가기</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="lbl after">After</span>
+        <div class="empty-row">
+          <div class="empty-card empty-card-after">
+            <svg class="duck-m" viewBox="0 0 100 120">
+              <g>
+                <circle cx="82" cy="22" r="14" fill="#FFFFFF" stroke="#003A75" stroke-width="2.5"/>
+                <text x="82" y="28" text-anchor="middle" font-size="16" font-weight="800" fill="#003A75">👋</text>
+              </g>
+              <use href="#duckC" x="0" y="14" width="80" height="80"/>
+              <circle cx="14" cy="28" r="2" fill="#F5A623"/>
+              <circle cx="8" cy="46" r="1.5" fill="#F5A623"/>
+              <circle cx="18" cy="62" r="2" fill="#F5A623"/>
+            </svg>
+            <h4>안녕하세요! 🐣</h4>
+            <p>조건 몇 개만 알려주세요<br>D-day 타임라인 만들어드릴게요</p>
+            <div class="btn orange">시작하기</div>
+          </div>
+
+          <div class="empty-card empty-card-after">
+            <svg class="duck-m" viewBox="0 0 100 120">
+              <rect x="16" y="16" width="6" height="3" fill="#F5A623" transform="rotate(30 19 17)"/>
+              <rect x="78" y="14" width="6" height="3" fill="#27AE60" transform="rotate(-20 81 15)"/>
+              <rect x="10" y="40" width="5" height="3" fill="#1F6FD0" transform="rotate(45 12 41)"/>
+              <rect x="86" y="46" width="5" height="3" fill="#E74C3C" transform="rotate(-30 88 47)"/>
+              <circle cx="22" cy="30" r="2" fill="#F5A623"/>
+              <circle cx="82" cy="30" r="2" fill="#27AE60"/>
+              <g>
+                <circle cx="84" cy="20" r="12" fill="#27AE60" stroke="#FFFFFF" stroke-width="2"/>
+                <path d="M 78 20 L 82 24 L 90 16" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <use href="#duckC" x="0" y="14" width="80" height="80"/>
+            </svg>
+            <h4>이상 무! 🎉</h4>
+            <p>감지된 위험 요소가 없어요<br>안전한 계약입니다</p>
+            <div class="btn orange">확인</div>
+          </div>
+
+          <div class="empty-card empty-card-after">
+            <svg class="duck-m" viewBox="0 0 100 120">
+              <g>
+                <circle cx="78" cy="18" r="13" fill="#FFFFFF" stroke="#003A75" stroke-width="2.5"/>
+                <text x="78" y="24" text-anchor="middle" font-size="18" font-weight="900" fill="#003A75">?</text>
+              </g>
+              <circle cx="20" cy="24" r="2" fill="#9CA3AF"/>
+              <circle cx="16" cy="36" r="1.5" fill="#9CA3AF"/>
+              <use href="#duckC" x="0" y="14" width="80" height="80"/>
+            </svg>
+            <h4>음...?</h4>
+            <p>찾으시는 항목이<br>없는 것 같아요</p>
+            <div class="btn orange">돌아가기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> 새 SVG 3개 (duck-wave / duck-celebrate / duck-confused) 추가 · <code>index.tsx</code>, <code>safecontract.tsx</code>, <code>[id].tsx</code> 빈 상태 블록에 Image 삽입 · 30분</div>
+
+    <!-- ═══════════════════════ Improvement 2: Touch feedback ═══════════════════════ -->
+    <h2 class="section"><span class="num">2</span>터치 피드백 통일</h2>
+    <p class="section-desc">대부분 Pressable 에 press 피드백 없음. 오른쪽 After 버튼을 실제로 눌러보세요 ↓</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before</span>
+        <div class="phone-demo" style="display:flex; align-items:center; justify-content:center; min-height:120px">
+          <div class="demo-btn">시작하기</div>
+        </div>
+        <div class="demo-hint">👆 눌러도 변화 없음</div>
+      </div>
+      <div class="panel">
+        <span class="lbl after">After</span>
+        <div class="phone-demo" style="display:flex; align-items:center; justify-content:center; min-height:120px">
+          <div class="demo-btn press">시작하기</div>
+        </div>
+        <div class="demo-hint">👆 눌러보세요 — scale 0.96 + 어두워짐</div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> <code>components/AppPressable.tsx</code> 래퍼 1개 · iOS activeOpacity 0.7 + Android ripple · 주요 CTA 전역 치환 · 40분</div>
+
+    <!-- ═══════════════════════ Improvement 3: Contrast ═══════════════════════ -->
+    <h2 class="section"><span class="num">3</span>접근성 — textMute 대비 개선</h2>
+    <p class="section-desc">현재 <code>textMute #9CA3AF</code> 는 WCAG AA 미달. 한 줄 수정으로 해결.</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before · #9CA3AF</span>
+        <div class="contrast-box">
+          <div class="contrast-sample old" style="font-size:11px">11px · 실거래가 · 국토부 API · 탭하여 상세</div>
+          <div class="contrast-sample old" style="font-size:13px">13px · 이사까지 D-15 일 · 분당구</div>
+          <div class="contrast-sample old" style="font-size:15px">15px · 조건 입력만으로 타임라인 생성</div>
+        </div>
+        <div class="wcag fail">❌ WCAG AA 미달 — contrast 2.8:1</div>
+      </div>
+      <div class="panel">
+        <span class="lbl after">After · #6B7280</span>
+        <div class="contrast-box">
+          <div class="contrast-sample new" style="font-size:11px">11px · 실거래가 · 국토부 API · 탭하여 상세</div>
+          <div class="contrast-sample new" style="font-size:13px">13px · 이사까지 D-15 일 · 분당구</div>
+          <div class="contrast-sample new" style="font-size:15px">15px · 조건 입력만으로 타임라인 생성</div>
+        </div>
+        <div class="wcag pass">✓ WCAG AA 통과 — contrast 4.4:1</div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> <code>theme/colors.ts</code> 한 줄 수정 <code>textMute: '#9CA3AF' → '#6B7280'</code> · 5분</div>
+
+    <!-- ═══════════════════════ Improvement 4: Orange accent ═══════════════════════ -->
+    <h2 class="section"><span class="num">4</span>오렌지 활용도 ↑ (브랜드 존재감)</h2>
+    <p class="section-desc">오렌지가 progress bar 1곳만 쓰임. 숫자/지표에 오렌지 입히면 브랜드 인상 + 정보 계층 분리.</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before</span>
+        <div class="hero-card">
+          <div class="hero-label">이사까지</div>
+          <div class="hero-dday">D-15</div>
+          <div class="hero-date">2026-04-30 · 분당구</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="v">572</div><div class="u">건</div><div class="l">법률 인용</div></div>
+          <div class="stat-card"><div class="v">200</div><div class="u">청크</div><div class="l">행정 절차</div></div>
+          <div class="stat-card"><div class="v">34</div><div class="u">개사</div><div class="l">지역 매핑</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="lbl after">After</span>
+        <div class="hero-card after">
+          <div class="hero-label">이사까지</div>
+          <div class="hero-dday">D-15</div>
+          <div class="hero-date">2026-04-30 · 분당구</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card after"><div class="v">572</div><div class="u">건</div><div class="l">법률 인용</div></div>
+          <div class="stat-card after"><div class="v">200</div><div class="u">청크</div><div class="l">행정 절차</div></div>
+          <div class="stat-card after"><div class="v">34</div><div class="u">개사</div><div class="l">지역 매핑</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> <code>index.tsx</code> heroDay color + heroCard borderLeft + statValue color · 20분</div>
+
+    <!-- ═══════════════════════ Improvement 5: Loading storytelling ═══════════════════════ -->
+    <h2 class="section"><span class="num">5</span>로딩 상태 스토리텔링</h2>
+    <p class="section-desc">현재는 "분석 중..." 한 문장. 3단계 로테이션으로 LLM 이 실제 뭘 하는지 보여줌 → 기다림 체감 시간 ↓</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before</span>
+        <div style="padding: 24px 0; display:flex; justify-content:center">
+          <div class="loader">
+            <div class="spinner"></div>
+            <div class="loader-text">분석 중...</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="lbl after">After · 3초마다 로테이션</span>
+        <div style="padding: 24px 0; display:flex; justify-content:center">
+          <div class="loader after">
+            <div class="spinner"></div>
+            <div class="loader-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> <code>lib/useRotatingText.ts</code> 훅 + <code>safecontract.tsx</code>, <code>checklist.tsx</code> 로딩 블록 적용 · 45분</div>
+
+    <!-- ═══════════════════════ Improvement 6: Palette cleanup ═══════════════════════ -->
+    <h2 class="section"><span class="num">6</span>팔레트 정리 (기술 부채)</h2>
+    <p class="section-desc">하드코딩된 <code>#FEE</code>, <code>#FFF4E6</code>, <code>#B8D4EC</code> 10+ 곳. 네이밍된 토큰으로 승격 → 일관성 + 향후 다크모드 대비.</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before — 하드코딩 산재</span>
+        <div class="swatch-grid">
+          <div class="swatch hardcoded">
+            <div class="color-box" style="background:#FEE"></div>
+            <div class="name">checklist.tsx:932</div><div class="hex">#FEE</div>
+          </div>
+          <div class="swatch hardcoded">
+            <div class="color-box" style="background:#FFF4E6"></div>
+            <div class="name">safecontract.tsx:978</div><div class="hex">#FFF4E6</div>
+          </div>
+          <div class="swatch hardcoded">
+            <div class="color-box" style="background:#B8D4EC"></div>
+            <div class="name">index.tsx:383</div><div class="hex">#B8D4EC</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="lbl after">After — colors.ts 토큰</span>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="color-box" style="background:#FEE"></div>
+            <div class="name">dangerBg</div><div class="hex">colors.dangerBg</div>
+          </div>
+          <div class="swatch">
+            <div class="color-box" style="background:#FFF4E6"></div>
+            <div class="name">warningBg</div><div class="hex">colors.warningBg</div>
+          </div>
+          <div class="swatch">
+            <div class="color-box" style="background:#B8D4EC"></div>
+            <div class="name">primaryMute</div><div class="hex">colors.primaryMute</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> <code>colors.ts</code> 에 4~5개 토큰 추가 · 전역 찾기/바꾸기 · 30분</div>
+
+    <!-- ═══════════════════════ Improvement 7: Card hierarchy ═══════════════════════ -->
+    <h2 class="section"><span class="num">7</span>카드 계층 재정비</h2>
+    <p class="section-desc">체크리스트 카드가 title/date/citation 모두 같은 무게. 3-tier 위계로 스캔 부담 ↓</p>
+
+    <div class="pair">
+      <div class="panel">
+        <span class="lbl before">Before — 평면</span>
+        <div class="list-card before">
+          <div>전입신고 (14일 이내)</div>
+          <div class="lc-meta">마감: 2026-04-30 · 정부24</div>
+          <div class="lc-cite">📚 주민등록법 제10조</div>
+        </div>
+        <div class="list-card before">
+          <div>확정일자 신청</div>
+          <div class="lc-meta">마감: 2026-05-05 · 주민센터</div>
+          <div class="lc-cite">📚 주택임대차보호법 제3조의2</div>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="lbl after">After — 3-tier 위계</span>
+        <div class="list-card after">
+          <div class="lc-title">전입신고 (14일 이내)</div>
+          <div class="lc-meta"><span>📅 2026-04-30</span><span>·</span><span>🏛 정부24</span></div>
+          <div class="lc-cite">📚 주민등록법 제10조</div>
+        </div>
+        <div class="list-card after">
+          <div class="lc-title">확정일자 신청</div>
+          <div class="lc-meta"><span>📅 2026-05-05</span><span>·</span><span>🏛 주민센터</span></div>
+          <div class="lc-cite">📚 주택임대차보호법 제3조의2</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adopt"><b>채택 시:</b> <code>checklist.tsx</code> renderItem 카드 스타일 업데이트 — 타이틀 강조 / 메타 아이콘화 / citation pill · 45분</div>
+
+    <!-- ═══════════════════════ Recommendation ═══════════════════════ -->
+    <div class="recommendation">
+      <h2>📌 적용 순서 추천</h2>
+      <ul>
+        <li><b>[Part I]</b> 브랜드 통합 — 로고/오리/온보딩 모두 코드 적용 완료 ✓</li>
+        <li><b>[Part II] #3 textMute 대비</b> — 5분, 즉시 WCAG 통과</li>
+        <li><b>[Part II] #1 마스코트 빈 상태</b> — 30분, 가장 큰 시각적 인상</li>
+        <li><b>[Part II] #2 터치 피드백</b> — 40분, 앱 전반 "살아있는 느낌"</li>
+        <li><b>[Part II] #4 오렌지 하이라이트</b> — 20분, 브랜드 존재감 ↑</li>
+        <li><b>[Part II] #6 팔레트 정리</b> — 30분, 기술 부채 해소</li>
+        <li><b>[Part II] #5 로딩 스토리텔링</b> — 45분, LLM 체감시간 ↓</li>
+        <li><b>[Part II] #7 카드 계층</b> — 45분, 리스트 스캔 부담 ↓</li>
+      </ul>
+      <p style="margin: 14px 0 0; font-size: 13px; opacity: 0.85;">⏱ Part II 전체 ~3.5시간. 1~4번만 해도 2시간 내 앱 전반 인상이 확 달라짐.</p>
+    </div>
+  </div>
+</body>
+</html>

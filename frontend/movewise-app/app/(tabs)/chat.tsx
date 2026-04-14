@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -19,6 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppPressable } from '../../components/AppPressable';
 import { api, ChatCitation, ChatResponse } from '../../lib/api';
 import { Text } from '../../lib/AppText';
 import { buildMobileLawUrl, parseLawTitle } from '../../lib/lawUrl';
@@ -99,10 +101,17 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
         <View style={styles.header}>
-          <Text style={styles.h1}>🐤 꽉꽉봇</Text>
-          <Text style={styles.h1Sub}>
-            이사·전월세 궁금한 점을 물어보세요
-          </Text>
+          <Image
+            source={require('../../assets/duck-chat-header.png')}
+            style={styles.headerDuck}
+            resizeMode="contain"
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.h1}>꽉꽉봇</Text>
+            <Text style={styles.h1Sub}>
+              이사·전월세 궁금한 점을 물어보세요
+            </Text>
+          </View>
         </View>
 
         <FlatList
@@ -157,13 +166,13 @@ export default function ChatScreen() {
             returnKeyType="send"
             editable={!loading}
           />
-          <Pressable
+          <AppPressable
             style={[styles.sendBtn, (!input.trim() || loading) && { opacity: 0.4 }]}
             onPress={() => send(input)}
             disabled={!input.trim() || loading}
           >
             <Ionicons name="send" size={20} color="#fff" />
-          </Pressable>
+          </AppPressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -249,7 +258,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  header: { padding: spacing.lg, paddingBottom: spacing.sm },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  headerDuck: { width: 64, height: 64 },
   h1: { ...typography.display },
   h1Sub: { ...typography.caption, marginTop: spacing.xs },
   messages: {

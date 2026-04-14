@@ -1,0 +1,23 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#F5A623"/>
+  <!-- Shield -->
+  <path d="M 256 90
+           L 390 135
+           L 390 280
+           Q 390 390 256 440
+           Q 122 390 122 280
+           L 122 135 Z"
+        fill="#003A75" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round"/>
+  <!-- Inner outline -->
+  <path d="M 256 120
+           L 368 152
+           L 368 280
+           Q 368 372 256 416
+           Q 144 372 144 280
+           L 144 152 Z"
+        fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" opacity="0.4"/>
+  <!-- Checkmark -->
+  <path d="M 178 270 L 238 330 L 342 202"
+        stroke="#FFFFFF" stroke-width="34" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

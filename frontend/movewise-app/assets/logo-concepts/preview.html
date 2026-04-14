@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>이사이상무 — 로고 컨셉 프리뷰</title>
+<style>
+  :root {
+    --navy: #003A75;
+    --orange: #F5A623;
+    --bg: #F5F7FB;
+    --card: #FFFFFF;
+    --text: #0F1822;
+    --sub: #5A6573;
+    --border: #E5E8EB;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 48px 24px 80px;
+  }
+  header {
+    max-width: 1120px;
+    margin: 0 auto 40px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    color: var(--navy);
+  }
+  .subtitle {
+    color: var(--sub);
+    font-size: 15px;
+    margin: 0;
+  }
+  .grid {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 2px 8px rgba(0,58,117,0.04);
+  }
+  .card h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--navy);
+  }
+  .card .concept-desc {
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: var(--sub);
+    line-height: 1.5;
+  }
+  .previews {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+  .size {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .size img {
+    display: block;
+    background: transparent;
+  }
+  .s-large  img { width: 160px; height: 160px; border-radius: 36px; }
+  .s-medium img { width: 72px;  height: 72px;  border-radius: 16px; }
+  .s-small  img { width: 40px;  height: 40px;  border-radius: 9px; }
+  .size small { font-size: 10px; color: var(--sub); }
+  .splash-row {
+    max-width: 1120px;
+    margin: 48px auto 0;
+  }
+  .splash-row h2 {
+    color: var(--navy);
+    font-size: 18px;
+    margin: 0 0 12px;
+  }
+  .splash-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .splash {
+    aspect-ratio: 9/16;
+    background: var(--navy);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .splash.light { background: #E8F1FB; }
+  .splash.white { background: #FFFFFF; border: 1px solid var(--border); }
+  .splash img { width: 40%; }
+  .splash-label {
+    text-align: center;
+    font-size: 12px;
+    color: var(--sub);
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>이사이상무 · 로고 컨셉</h1>
+    <p class="subtitle">5 concepts · 브랜드 팔레트 navy #003A75 + orange #F5A623 · SVG 원본 (무한 확대 가능)</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1. 이사 박스 + 체크</h2>
+      <p class="concept-desc">가장 직관적. 아이소메트릭 이사 박스 위에 체크 마크 — "짐 포장 완료"의 시각화. 앱 아이콘으로 작게 줄여도 박스 형태가 또렷함.</p>
+      <div class="previews">
+        <div class="size s-large"><img src="concept-1-box.svg" alt=""><small>1024</small></div>
+        <div class="size s-medium"><img src="concept-1-box.svg" alt=""><small>180</small></div>
+        <div class="size s-small"><img src="concept-1-box.svg" alt=""><small>40</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. 집 + 체크</h2>
+      <p class="concept-desc">집 실루엣 안에 큰 체크 마크. "새 집으로 이사 완료" 의미. 지붕은 오렌지, 본체는 투명 — 강한 대비로 기억에 남음.</p>
+      <div class="previews">
+        <div class="size s-large"><img src="concept-2-house.svg" alt=""><small>1024</small></div>
+        <div class="size s-medium"><img src="concept-2-house.svg" alt=""><small>180</small></div>
+        <div class="size s-small"><img src="concept-2-house.svg" alt=""><small>40</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. 방패 + 체크 (추천)</h2>
+      <p class="concept-desc">"이상무"의 군대식 확인 의미를 가장 잘 살림. 방패는 SafeContract(등기부 해석기) 의 "안전한 이사" 메시지와도 정합. 앱 아이콘으로 가장 강함.</p>
+      <div class="previews">
+        <div class="size s-large"><img src="concept-3-shield.svg" alt=""><small>1024</small></div>
+        <div class="size s-medium"><img src="concept-3-shield.svg" alt=""><small>180</small></div>
+        <div class="size s-small"><img src="concept-3-shield.svg" alt=""><small>40</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4. 이사 여정 체크</h2>
+      <p class="concept-desc">체크 마크를 "옛 집 → 새 집" 이동 경로로 변환. 이사 여정 가이드라는 앱 정체성이 직관적으로 드러나지만, 작게 줄이면 디테일이 약해짐.</p>
+      <div class="previews">
+        <div class="size s-large"><img src="concept-4-journey.svg" alt=""><small>1024</small></div>
+        <div class="size s-medium"><img src="concept-4-journey.svg" alt=""><small>180</small></div>
+        <div class="size s-small"><img src="concept-4-journey.svg" alt=""><small>40</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>5. 한글 워드마크</h2>
+      <p class="concept-desc">"이사 / 이상무" 2단 타이포 + 오렌지 체크. 스플래시/헤더 용으로 가장 적합. 앱 아이콘 단독으로는 약할 수 있어 아이콘과 세트로 쓰는 것을 추천.</p>
+      <div class="previews">
+        <div class="size s-large"><img src="concept-5-wordmark.svg" alt=""><small>1024</small></div>
+        <div class="size s-medium"><img src="concept-5-wordmark.svg" alt=""><small>180</small></div>
+        <div class="size s-small"><img src="concept-5-wordmark.svg" alt=""><small>40</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="splash-row">
+    <h2>Splash screen 시뮬레이션</h2>
+    <div class="splash-grid">
+      <div>
+        <div class="splash"><img src="concept-1-box.svg" alt=""></div>
+        <div class="splash-label">1. Box</div>
+      </div>
+      <div>
+        <div class="splash"><img src="concept-2-house.svg" alt=""></div>
+        <div class="splash-label">2. House</div>
+      </div>
+      <div>
+        <div class="splash"><img src="concept-3-shield.svg" alt=""></div>
+        <div class="splash-label">3. Shield</div>
+      </div>
+      <div>
+        <div class="splash light"><img src="concept-4-journey.svg" alt=""></div>
+        <div class="splash-label">4. Journey</div>
+      </div>
+      <div>
+        <div class="splash white"><img src="concept-5-wordmark.svg" alt=""></div>
+        <div class="splash-label">5. Wordmark</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

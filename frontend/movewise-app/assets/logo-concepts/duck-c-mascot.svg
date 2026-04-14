@@ -1,0 +1,22 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Duck C: Chibi mascot — front-facing, big head, friendly chatbot feel -->
+  <!-- Body -->
+  <ellipse cx="50" cy="74" rx="30" ry="16" fill="#F5A623" stroke="#003A75" stroke-width="4"/>
+  <!-- Feet -->
+  <path d="M 38 88 L 32 94 L 44 94 Z" fill="#E67E22" stroke="#003A75" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M 62 88 L 56 94 L 68 94 Z" fill="#E67E22" stroke="#003A75" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Head -->
+  <circle cx="50" cy="42" r="26" fill="#F5A623" stroke="#003A75" stroke-width="4"/>
+  <!-- Eye whites -->
+  <circle cx="42" cy="38" r="5" fill="#FFFFFF" stroke="#003A75" stroke-width="2.5"/>
+  <circle cx="58" cy="38" r="5" fill="#FFFFFF" stroke="#003A75" stroke-width="2.5"/>
+  <!-- Pupils -->
+  <circle cx="43" cy="39" r="2" fill="#003A75"/>
+  <circle cx="59" cy="39" r="2" fill="#003A75"/>
+  <!-- Beak -->
+  <path d="M 42 48 Q 50 44 58 48 L 56 56 Q 50 58 44 56 Z"
+        fill="#E67E22" stroke="#003A75" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Cheek blush -->
+  <ellipse cx="34" cy="48" rx="3" ry="2" fill="#E74C3C" opacity="0.5"/>
+  <ellipse cx="66" cy="48" rx="3" ry="2" fill="#E74C3C" opacity="0.5"/>
+</svg>

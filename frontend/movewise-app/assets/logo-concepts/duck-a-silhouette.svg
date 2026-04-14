@@ -1,0 +1,16 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Duck A: Navy silhouette with orange beak — minimalist, readable at small sizes -->
+  <!-- Body -->
+  <ellipse cx="48" cy="64" rx="34" ry="20" fill="#003A75"/>
+  <!-- Head -->
+  <circle cx="70" cy="38" r="18" fill="#003A75"/>
+  <!-- Neck connection smoothing -->
+  <path d="M 58 48 Q 62 58 72 56 L 72 42 Z" fill="#003A75"/>
+  <!-- Beak -->
+  <path d="M 84 36 L 98 40 L 84 44 Z" fill="#F5A623" stroke="#F5A623" stroke-width="1" stroke-linejoin="round"/>
+  <!-- Eye (white ring + navy center) -->
+  <circle cx="74" cy="34" r="3.2" fill="#FFFFFF"/>
+  <circle cx="75" cy="34" r="1.6" fill="#003A75"/>
+  <!-- Tail tip -->
+  <path d="M 14 56 L 8 52 L 14 62 Z" fill="#003A75"/>
+</svg>

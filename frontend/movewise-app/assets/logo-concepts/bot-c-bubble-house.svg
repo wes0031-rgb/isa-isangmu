@@ -1,0 +1,25 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Option C: Speech bubble with mini house+check (ties to main logo) -->
+  <!-- Speech bubble -->
+  <path d="M 18 14
+           L 82 14
+           Q 90 14 90 22
+           L 90 62
+           Q 90 70 82 70
+           L 52 70
+           L 36 86
+           L 40 70
+           L 18 70
+           Q 10 70 10 62
+           L 10 22
+           Q 10 14 18 14 Z"
+        fill="#003A75"/>
+  <!-- Mini house inside -->
+  <path d="M 50 24 L 26 44 L 26 62 L 74 62 L 74 44 Z"
+        fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Roof accent -->
+  <path d="M 50 24 L 26 44 L 74 44 Z" fill="#F5A623" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Check -->
+  <path d="M 34 52 L 44 60 L 66 40"
+        stroke="#F5A623" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

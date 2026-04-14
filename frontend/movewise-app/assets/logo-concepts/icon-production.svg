@@ -1,0 +1,13 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Full square navy background (OS will apply its own rounding) -->
+  <rect width="1024" height="1024" fill="#003A75"/>
+  <!-- House outline -->
+  <path d="M 512 220 L 220 480 L 220 820 L 804 820 L 804 480 Z"
+        fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Roof fill accent -->
+  <path d="M 512 220 L 220 480 L 804 480 Z" fill="#F5A623" stroke="#FFFFFF" stroke-width="44" stroke-linejoin="round"/>
+  <!-- Big checkmark inside house body -->
+  <path d="M 320 640 L 460 760 L 730 500"
+        stroke="#F5A623" stroke-width="80" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

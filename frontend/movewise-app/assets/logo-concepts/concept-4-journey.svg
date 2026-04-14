@@ -1,0 +1,22 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#E8F1FB"/>
+
+  <!-- Old house (left, smaller, muted) -->
+  <g opacity="0.45">
+    <path d="M 120 300 L 80 330 L 80 400 L 160 400 L 160 330 Z"
+          fill="none" stroke="#003A75" stroke-width="10" stroke-linejoin="round"/>
+    <rect x="108" y="355" width="24" height="45" fill="none" stroke="#003A75" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Checkmark journey path (from old house → up → new house) -->
+  <path d="M 130 340 L 220 400 L 400 180"
+        stroke="#F5A623" stroke-width="42" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- New house (right, larger, prominent) -->
+  <g>
+    <path d="M 400 110 L 320 180 L 320 290 L 480 290 L 480 180 Z"
+          fill="#003A75" stroke="#003A75" stroke-width="10" stroke-linejoin="round"/>
+    <rect x="380" y="220" width="40" height="70" fill="#F5A623"/>
+  </g>
+</svg>

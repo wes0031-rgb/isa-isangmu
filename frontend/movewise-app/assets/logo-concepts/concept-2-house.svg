@@ -1,0 +1,12 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#003A75"/>
+  <!-- House outline -->
+  <path d="M 256 110 L 110 240 L 110 410 L 402 410 L 402 240 Z"
+        fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Roof fill accent -->
+  <path d="M 256 110 L 110 240 L 402 240 Z" fill="#F5A623" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round"/>
+  <!-- Big checkmark inside house body -->
+  <path d="M 160 320 L 230 380 L 365 250"
+        stroke="#F5A623" stroke-width="40" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

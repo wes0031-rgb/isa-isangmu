@@ -1,0 +1,15 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#003A75"/>
+  <g transform="translate(256 268)">
+    <!-- Back left face (darker) -->
+    <path d="M -140 -50 L 0 -120 L 0 20 L -140 90 Z" fill="#D88C0F" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Back right face -->
+    <path d="M 140 -50 L 0 -120 L 0 20 L 140 90 Z" fill="#F5A623" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Top lid -->
+    <path d="M -140 -50 L 0 -120 L 140 -50 L 0 20 Z" fill="#FFC766" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Tape seam on top -->
+    <path d="M -70 -85 L 70 -85" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <!-- Checkmark on right face -->
+    <path d="M 20 30 L 55 65 L 115 -15" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

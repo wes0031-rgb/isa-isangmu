@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform, View } from 'react-native';
+import { Image, Platform } from 'react-native';
 
-import { Text } from '../../lib/AppText';
 import { colors, typography } from '../../theme/colors';
 
 export default function TabsLayout() {
@@ -76,27 +75,15 @@ export default function TabsLayout() {
         options={{
           title: '꽉꽉봇',
           tabBarIcon: ({ focused }) => (
-            <View
+            <Image
+              source={require('../../assets/duck-tab.png')}
               style={{
                 width: 28,
                 height: 28,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: focused ? 1 : 0.55,
+                opacity: focused ? 1 : 0.5,
               }}
-            >
-              <Text
-                style={{
-                  fontSize: 22,
-                  lineHeight: 26,
-                  textAlign: 'center',
-                  // @ts-ignore — Android only, 이모지 상하 잘림 방지
-                  includeFontPadding: false,
-                }}
-              >
-                🐤
-              </Text>
-            </View>
+              resizeMode="contain"
+            />
           ),
         }}
       />

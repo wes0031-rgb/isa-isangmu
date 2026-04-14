@@ -1,0 +1,19 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Duck B: Classic rubber-duck feel — white body, navy outline, orange beak -->
+  <!-- Water ripples -->
+  <path d="M 8 84 Q 22 88 38 84 Q 54 80 70 84 Q 82 87 92 84"
+        stroke="#1F6FD0" stroke-width="2.5" fill="none" opacity="0.5" stroke-linecap="round"/>
+  <!-- Body -->
+  <ellipse cx="48" cy="66" rx="34" ry="20" fill="#FFFFFF" stroke="#003A75" stroke-width="4"/>
+  <!-- Head -->
+  <circle cx="70" cy="38" r="18" fill="#FFFFFF" stroke="#003A75" stroke-width="4"/>
+  <!-- Wing -->
+  <path d="M 32 62 Q 46 76 60 64" fill="none" stroke="#003A75" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Eye -->
+  <circle cx="76" cy="35" r="2.8" fill="#003A75"/>
+  <!-- Beak -->
+  <path d="M 86 37 L 98 41 L 86 45 Z" fill="#F5A623" stroke="#003A75" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Tuft -->
+  <path d="M 65 18 L 66 10 M 70 16 L 72 8 M 75 18 L 77 10"
+        stroke="#003A75" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

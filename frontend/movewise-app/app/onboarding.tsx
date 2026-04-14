@@ -3,8 +3,10 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { AppPressable } from '../components/AppPressable';
 
 import { Text } from '../lib/AppText';
 import { colors, radius, spacing, typography } from '../theme/colors';
@@ -32,6 +34,13 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
+        <View style={styles.logoBadge}>
+          <Image
+            source={require('../assets/splash-icon.png')}
+            style={styles.logoMark}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.logo}>이사이상무</Text>
         <Text style={styles.subtitle}>이사부터 정착까지, 한 곳에서</Text>
       </View>
@@ -48,9 +57,9 @@ export default function Onboarding() {
         ))}
       </View>
 
-      <Pressable style={styles.cta} onPress={() => router.replace('/(tabs)')}>
+      <AppPressable style={styles.cta} onPress={() => router.replace('/(tabs)')}>
         <Text style={styles.ctaText}>시작하기</Text>
-      </Pressable>
+      </AppPressable>
       <Text style={styles.disclaimer}>
         ※ 참고용 도구입니다. 법률 자문이 아닙니다.
       </Text>
@@ -67,11 +76,29 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginTop: spacing.xxl,
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
+  },
+  logoBadge: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  logoMark: {
+    width: 78,
+    height: 78,
   },
   logo: {
     ...typography.display,
-    fontSize: 36,
+    fontSize: 32,
   },
   subtitle: {
     ...typography.caption,

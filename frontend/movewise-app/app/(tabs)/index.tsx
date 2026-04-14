@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppPressable } from '../../components/AppPressable';
 import { api, MarketEstimate } from '../../lib/api';
 import { Text } from '../../lib/AppText';
 import {
@@ -144,23 +146,27 @@ export default function Home() {
             )}
           </View>
         ) : (
-          <Pressable
+          <AppPressable
             style={styles.emptyHero}
             onPress={() => router.push('/(tabs)/checklist')}
           >
-            <Ionicons name="add-circle" size={36} color={colors.primary} />
-            <Text style={styles.emptyHeroTitle}>체크리스트 시작하기</Text>
+            <Image
+              source={require('../../assets/duck-wave.png')}
+              style={styles.emptyHeroDuck}
+              resizeMode="contain"
+            />
+            <Text style={styles.emptyHeroTitle}>안녕하세요! 🐣</Text>
             <Text style={styles.emptyHeroSub}>
-              조건 입력 → D-day 타임라인 자동 생성
+              조건 몇 개만 알려주세요{'\n'}D-day 타임라인 만들어드릴게요
             </Text>
-          </Pressable>
+          </AppPressable>
         )}
 
         {/* Backend status */}
         <View
           style={[
             styles.statusCard,
-            { backgroundColor: healthError ? '#FEE' : colors.cardBg },
+            { backgroundColor: healthError ? colors.dangerBg : colors.cardBg },
           ]}
         >
           {healthError ? (
@@ -191,7 +197,7 @@ export default function Home() {
 
         {/* 내 지역 실거래가 카드 */}
         {realty && realty.median_price_krw && (
-          <Pressable
+          <AppPressable
             style={styles.realtyCard}
             onPress={() => router.push('/(tabs)/safecontract')}
           >
@@ -215,7 +221,7 @@ export default function Home() {
             <Text style={styles.realtyFooter}>
               아파트 매매 {realty.total_count}건 · 국토부 실거래가 API · 탭하여 상세 →
             </Text>
-          </Pressable>
+          </AppPressable>
         )}
 
         {/* Upcoming deadlines */}
@@ -276,7 +282,7 @@ export default function Home() {
 
         {/* Main CTAs */}
         <View style={styles.ctaGroup}>
-          <Pressable
+          <AppPressable
             style={styles.bigCta}
             onPress={() => router.push('/(tabs)/checklist')}
           >
@@ -298,9 +304,9 @@ export default function Home() {
               size={20}
               color={colors.textSub}
             />
-          </Pressable>
+          </AppPressable>
 
-          <Pressable
+          <AppPressable
             style={styles.bigCta}
             onPress={() => router.push('/(tabs)/safecontract')}
           >
@@ -320,7 +326,7 @@ export default function Home() {
               size={20}
               color={colors.textSub}
             />
-          </Pressable>
+          </AppPressable>
         </View>
 
         {/* Stats */}
@@ -374,23 +380,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg + 4,
     marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
   },
   heroHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  heroLabel: { color: '#B8D4EC', fontSize: 14, fontWeight: '700' },
-  heroRegion: { color: '#B8D4EC', fontSize: 13, fontWeight: '500' },
+  heroLabel: { color: colors.primaryMute, fontSize: 14, fontWeight: '700' },
+  heroRegion: { color: colors.primaryMute, fontSize: 13, fontWeight: '500' },
   heroDay: {
-    color: '#fff',
+    color: colors.accent,
     fontSize: 56,
     fontWeight: '900',
     marginTop: spacing.sm,
     letterSpacing: -1,
+    textShadowColor: 'rgba(245, 166, 35, 0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 12,
   },
   heroDate: {
-    color: '#B8D4EC',
+    color: colors.primaryMute,
     fontSize: 14,
     marginBottom: spacing.md,
     fontWeight: '500',
@@ -401,7 +412,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.xs,
   },
-  progressLabel: { color: '#B8D4EC', fontSize: 13, fontWeight: '600' },
+  progressLabel: { color: colors.primaryMute, fontSize: 13, fontWeight: '600' },
   progressValue: { color: '#fff', fontSize: 14, fontWeight: '800' },
   progressBar: {
     height: 8,
@@ -418,15 +429,19 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.primaryBg,
+    borderColor: colors.accent,
     borderStyle: 'dashed',
     marginBottom: spacing.md,
+  },
+  emptyHeroDuck: {
+    width: 96,
+    height: 112,
   },
   emptyHeroTitle: {
     ...typography.subtitle,
     marginTop: spacing.sm,
   },
-  emptyHeroSub: { ...typography.caption, marginTop: spacing.xs, textAlign: 'center' },
+  emptyHeroSub: { ...typography.caption, marginTop: spacing.xs, textAlign: 'center', lineHeight: 18 },
 
   // Status
   statusCard: {
@@ -570,7 +585,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
-  statValue: { fontSize: 26, fontWeight: '800', color: colors.primary },
+  statValue: { fontSize: 26, fontWeight: '800', color: colors.accent },
   statUnit: { ...typography.caption, fontSize: 11 },
   statLabel: { ...typography.caption, marginTop: spacing.xs, fontWeight: '600' },
 

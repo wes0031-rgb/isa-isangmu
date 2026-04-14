@@ -1,0 +1,12 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Transparent background — Android fills with adaptiveIcon.backgroundColor -->
+  <!-- Scale house to 82% to fit Android adaptive-icon safe zone (center ~66%) -->
+  <g transform="translate(512 512) scale(0.82) translate(-512 -512)">
+    <path d="M 512 220 L 220 480 L 220 820 L 804 820 L 804 480 Z"
+          fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M 512 220 L 220 480 L 804 480 Z" fill="#F5A623" stroke="#FFFFFF" stroke-width="44" stroke-linejoin="round"/>
+    <path d="M 320 640 L 460 760 L 730 500"
+          stroke="#F5A623" stroke-width="80" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

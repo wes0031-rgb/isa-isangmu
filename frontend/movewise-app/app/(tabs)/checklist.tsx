@@ -38,7 +38,14 @@ import {
   saveChecklist,
   setCompletion,
 } from '../../lib/storage';
+import { useRotatingText } from '../../lib/useRotatingText';
 import { colors, radius, spacing, typography } from '../../theme/colors';
+
+const CHECKLIST_LOADING_STEPS = [
+  '📋 조건 분석 중...',
+  '⚖️ 법령 조항 검색 중...',
+  '📅 D-day 타임라인 구성 중...',
+] as const;
 
 const HOUSEHOLDS: HouseholdType[] = ['자취', '신혼', '가족'];
 const CONTRACTS: ContractType[] = ['월세', '전세', '자가'];
@@ -94,6 +101,7 @@ export default function ChecklistScreen() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ChecklistResponse | null>(null);
   const [completions, setCompletions] = useState<CompletionMap>({});
+  const loadingMessage = useRotatingText(CHECKLIST_LOADING_STEPS, loading, 2500);
 
   // 탭 포커스마다 저장된 체크리스트 복원
   useFocusEffect(
@@ -274,6 +282,7 @@ export default function ChecklistScreen() {
               concernLabels={concernLabels}
               toggleConcern={toggleConcern}
               loading={loading}
+              loadingMessage={loadingMessage}
               error={error}
               submit={submit}
             />
@@ -348,6 +357,7 @@ interface FormViewProps {
   concernLabels: string[];
   toggleConcern: (label: string) => void;
   loading: boolean;
+  loadingMessage: string;
   error: string | null;
   submit: () => void;
 }
@@ -383,6 +393,7 @@ function FormView(props: FormViewProps) {
     concernLabels,
     toggleConcern,
     loading,
+    loadingMessage,
     error,
     submit,
   } = props;
@@ -557,7 +568,10 @@ function FormView(props: FormViewProps) {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <>
+            <ActivityIndicator color="#fff" />
+            <Text style={styles.submitText}>{loadingMessage}</Text>
+          </>
         ) : (
           <Text style={styles.submitText}>체크리스트 생성</Text>
         )}
@@ -923,13 +937,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     marginTop: spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   submitText: { color: '#fff', fontSize: 17, fontWeight: '800' },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#FEE',
+    backgroundColor: colors.dangerBg,
     padding: spacing.md,
     borderRadius: radius.md,
     marginTop: spacing.md,
@@ -939,7 +956,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.warningBg,
     padding: spacing.sm,
     borderRadius: radius.sm,
     marginBottom: spacing.md,
@@ -981,13 +998,18 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   checkbox: { paddingTop: 2 },
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.xs,
+    marginBottom: 6,
   },
   dDayBadge: {
     paddingHorizontal: spacing.sm,
@@ -995,25 +1017,42 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   dDayText: { color: '#fff', fontSize: 12, fontWeight: '800' },
-  itemTitle: { ...typography.bodyBold, flex: 1 },
+  itemTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.text,
+    lineHeight: 22,
+  },
   strike: { textDecorationLine: 'line-through' },
-  itemSubDate: { ...typography.caption, marginBottom: spacing.xs },
+  itemSubDate: {
+    fontSize: 11,
+    color: colors.textMute,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
   deadlineBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.xs,
+    marginBottom: 6,
   },
-  deadlineText: { color: colors.warning, fontSize: 13, fontWeight: '700' },
+  deadlineText: { color: colors.warning, fontSize: 12, fontWeight: '700' },
   citationShortRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: spacing.xs,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primaryBg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
   },
   citationShort: {
-    ...typography.caption,
-    flex: 1,
+    fontSize: 11,
+    color: colors.primary,
+    fontWeight: '700',
   },
   metaRow: {
     flexDirection: 'row',
@@ -1022,13 +1061,13 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   metaText: {
-    ...typography.caption,
+    fontSize: 11,
     flex: 1,
     fontWeight: '600',
-    color: colors.primary,
+    color: colors.textSub,
   },
   metaContact: {
-    ...typography.caption,
+    fontSize: 11,
     flex: 1,
     fontWeight: '700',
     color: colors.success,

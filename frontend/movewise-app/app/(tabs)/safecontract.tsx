@@ -8,6 +8,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -17,6 +18,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+import { AppPressable } from '../../components/AppPressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RegionPickerModal } from '../../components/RegionPickerModal';
@@ -30,7 +33,14 @@ import {
 import { Text } from '../../lib/AppText';
 import { alertAsync } from '../../lib/confirm';
 import { loadChecklist } from '../../lib/storage';
+import { useRotatingText } from '../../lib/useRotatingText';
 import { colors, radius, spacing, typography } from '../../theme/colors';
+
+const SAFECONTRACT_LOADING_STEPS = [
+  '📄 문서 파싱 중...',
+  '⚖️ 법령 대조 중...',
+  '🔍 위험 요소 추출 중...',
+] as const;
 
 type InputMode = 'text' | 'pdf' | 'photo' | 'register';
 
@@ -72,6 +82,7 @@ export default function SafeContractScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SafeContractResponse | null>(null);
+  const loadingMessage = useRotatingText(SAFECONTRACT_LOADING_STEPS, loading, 2500);
 
   // CODEF 등기부등본 주소 검색 상태
   const [registerAddress, setRegisterAddress] = useState('');
@@ -494,7 +505,10 @@ export default function SafeContractScreen() {
                 }
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <>
+                    <ActivityIndicator color="#fff" />
+                    <Text style={styles.submitText}>{loadingMessage}</Text>
+                  </>
                 ) : (
                   <>
                     <Ionicons name="shield-checkmark" size={18} color="#fff" />
@@ -646,9 +660,15 @@ function ResultView({
         <Text style={styles.sectionH}>위험 항목</Text>
       </View>
       {result.risks.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={{ color: colors.textSub, fontSize: 14 }}>
-            감지된 위험 요소가 없습니다.
+        <View style={styles.noRiskCard}>
+          <Image
+            source={require('../../assets/duck-celebrate.png')}
+            style={styles.noRiskDuck}
+            resizeMode="contain"
+          />
+          <Text style={styles.noRiskTitle}>이상 무! 🎉</Text>
+          <Text style={styles.noRiskDesc}>
+            감지된 위험 요소가 없어요{'\n'}안전한 계약입니다
           </Text>
         </View>
       ) : (
@@ -676,19 +696,19 @@ function ResultView({
       ))}
 
       {/* 계약 진행 버튼 */}
-      <Pressable style={styles.nextBtn} onPress={onGoChecklist}>
+      <AppPressable style={styles.nextBtn} onPress={onGoChecklist}>
         <View style={{ flex: 1 }}>
           <Text style={styles.nextBtnLabel}>계약을 진행하기로 했다면</Text>
           <Text style={styles.nextBtnTitle}>이사 체크리스트 만들기 →</Text>
         </View>
         <Ionicons name="arrow-forward-circle" size={32} color="#fff" />
-      </Pressable>
+      </AppPressable>
 
       {/* 다시 분석 */}
-      <Pressable style={styles.resetBtn} onPress={onReset}>
+      <AppPressable style={styles.resetBtn} onPress={onReset}>
         <Ionicons name="refresh" size={16} color={colors.primary} />
         <Text style={styles.resetText}>다른 등기부 분석하기</Text>
-      </Pressable>
+      </AppPressable>
 
       <Text style={styles.disclaimer}>{result.disclaimer}</Text>
     </View>
@@ -975,7 +995,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.warningBg,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -1172,7 +1192,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#FEE',
+    backgroundColor: colors.dangerBg,
     padding: spacing.md,
     borderRadius: radius.md,
     marginTop: spacing.md,
@@ -1234,6 +1254,30 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderLight,
+  },
+  noRiskCard: {
+    backgroundColor: colors.cardBg,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.success,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  noRiskDuck: {
+    width: 120,
+    height: 140,
+    marginBottom: spacing.sm,
+  },
+  noRiskTitle: {
+    ...typography.subtitle,
+    color: colors.success,
+    marginBottom: spacing.xs,
+  },
+  noRiskDesc: {
+    ...typography.caption,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 
   // Risk accordion
@@ -1322,7 +1366,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   nextBtnLabel: {
-    color: '#B8D4EC',
+    color: colors.primaryMute,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 2,
