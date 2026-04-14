@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegionPickerModal } from '../../components/RegionPickerModal';
 import {
   api,
+  CodefRegisterCandidate,
   MarketEstimate,
   RiskItem,
   SafeContractResponse,
@@ -31,7 +32,7 @@ import { alertAsync } from '../../lib/confirm';
 import { loadChecklist } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
-type InputMode = 'text' | 'pdf' | 'photo';
+type InputMode = 'text' | 'pdf' | 'photo' | 'register';
 
 interface PickedFile {
   uri: string;
@@ -71,6 +72,12 @@ export default function SafeContractScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SafeContractResponse | null>(null);
+
+  // CODEF 등기부등본 주소 검색 상태
+  const [registerAddress, setRegisterAddress] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerCandidates, setRegisterCandidates] = useState<CodefRegisterCandidate[] | null>(null);
+  const [registerEnv, setRegisterEnv] = useState<string | null>(null);
 
   // 체크리스트에 저장된 region 을 기본값으로 자동 불러옴
   useFocusEffect(
@@ -166,6 +173,28 @@ export default function SafeContractScreen() {
     );
   }
 
+  async function searchRegister() {
+    setError(null);
+    if (!registerAddress.trim()) {
+      setError('주소를 입력하세요');
+      return;
+    }
+    setRegisterLoading(true);
+    setRegisterCandidates(null);
+    try {
+      const res = await api.registerSearch(registerAddress.trim());
+      if (!res.ok) {
+        setError(res.message || 'CODEF 조회 실패');
+      }
+      setRegisterCandidates(res.candidates);
+      setRegisterEnv(res.env_mode);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setRegisterLoading(false);
+    }
+  }
+
   function goToChecklist() {
     router.push('/(tabs)/checklist');
   }
@@ -203,15 +232,22 @@ export default function SafeContractScreen() {
                 />
                 <ModeButton
                   icon="cloud-upload"
-                  label="PDF 업로드"
+                  label="PDF"
                   badge="Azure"
                   active={mode === 'pdf'}
                   onPress={() => setMode('pdf')}
                 />
                 <ModeButton
+                  icon="search"
+                  label="주소 조회"
+                  badge="CODEF"
+                  active={mode === 'register'}
+                  onPress={() => setMode('register')}
+                />
+                <ModeButton
                   icon="camera"
-                  label="사진 촬영"
-                  badge="준비 중"
+                  label="사진"
+                  badge="준비중"
                   active={false}
                   disabled
                   onPress={handlePhotoDisabled}
@@ -229,19 +265,26 @@ export default function SafeContractScreen() {
                       <Text style={{ fontWeight: '700' }}>갑구·을구 영역 전체를 복사</Text>
                       <Text>해서 아래에 붙여넣으세요.</Text>
                     </>
-                  ) : (
+                  ) : mode === 'pdf' ? (
                     <>
                       <Text style={{ fontWeight: '700' }}>인터넷등기소</Text>
                       <Text>에서 다운받은 등기부등본 PDF 파일을 그대로 업로드하세요.{' '}</Text>
                       <Text style={{ fontWeight: '700' }}>Azure Document Intelligence</Text>
                       <Text>가 자동으로 갑구·을구를 읽어냅니다.</Text>
                     </>
+                  ) : (
+                    <>
+                      <Text style={{ fontWeight: '700' }}>CODEF 등기부등본 API</Text>
+                      <Text>가 대법원 인터넷등기소에 실시간으로 연결되어{' '}</Text>
+                      <Text style={{ fontWeight: '700' }}>해당 주소의 등기부 목록</Text>
+                      <Text>을 찾아드립니다. 지번·도로명 모두 가능.</Text>
+                    </>
                   )}
                 </Text>
               </View>
 
               {/* 입력 영역 (모드별 분기) */}
-              {mode === 'text' ? (
+              {mode === 'text' && (
                 <>
                   <Text style={styles.sectionLabel}>등기부등본 본문</Text>
                   <TextInput
@@ -254,7 +297,8 @@ export default function SafeContractScreen() {
                     textAlignVertical="top"
                   />
                 </>
-              ) : (
+              )}
+              {mode === 'pdf' && (
                 <>
                   <Text style={styles.sectionLabel}>PDF 파일</Text>
                   <Pressable style={styles.pdfDropzone} onPress={pickPdf}>
@@ -288,7 +332,98 @@ export default function SafeContractScreen() {
                   </Pressable>
                 </>
               )}
+              {mode === 'register' && (
+                <>
+                  <Text style={styles.sectionLabel}>조회할 주소</Text>
+                  <TextInput
+                    value={registerAddress}
+                    onChangeText={setRegisterAddress}
+                    placeholder="예: 서울특별시 강남구 역삼동 123"
+                    placeholderTextColor={colors.textMute}
+                    style={styles.input}
+                    onSubmitEditing={searchRegister}
+                    returnKeyType="search"
+                  />
+                  <Pressable
+                    style={[
+                      styles.submitBtn,
+                      { marginTop: spacing.sm },
+                      (registerLoading || !registerAddress.trim()) && { opacity: 0.5 },
+                    ]}
+                    onPress={searchRegister}
+                    disabled={registerLoading || !registerAddress.trim()}
+                  >
+                    {registerLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="search" size={18} color="#fff" />
+                        <Text style={styles.submitText}>CODEF 로 조회</Text>
+                      </>
+                    )}
+                  </Pressable>
 
+                  {registerCandidates !== null && (
+                    <View style={{ marginTop: spacing.md }}>
+                      <View style={styles.helpBox}>
+                        <Ionicons
+                          name={registerEnv === 'demo' ? 'flask' : 'checkmark-circle'}
+                          size={16}
+                          color={colors.primaryLight}
+                        />
+                        <Text style={styles.helpText}>
+                          {registerCandidates.length}건 발견
+                          {registerEnv === 'demo' && ' · 개발환경(샘플 모드)'}
+                          {registerEnv === 'demo' && (
+                            <Text style={{ color: colors.textMute }}>
+                              {' · 실 발급은 운영환경 전환 필요'}
+                            </Text>
+                          )}
+                        </Text>
+                      </View>
+
+                      {registerCandidates.map((c) => (
+                        <View key={c.unique_no} style={styles.candidateCard}>
+                          <View style={styles.candidateHeader}>
+                            <View
+                              style={[
+                                styles.typeBadge,
+                                {
+                                  backgroundColor:
+                                    c.real_estate_type === '토지'
+                                      ? colors.warning
+                                      : colors.primaryLight,
+                                },
+                              ]}
+                            >
+                              <Text style={styles.typeBadgeText}>
+                                {c.real_estate_type}
+                              </Text>
+                            </View>
+                            <Text style={styles.candidateState}>{c.state}</Text>
+                          </View>
+                          <Text style={styles.candidateAddress}>{c.address}</Text>
+                          <Text style={styles.candidateUniqueNo}>
+                            고유번호 {c.unique_no}
+                          </Text>
+                        </View>
+                      ))}
+
+                      {registerCandidates.length === 0 && (
+                        <View style={styles.errorBox}>
+                          <Ionicons name="information-circle" size={16} color={colors.textMute} />
+                          <Text style={styles.errorText}>
+                            해당 주소의 등기부를 찾을 수 없습니다. 지번·도로명 확인 후 재시도.
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {mode !== 'register' && (
+                <>
               {/* 지역 (실거래가 자동 조회용) */}
               <Text style={styles.sectionLabel}>지역 (자동 시세 조회)</Text>
               <Pressable
@@ -367,6 +502,8 @@ export default function SafeContractScreen() {
                   </>
                 )}
               </Pressable>
+                </>
+              )}
 
               {error && (
                 <View style={styles.errorBox}>
@@ -985,6 +1122,49 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '800',
+  },
+  // CODEF 후보 카드
+  candidateCard: {
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  candidateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  typeBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  typeBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  candidateState: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMute,
+  },
+  candidateAddress: {
+    ...typography.body,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  candidateUniqueNo: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMute,
+    fontVariant: ['tabular-nums'],
   },
   errorBox: {
     flexDirection: 'row',
