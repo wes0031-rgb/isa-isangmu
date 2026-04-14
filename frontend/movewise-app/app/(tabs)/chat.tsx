@@ -80,8 +80,8 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.root} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
         <View style={styles.header}>
           <Text style={styles.h1}>🐤 꽉꽉봇</Text>
