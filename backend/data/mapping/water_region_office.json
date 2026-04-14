@@ -1,0 +1,798 @@
+{
+  "generated_at": "2026-04-14",
+  "source": "각 지자체 상수도사업본부 공식 홈페이지 (공공누리 1유형)",
+  "total_regions": 17,
+  "total_sub_offices": 63,
+  "common_guide": {
+    "title": "수도 명의변경 공통 안내",
+    "required_info": [
+      "이사 주소 (전 주소, 새 주소)",
+      "계량기 번호 (고지서 또는 수전함에서 확인)",
+      "본인 확인 정보 (이름, 전화번호)",
+      "이사일"
+    ],
+    "methods": [
+      "온라인: 해당 지역 상수도사업본부 홈페이지 이비주닥(e-bill) 시스템 로그인 후 명의변경 신청",
+      "전화: 해당 지역 수도사업소 대표번호로 전화",
+      "방문: 해당 구역 수도사업소 직접 방문 (신분증 지참)",
+      "정부24: https://www.gov.kr 에서 일부 지자체 지원 (공동인증서 필요)"
+    ],
+    "tip": "이사 당일 또는 익일 내 명의변경 권장. 늦어지면 이전 거주자 명의로 요금이 계속 부과됨.",
+    "legal_basis": "수도법 시행규칙 제24조 (사용자 변경 신고)",
+    "source": "각 지자체 상수도사업본부 공식 안내 2026-04"
+  },
+  "offices": [
+    {
+      "sido": "서울특별시",
+      "region_match": [
+        "서울",
+        "서울특별시"
+      ],
+      "office_name": "서울특별시 상수도사업본부",
+      "phone": "120",
+      "phone_label": "다산콜센터 120",
+      "website": "https://arisu.seoul.go.kr",
+      "online_change_url": "https://cyber.arisu.seoul.go.kr/",
+      "note": "서울시 아리수 사이버 수도사업소에서 온라인 명의변경 가능",
+      "sub_offices": [
+        {
+          "name": "중부수도사업소",
+          "district": [
+            "종로구",
+            "중구",
+            "용산구"
+          ],
+          "phone": "02-3788-1200"
+        },
+        {
+          "name": "동부수도사업소",
+          "district": [
+            "성동구",
+            "광진구",
+            "동대문구",
+            "중랑구",
+            "성북구",
+            "강북구",
+            "도봉구",
+            "노원구"
+          ],
+          "phone": "02-3407-6114"
+        },
+        {
+          "name": "서부수도사업소",
+          "district": [
+            "은평구",
+            "서대문구",
+            "마포구"
+          ],
+          "phone": "02-3146-2500"
+        },
+        {
+          "name": "북부수도사업소",
+          "district": [
+            "강북구",
+            "노원구",
+            "도봉구"
+          ],
+          "phone": "02-3146-3200"
+        },
+        {
+          "name": "강서수도사업소",
+          "district": [
+            "양천구",
+            "강서구",
+            "구로구",
+            "금천구",
+            "영등포구"
+          ],
+          "phone": "02-3660-2200"
+        },
+        {
+          "name": "강남수도사업소",
+          "district": [
+            "동작구",
+            "관악구",
+            "서초구",
+            "강남구",
+            "송파구",
+            "강동구"
+          ],
+          "phone": "02-3146-4500"
+        }
+      ]
+    },
+    {
+      "sido": "부산광역시",
+      "region_match": [
+        "부산",
+        "부산광역시"
+      ],
+      "office_name": "부산광역시 상수도사업본부",
+      "phone": "051-669-4000",
+      "phone_label": "부산상수도사업본부 대표",
+      "website": "https://www.busan.go.kr/water",
+      "online_change_url": "https://ebill.busan.go.kr/",
+      "note": "부산 수도요금 인터넷 납부 시스템에서 명의변경 신청 가능",
+      "sub_offices": [
+        {
+          "name": "중부수도사업소",
+          "district": [
+            "중구",
+            "서구",
+            "동구",
+            "영도구"
+          ],
+          "phone": "051-669-4200"
+        },
+        {
+          "name": "동부수도사업소",
+          "district": [
+            "부산진구",
+            "동래구",
+            "연제구",
+            "수영구"
+          ],
+          "phone": "051-669-4400"
+        },
+        {
+          "name": "서부수도사업소",
+          "district": [
+            "북구",
+            "사상구",
+            "강서구"
+          ],
+          "phone": "051-669-4600"
+        },
+        {
+          "name": "남부수도사업소",
+          "district": [
+            "남구",
+            "해운대구",
+            "사하구",
+            "금정구",
+            "기장군"
+          ],
+          "phone": "051-669-4800"
+        }
+      ]
+    },
+    {
+      "sido": "대구광역시",
+      "region_match": [
+        "대구",
+        "대구광역시"
+      ],
+      "office_name": "대구광역시 상수도사업본부",
+      "phone": "1899-2121",
+      "phone_label": "대구상수도 통합 콜센터",
+      "website": "https://www.daegu.go.kr/dgwater",
+      "online_change_url": "https://ebill.daegu.go.kr/",
+      "note": "대구광역시 수도요금 인터넷 납부 시스템 활용",
+      "sub_offices": [
+        {
+          "name": "동부수도사업소",
+          "district": [
+            "동구",
+            "중구",
+            "수성구"
+          ],
+          "phone": "053-760-8000"
+        },
+        {
+          "name": "서부수도사업소",
+          "district": [
+            "서구",
+            "남구",
+            "달서구",
+            "달성군"
+          ],
+          "phone": "053-560-8000"
+        },
+        {
+          "name": "북부수도사업소",
+          "district": [
+            "북구",
+            "군위군"
+          ],
+          "phone": "053-660-8000"
+        }
+      ]
+    },
+    {
+      "sido": "인천광역시",
+      "region_match": [
+        "인천",
+        "인천광역시"
+      ],
+      "office_name": "인천광역시 상수도사업본부",
+      "phone": "032-120",
+      "phone_label": "인천미추홀콜센터 032-120",
+      "website": "https://www.incheon.go.kr/water",
+      "online_change_url": "https://i-water.incheon.go.kr/",
+      "note": "인천 i-water 시스템에서 온라인 명의변경",
+      "sub_offices": [
+        {
+          "name": "중부수도사업소",
+          "district": [
+            "중구",
+            "동구",
+            "남동구"
+          ],
+          "phone": "032-440-7000"
+        },
+        {
+          "name": "서부수도사업소",
+          "district": [
+            "미추홀구",
+            "서구"
+          ],
+          "phone": "032-440-7100"
+        },
+        {
+          "name": "북부수도사업소",
+          "district": [
+            "부평구",
+            "계양구"
+          ],
+          "phone": "032-440-7200"
+        },
+        {
+          "name": "남부수도사업소",
+          "district": [
+            "연수구"
+          ],
+          "phone": "032-440-7300"
+        },
+        {
+          "name": "강화수도사업소",
+          "district": [
+            "강화군",
+            "옹진군"
+          ],
+          "phone": "032-930-3000"
+        }
+      ]
+    },
+    {
+      "sido": "광주광역시",
+      "region_match": [
+        "광주",
+        "광주광역시"
+      ],
+      "office_name": "광주광역시 상수도사업본부",
+      "phone": "062-613-1500",
+      "phone_label": "광주상수도 대표",
+      "website": "https://www.gwangju.go.kr/waterworks",
+      "online_change_url": "https://ebill.gwangju.go.kr/",
+      "note": "광주광역시 수도요금 인터넷납부 시스템 활용",
+      "sub_offices": [
+        {
+          "name": "동부수도사업소",
+          "district": [
+            "동구",
+            "남구"
+          ],
+          "phone": "062-613-4000"
+        },
+        {
+          "name": "서부수도사업소",
+          "district": [
+            "서구",
+            "북구",
+            "광산구"
+          ],
+          "phone": "062-613-5000"
+        }
+      ]
+    },
+    {
+      "sido": "대전광역시",
+      "region_match": [
+        "대전",
+        "대전광역시"
+      ],
+      "office_name": "대전광역시 상수도사업본부",
+      "phone": "042-270-7000",
+      "phone_label": "대전상수도 대표",
+      "website": "https://www.daejeon.go.kr/water",
+      "online_change_url": "https://ebill.daejeon.go.kr/",
+      "note": "대전광역시 수도요금 인터넷납부 시스템",
+      "sub_offices": [
+        {
+          "name": "동부수도사업소",
+          "district": [
+            "동구",
+            "중구",
+            "대덕구"
+          ],
+          "phone": "042-270-7200"
+        },
+        {
+          "name": "서부수도사업소",
+          "district": [
+            "서구",
+            "유성구"
+          ],
+          "phone": "042-270-7400"
+        }
+      ]
+    },
+    {
+      "sido": "울산광역시",
+      "region_match": [
+        "울산",
+        "울산광역시"
+      ],
+      "office_name": "울산광역시 상수도사업본부",
+      "phone": "052-229-3500",
+      "phone_label": "울산상수도 대표",
+      "website": "https://www.ulsan.go.kr/s/water",
+      "online_change_url": "https://ebill.ulsan.go.kr/",
+      "note": "울산광역시 수도요금 인터넷납부 시스템",
+      "sub_offices": [
+        {
+          "name": "중부수도사업소",
+          "district": [
+            "중구",
+            "남구",
+            "동구",
+            "울주군"
+          ],
+          "phone": "052-229-3600"
+        },
+        {
+          "name": "북부수도사업소",
+          "district": [
+            "북구"
+          ],
+          "phone": "052-229-3700"
+        }
+      ]
+    },
+    {
+      "sido": "세종특별자치시",
+      "region_match": [
+        "세종",
+        "세종특별자치시"
+      ],
+      "office_name": "세종특별자치시 상수도사업소",
+      "phone": "044-300-6900",
+      "phone_label": "세종시 수도과",
+      "website": "https://www.sejong.go.kr",
+      "online_change_url": "https://ebill.sejong.go.kr/",
+      "note": "세종시 통합 수도요금 시스템",
+      "sub_offices": []
+    },
+    {
+      "sido": "경기도",
+      "region_match": [
+        "경기도"
+      ],
+      "office_name": "경기도 각 시·군 수도사업소",
+      "phone": "031-120",
+      "phone_label": "경기도 콜센터 031-120",
+      "website": "https://www.gg.go.kr",
+      "online_change_url": "",
+      "note": "경기도는 각 시·군별 독립 운영. 아래 산하 사업소 참고",
+      "sub_offices": [
+        {
+          "name": "수원시 상수도사업소",
+          "district": [
+            "수원시 장안구",
+            "수원시 권선구",
+            "수원시 팔달구",
+            "수원시 영통구"
+          ],
+          "phone": "031-228-2114"
+        },
+        {
+          "name": "성남시 상하수도사업소",
+          "district": [
+            "성남시 수정구",
+            "성남시 중원구",
+            "성남시 분당구"
+          ],
+          "phone": "031-729-3114"
+        },
+        {
+          "name": "고양시 상수도사업소",
+          "district": [
+            "고양시 덕양구",
+            "고양시 일산동구",
+            "고양시 일산서구"
+          ],
+          "phone": "031-8075-3000"
+        },
+        {
+          "name": "용인시 상수도사업소",
+          "district": [
+            "용인시 처인구",
+            "용인시 기흥구",
+            "용인시 수지구"
+          ],
+          "phone": "031-324-4000"
+        },
+        {
+          "name": "부천시 상수도사업소",
+          "district": [
+            "부천시"
+          ],
+          "phone": "032-320-3000"
+        },
+        {
+          "name": "안양시 상수도사업소",
+          "district": [
+            "안양시 만안구",
+            "안양시 동안구"
+          ],
+          "phone": "031-8045-4000"
+        },
+        {
+          "name": "안산시 상수도사업소",
+          "district": [
+            "안산시 상록구",
+            "안산시 단원구"
+          ],
+          "phone": "031-481-3000"
+        },
+        {
+          "name": "화성시 상수도사업소",
+          "district": [
+            "화성시"
+          ],
+          "phone": "031-5189-7100"
+        },
+        {
+          "name": "평택시 상수도사업소",
+          "district": [
+            "평택시"
+          ],
+          "phone": "031-8024-4000"
+        },
+        {
+          "name": "의정부시 상수도사업소",
+          "district": [
+            "의정부시"
+          ],
+          "phone": "031-828-2000"
+        },
+        {
+          "name": "시흥시 상수도사업소",
+          "district": [
+            "시흥시"
+          ],
+          "phone": "031-310-2000"
+        },
+        {
+          "name": "김포시 상수도사업소",
+          "district": [
+            "김포시"
+          ],
+          "phone": "031-980-2000"
+        },
+        {
+          "name": "광주시 상수도사업소",
+          "district": [
+            "광주시"
+          ],
+          "phone": "031-760-2000"
+        },
+        {
+          "name": "광명시 상수도사업소",
+          "district": [
+            "광명시"
+          ],
+          "phone": "02-2680-2000"
+        },
+        {
+          "name": "하남시 상수도사업소",
+          "district": [
+            "하남시"
+          ],
+          "phone": "031-790-6000"
+        },
+        {
+          "name": "군포시 상수도사업소",
+          "district": [
+            "군포시"
+          ],
+          "phone": "031-390-0114"
+        },
+        {
+          "name": "이천시 상수도사업소",
+          "district": [
+            "이천시"
+          ],
+          "phone": "031-644-2000"
+        },
+        {
+          "name": "오산시 상수도사업소",
+          "district": [
+            "오산시"
+          ],
+          "phone": "031-8036-7000"
+        },
+        {
+          "name": "남양주시 상수도사업소",
+          "district": [
+            "남양주시"
+          ],
+          "phone": "031-590-2000"
+        }
+      ]
+    },
+    {
+      "sido": "강원특별자치도",
+      "region_match": [
+        "강원",
+        "강원도",
+        "강원특별자치도"
+      ],
+      "office_name": "강원특별자치도 각 시·군 수도사업소",
+      "phone": "033-120",
+      "phone_label": "강원도 콜센터 033-120",
+      "website": "https://www.provin.gangwon.kr",
+      "online_change_url": "",
+      "note": "강원특별자치도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "춘천시 상수도사업소",
+          "district": [
+            "춘천시"
+          ],
+          "phone": "033-250-3000"
+        },
+        {
+          "name": "원주시 상수도사업소",
+          "district": [
+            "원주시"
+          ],
+          "phone": "033-737-2000"
+        },
+        {
+          "name": "강릉시 상수도사업소",
+          "district": [
+            "강릉시"
+          ],
+          "phone": "033-640-5000"
+        }
+      ]
+    },
+    {
+      "sido": "충청북도",
+      "region_match": [
+        "충북",
+        "충청북도"
+      ],
+      "office_name": "충청북도 각 시·군 수도사업소",
+      "phone": "043-120",
+      "phone_label": "충청북도 콜센터",
+      "website": "https://www.chungbuk.go.kr",
+      "online_change_url": "",
+      "note": "충청북도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "청주시 상수도사업본부",
+          "district": [
+            "청주시 상당구",
+            "청주시 서원구",
+            "청주시 흥덕구",
+            "청주시 청원구"
+          ],
+          "phone": "043-201-4000"
+        },
+        {
+          "name": "충주시 상수도사업소",
+          "district": [
+            "충주시"
+          ],
+          "phone": "043-850-6000"
+        }
+      ]
+    },
+    {
+      "sido": "충청남도",
+      "region_match": [
+        "충남",
+        "충청남도"
+      ],
+      "office_name": "충청남도 각 시·군 수도사업소",
+      "phone": "041-120",
+      "phone_label": "충청남도 콜센터",
+      "website": "https://www.chungnam.go.kr",
+      "online_change_url": "",
+      "note": "충청남도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "천안시 상수도사업소",
+          "district": [
+            "천안시 동남구",
+            "천안시 서북구"
+          ],
+          "phone": "041-521-2000"
+        },
+        {
+          "name": "아산시 상수도사업소",
+          "district": [
+            "아산시"
+          ],
+          "phone": "041-540-2000"
+        }
+      ]
+    },
+    {
+      "sido": "전북특별자치도",
+      "region_match": [
+        "전북",
+        "전라북도",
+        "전북특별자치도"
+      ],
+      "office_name": "전북특별자치도 각 시·군 수도사업소",
+      "phone": "063-120",
+      "phone_label": "전라북도 콜센터",
+      "website": "https://www.jeonbuk.go.kr",
+      "online_change_url": "",
+      "note": "전북특별자치도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "전주시 상수도사업본부",
+          "district": [
+            "전주시 완산구",
+            "전주시 덕진구"
+          ],
+          "phone": "063-281-2000"
+        },
+        {
+          "name": "군산시 상수도사업소",
+          "district": [
+            "군산시"
+          ],
+          "phone": "063-450-3000"
+        }
+      ]
+    },
+    {
+      "sido": "전라남도",
+      "region_match": [
+        "전남",
+        "전라남도"
+      ],
+      "office_name": "전라남도 각 시·군 수도사업소",
+      "phone": "061-120",
+      "phone_label": "전라남도 콜센터",
+      "website": "https://www.jeonnam.go.kr",
+      "online_change_url": "",
+      "note": "전라남도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "목포시 상수도사업소",
+          "district": [
+            "목포시"
+          ],
+          "phone": "061-270-8000"
+        },
+        {
+          "name": "여수시 상수도사업소",
+          "district": [
+            "여수시"
+          ],
+          "phone": "061-690-2000"
+        },
+        {
+          "name": "순천시 상수도사업소",
+          "district": [
+            "순천시"
+          ],
+          "phone": "061-749-3000"
+        }
+      ]
+    },
+    {
+      "sido": "경상북도",
+      "region_match": [
+        "경북",
+        "경상북도"
+      ],
+      "office_name": "경상북도 각 시·군 수도사업소",
+      "phone": "054-120",
+      "phone_label": "경상북도 콜센터",
+      "website": "https://www.gb.go.kr",
+      "online_change_url": "",
+      "note": "경상북도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "포항시 상수도사업소",
+          "district": [
+            "포항시 남구",
+            "포항시 북구"
+          ],
+          "phone": "054-270-2000"
+        },
+        {
+          "name": "경주시 상수도사업소",
+          "district": [
+            "경주시"
+          ],
+          "phone": "054-779-6000"
+        },
+        {
+          "name": "구미시 상수도사업소",
+          "district": [
+            "구미시"
+          ],
+          "phone": "054-480-2000"
+        }
+      ]
+    },
+    {
+      "sido": "경상남도",
+      "region_match": [
+        "경남",
+        "경상남도"
+      ],
+      "office_name": "경상남도 각 시·군 수도사업소",
+      "phone": "055-120",
+      "phone_label": "경상남도 콜센터",
+      "website": "https://www.gyeongnam.go.kr",
+      "online_change_url": "",
+      "note": "경상남도는 각 시·군별 독립 운영",
+      "sub_offices": [
+        {
+          "name": "창원시 상수도사업소",
+          "district": [
+            "창원시 의창구",
+            "창원시 성산구",
+            "창원시 마산합포구",
+            "창원시 마산회원구",
+            "창원시 진해구"
+          ],
+          "phone": "055-225-2000"
+        },
+        {
+          "name": "진주시 상수도사업소",
+          "district": [
+            "진주시"
+          ],
+          "phone": "055-749-2000"
+        },
+        {
+          "name": "김해시 상수도사업소",
+          "district": [
+            "김해시"
+          ],
+          "phone": "055-330-3000"
+        }
+      ]
+    },
+    {
+      "sido": "제주특별자치도",
+      "region_match": [
+        "제주",
+        "제주도",
+        "제주특별자치도"
+      ],
+      "office_name": "제주특별자치도 상하수도본부",
+      "phone": "064-710-3200",
+      "phone_label": "제주 상하수도본부",
+      "website": "https://www.jeju.go.kr/water.htm",
+      "online_change_url": "https://water.jeju.go.kr/",
+      "note": "제주도는 상하수도본부에서 통합 운영",
+      "sub_offices": [
+        {
+          "name": "제주시 수도사업소",
+          "district": [
+            "제주시"
+          ],
+          "phone": "064-728-3000"
+        },
+        {
+          "name": "서귀포시 수도사업소",
+          "district": [
+            "서귀포시"
+          ],
+          "phone": "064-760-2000"
+        }
+      ]
+    }
+  ]
+}
