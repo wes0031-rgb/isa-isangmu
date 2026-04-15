@@ -210,6 +210,23 @@ def _yt_title(h: dict) -> str:
     return clean_hanja(h.get("title") or h.get("video_title") or "유튜브 영상")
 
 
+def _format_timestamp(seconds) -> str:
+    """초 단위 → '1분 26초' 같은 사람 친화 라벨. 0이면 빈 문자열."""
+    try:
+        s = int(seconds or 0)
+    except (TypeError, ValueError):
+        return ""
+    if s <= 0:
+        return ""
+    minutes = s // 60
+    secs = s % 60
+    if minutes == 0:
+        return f"{secs}초"
+    if secs == 0:
+        return f"{minutes}분"
+    return f"{minutes}분 {secs}초"
+
+
 def _law_ref(h: dict) -> str:
     return f"{h.get('law_name', '')} {h.get('article', '')}".strip()
 
@@ -318,12 +335,20 @@ def _sanitize_answer(
         top = yt_hits[0]
         title = _yt_title(top)
         channel = top.get("channel", "")
-        url = top.get("source_url") or top.get("deep_link") or ""
+        # deep_link 우선 — 타임스탬프 포함 URL → 클릭 시 해당 시점부터 자동 재생
+        url = top.get("deep_link") or top.get("source_url") or ""
+        ts_label = _format_timestamp(top.get("start_seconds"))
         prefix = f"{channel} - " if channel else ""
-        block_lines = [f"🎥 참고 영상: {prefix}{title}"]
+        ts_suffix = f" ({ts_label}부터)" if ts_label else ""
+        block_lines = [f"🎥 참고 영상: {prefix}{title}{ts_suffix}"]
         if url:
-            block_lines.append(f"👉 전체 영상 보기: {url}")
-            block_lines.append("더 궁금한 내용은 영상을 확인해보세요.")
+            block_lines.append(f"👉 영상 보기: {url}")
+            if ts_label:
+                block_lines.append(
+                    f"링크를 누르면 해당 부분({ts_label})부터 자동 재생돼요."
+                )
+            else:
+                block_lines.append("더 궁금한 내용은 영상을 확인해보세요.")
         replacement = "\n".join(block_lines)
 
         # LLM 이 쓴 🎥 줄이 있으면 교체, 없으면 "더 자세한 내용은" 앞에 삽입
@@ -501,8 +526,10 @@ def generate_chat_reply(
             f"{clean_hanja((h.get('content') or '')[:400])}"
         )
     for h in yt_hits[:3]:
+        ts = _format_timestamp(h.get("start_seconds"))
+        ts_tag = f" @ {ts}" if ts else ""
         context_parts.append(
-            f"[영상] {h.get('channel', '')} - {_yt_title(h)}: "
+            f"[영상{ts_tag}] {h.get('channel', '')} - {_yt_title(h)}: "
             f"{clean_hanja((h.get('content') or '')[:300])}"
         )
     context = "\n\n".join(context_parts)
