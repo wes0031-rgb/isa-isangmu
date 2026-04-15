@@ -140,12 +140,10 @@ def search_procedures(queries: list[str], req: ChecklistRequest) -> list[dict]:
     results: list[dict] = []
     for q in queries:
         # 통합 인덱스 전환 이후 procedure 타입만 추출
+        # (region 필터는 제거 — unified index 의 region 은 모두 "전국" 고정)
         hits = client.search(
             search_text=q,
-            filter=(
-                f"source_type eq 'procedure' and "
-                f"(region eq '전국' or region eq '{req.region}')"
-            ),
+            filter="source_type eq 'procedure'",
             top=3,
             query_type="semantic",
             semantic_configuration_name="movewise-semantic",
