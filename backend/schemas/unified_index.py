@@ -106,10 +106,7 @@ def azure_index_schema(index_name: str = "moving-unified-index") -> dict:
     """
     return {
         "name": index_name,
-        "description": (
-            "이사이상무 통합 인덱스 — 법률 조문·행정절차·유튜브 자막을 "
-            "source_type 디스크리미네이터로 구분"
-        ),
+        # NOTE: "description" 필드는 Azure Search API 2024-07-01 에서 제거됨 (지원 안 함)
         "fields": [
             {"name": "id", "type": "Edm.String", "key": True, "filterable": True, "retrievable": True},
             {"name": "source_id", "type": "Edm.String", "searchable": False, "filterable": True, "retrievable": True},

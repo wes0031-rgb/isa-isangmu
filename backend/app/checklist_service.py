@@ -133,23 +133,33 @@ def build_queries_llm(req: ChecklistRequest) -> list[str]:
 
 
 def search_procedures(queries: list[str], req: ChecklistRequest) -> list[dict]:
+    import logging as _log
+    _logger = _log.getLogger("movewise")
+
     client = get_search_client_procedure()
     if client is None:
-        # Local keyword search over curated chunks (index_b_chunks_curated.jsonl)
+        _logger.warning("search_procedures: no Azure Search client — using local fallback")
         return local_search(queries, top_k_per_query=3)
     results: list[dict] = []
     for q in queries:
-        # 통합 인덱스 전환 이후 procedure 타입만 추출
-        # (region 필터는 제거 — unified index 의 region 은 모두 "전국" 고정)
-        hits = client.search(
-            search_text=q,
-            filter="source_type eq 'procedure'",
-            top=3,
-            query_type="semantic",
-            semantic_configuration_name="movewise-semantic",
-        )
-        for h in hits:
-            results.append(dict(h))
+        try:
+            hits = client.search(
+                search_text=q,
+                filter="source_type eq 'procedure'",
+                top=3,
+                query_type="semantic",
+                semantic_configuration_name="movewise-semantic",
+            )
+            for h in hits:
+                results.append(dict(h))
+        except Exception as exc:
+            _logger.warning(
+                f"search_procedures: query '{q}' failed ({type(exc).__name__}: {exc})"
+            )
+    _logger.info(f"search_procedures: queries={len(queries)} hits={len(results)}")
+    if not results:
+        _logger.warning("search_procedures: 0 hits from Azure — falling back to local_search")
+        return local_search(queries, top_k_per_query=3)
     return results
 
 
@@ -211,10 +221,39 @@ def structure_checklist_llm(
     raw = resp.choices[0].message.content or '{"items": []}'
     try:
         parsed = json.loads(raw)
-        items_data = parsed.get("items", parsed if isinstance(parsed, list) else [])
-        items = []
+        items_data: list = []
+        if isinstance(parsed, list):
+            items_data = parsed
+        elif isinstance(parsed, dict):
+            for key in ("items", "checklist", "체크리스트", "procedures", "결과"):
+                v = parsed.get(key)
+                if isinstance(v, list):
+                    items_data = v
+                    break
+            if not items_data:
+                # 최후: dict 안에서 첫 list 값을 사용
+                for v in parsed.values():
+                    if isinstance(v, list) and v and isinstance(v[0], dict):
+                        items_data = v
+                        break
+        items: list[ChecklistItem] = []
         for d in items_data:
-            items.append(_item_from_dict(d, req.move_date))
+            if not isinstance(d, dict):
+                continue
+            try:
+                items.append(_item_from_dict(d, req.move_date))
+            except Exception as exc:
+                _logger.warning(
+                    f"_item_from_dict failed on {d.get('title', d)}: {type(exc).__name__}: {exc}"
+                )
+        _logger.info(
+            f"structure_checklist_llm: chunks={len(chunks)} parsed_items={len(items_data)} built_items={len(items)}"
+        )
+        if not items:
+            _logger.warning(
+                f"structure LLM 0 items (parsed type={type(parsed).__name__}, keys={list(parsed.keys()) if isinstance(parsed, dict) else 'list'}) — falling back"
+            )
+            return structure_checklist_fallback(req, chunks)
         return items
     except (json.JSONDecodeError, ValueError) as exc:
         _logger.warning(f"structure LLM parse error: {exc} — falling back")
