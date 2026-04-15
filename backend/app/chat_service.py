@@ -298,26 +298,54 @@ def _sanitize_answer(
     proc_hits: list[dict],
     yt_hits: list[dict],
 ) -> str:
-    """LLM halluclination 방어 후처리.
+    """LLM halluclination 방어 후처리 + 유튜브 블록 표준화.
 
     - 검색 결과에 유튜브가 0건이면 '🎥 참고 영상:' 줄 제거 + 본문 [영상] 태그도 제거
+    - 유튜브 1건 이상이면 LLM 이 쓴 🎥 줄을 backend 가 만든 정확한 블록으로 교체
+      (제목·채널명 정확성 보장 + 실제 URL 포함 + 안내 문구)
     - 법률/절차 0건이면 각 태그도 제거
-    이렇게 하면 LLM 이 없는 출처를 지어내도 사용자에게는 보이지 않음.
     """
     import re
 
     out = answer
+    yt_line_pat = re.compile(r"^\s*🎥\s*참고 영상[:：].*$", re.MULTILINE)
+
     if not yt_hits:
-        # '🎥 참고 영상:' 으로 시작하는 줄 통째로 제거
-        out = re.sub(r"^\s*🎥\s*참고 영상[:：].*$", "", out, flags=re.MULTILINE)
+        out = yt_line_pat.sub("", out)
         out = out.replace("[영상]", "")
+    else:
+        # backend 가 직접 만든 정확한 유튜브 블록
+        top = yt_hits[0]
+        title = _yt_title(top)
+        channel = top.get("channel", "")
+        url = top.get("source_url") or top.get("deep_link") or ""
+        prefix = f"{channel} - " if channel else ""
+        block_lines = [f"🎥 참고 영상: {prefix}{title}"]
+        if url:
+            block_lines.append(f"👉 전체 영상 보기: {url}")
+            block_lines.append("더 궁금한 내용은 영상을 확인해보세요.")
+        replacement = "\n".join(block_lines)
+
+        # LLM 이 쓴 🎥 줄이 있으면 교체, 없으면 "더 자세한 내용은" 앞에 삽입
+        if yt_line_pat.search(out):
+            # callable 로 넘겨서 replacement 내 특수문자(&, ?) 가 backreference 로 오해되지 않게
+            out = yt_line_pat.sub(lambda _m: replacement, out, count=1)
+        elif "더 자세한 내용은" in out:
+            out = out.replace(
+                "더 자세한 내용은",
+                replacement + "\n\n더 자세한 내용은",
+                1,
+            )
+        else:
+            out = out.rstrip() + "\n\n" + replacement
+
     if not law_hits:
         out = out.replace("[법률]", "")
     if not proc_hits:
         out = out.replace("[절차]", "")
 
-    # 태그 제거로 생긴 이중공백·빈 줄 정리
-    out = re.sub(r"[ \t]+", " ", out)
+    # 태그 제거로 생긴 이중공백·빈 줄 정리 (URL 의 공백은 건드리지 않음)
+    out = re.sub(r"[ \t]{2,}", " ", out)
     out = re.sub(r"\n{3,}", "\n\n", out)
     return out.strip()
 

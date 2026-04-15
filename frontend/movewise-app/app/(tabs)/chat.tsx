@@ -43,9 +43,10 @@ const SOURCE_META: Record<SourceKind, { label: string; color: string; bg: string
   video: { label: '영상', color: '#C53030', bg: '#FFF5F5' },
 };
 
-/** 본문의 [법률]/[절차]/[영상] 태그를 배지로 렌더링. */
+/** 본문의 [법률]/[절차]/[영상] 태그 → 컬러 배지, http(s) URL → 탭 가능한 링크. */
 function renderAnswerWithTags(text: string, textColor: string) {
-  const parts = text.split(/(\[법률\]|\[절차\]|\[영상\])/g);
+  // 태그 + URL 을 한 split 에서 함께 처리 (URL 은 마지막 구두점 제외)
+  const parts = text.split(/(\[법률\]|\[절차\]|\[영상\]|https?:\/\/[^\s)]+[^\s.,!?)\]])/g);
   return parts.map((p, i) => {
     let kind: SourceKind | null = null;
     if (p === '[법률]') kind = 'law';
@@ -68,6 +69,21 @@ function renderAnswerWithTags(text: string, textColor: string) {
           }}
         >
           {' '}{meta.label}{' '}
+        </Text>
+      );
+    }
+    if (/^https?:\/\//.test(p)) {
+      return (
+        <Text
+          key={i}
+          style={{
+            color: SOURCE_META.video.color,
+            textDecorationLine: 'underline',
+            fontWeight: '600',
+          }}
+          onPress={() => Linking.openURL(p)}
+        >
+          {p}
         </Text>
       );
     }
