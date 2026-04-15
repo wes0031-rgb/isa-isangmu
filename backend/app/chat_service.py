@@ -48,16 +48,20 @@ CHAT_SYSTEM_PROMPT = """당신은 한국 이사·전월세 절차 전문 도우�
 규칙:
 1. 답변은 한국어로 2~5문장, 쉬운 말로 작성
 2. 검색 결과는 세 종류로 구분되어 있습니다 — 본문을 쓸 때 각 문장이 어느 출처에서 왔는지 반드시 표시합니다:
-   - 법률 조문에서 가져온 내용 → 문장 끝에 `[법률]` 태그
-   - 행정 절차/연락처에서 가져온 내용 → 문장 끝에 `[절차]` 태그
-   - 유튜브 영상에서 가져온 내용 → 문장 끝에 `[영상]` 태그
+   - [법률] 섹션에서 가져온 내용 → 문장 끝에 `[법률]` 태그
+   - [절차] 섹션에서 가져온 내용 → 문장 끝에 `[절차]` 태그
+   - [영상] 섹션에서 가져온 내용 → 문장 끝에 `[영상]` 태그
    태그는 반드시 위 세 가지만 사용하고, 마침표 앞에 붙입니다. 예:
    "확정일자는 주민센터에서 받을 수 있습니다 [법률]. 방문 견적을 받으면 비용을 아낄 수 있어요 [영상]."
-3. 세 종류를 균형 있게 활용. 검색 결과에 있으면 최소 하나씩 인용하도록 노력.
+3. 검색 결과에 실제로 존재하는 섹션만 인용. 없는 섹션의 태그는 사용 금지.
+   예: 검색 결과에 [영상] 섹션이 하나도 없으면 본문에 [영상] 태그 사용 금지.
 4. 법 조항 인용 시 `[주택임대차보호법 제3조의2]` 같은 법 이름+조항은 본문 안에 자연스럽게 쓰되, 그 문장 끝에도 `[법률]` 태그를 별도로 붙입니다.
-5. 검색 결과에 [영상] 이 포함돼 있으면, 답변 본문 뒤에 줄을 바꿔
-   `🎥 참고 영상: 채널명 - 영상제목` 형식으로 1건 추가 (이 줄에는 [영상] 태그 생략).
-6. 검색 결과에 없는 내용은 절대 지어내지 말 것.
+5. ⚠️ '참고 영상' 줄은 오직 검색 결과 [영상] 섹션이 실제로 존재할 때만 추가:
+   - 검색 결과에 [영상] 항목이 하나라도 있으면 본문 뒤에 줄을 바꿔
+     `🎥 참고 영상: 채널명 - 영상제목` 형식으로 1건 추가 (검색 결과의 실제 제목/채널 그대로 복사).
+   - 검색 결과에 [영상] 항목이 0건이면 '참고 영상' 줄을 절대 추가하지 말 것.
+   - 영상 제목·채널명은 검색 결과에 있는 그대로 사용하고 절대 지어내지 말 것.
+6. 검색 결과에 없는 내용은 절대 지어내지 말 것. 지어낸 내용이 발견되면 서비스 신뢰도가 치명적으로 손상됩니다.
 7. 맨 마지막 줄에 `더 자세한 내용은 관련 기관에 확인하세요` 추가.
 """
 
@@ -288,6 +292,36 @@ def _build_citations(
     return cits
 
 
+def _sanitize_answer(
+    answer: str,
+    law_hits: list[dict],
+    proc_hits: list[dict],
+    yt_hits: list[dict],
+) -> str:
+    """LLM halluclination 방어 후처리.
+
+    - 검색 결과에 유튜브가 0건이면 '🎥 참고 영상:' 줄 제거 + 본문 [영상] 태그도 제거
+    - 법률/절차 0건이면 각 태그도 제거
+    이렇게 하면 LLM 이 없는 출처를 지어내도 사용자에게는 보이지 않음.
+    """
+    import re
+
+    out = answer
+    if not yt_hits:
+        # '🎥 참고 영상:' 으로 시작하는 줄 통째로 제거
+        out = re.sub(r"^\s*🎥\s*참고 영상[:：].*$", "", out, flags=re.MULTILINE)
+        out = out.replace("[영상]", "")
+    if not law_hits:
+        out = out.replace("[법률]", "")
+    if not proc_hits:
+        out = out.replace("[절차]", "")
+
+    # 태그 제거로 생긴 이중공백·빈 줄 정리
+    out = re.sub(r"[ \t]+", " ", out)
+    out = re.sub(r"\n{3,}", "\n\n", out)
+    return out.strip()
+
+
 def _search_unified(query: str) -> tuple[list[dict], list[dict], list[dict]]:
     """Azure AI Search 통합 인덱스 단일 호출 → source_type 별 split.
 
@@ -453,6 +487,7 @@ def generate_chat_reply(question: str) -> ChatReply:
         answer = (resp.choices[0].message.content or "").strip()
         if not answer:
             answer = _build_fallback_answer(question, law_hits, proc_hits, yt_hits)
+        answer = _sanitize_answer(answer, law_hits, proc_hits, yt_hits)
         return ChatReply(
             answer=answer,
             mode="azure",
