@@ -185,6 +185,13 @@ export default function SafeContractScreen() {
     );
   }
 
+  function handleRegisterDisabled() {
+    alertAsync(
+      '주소 조회 — 곧 출시',
+      'CODEF 등기부등본 연동은 운영환경 전환 후 활성화됩니다. 우선 텍스트 붙여넣기 또는 PDF 업로드를 이용해주세요.',
+    );
+  }
+
   async function searchRegister() {
     setError(null);
     if (!registerAddress.trim()) {
@@ -252,9 +259,10 @@ export default function SafeContractScreen() {
                 <ModeButton
                   icon="search"
                   label="주소 조회"
-                  badge="CODEF"
-                  active={mode === 'register'}
-                  onPress={() => setMode('register')}
+                  badge="준비중"
+                  active={false}
+                  disabled
+                  onPress={handleRegisterDisabled}
                 />
                 <ModeButton
                   icon="camera"
