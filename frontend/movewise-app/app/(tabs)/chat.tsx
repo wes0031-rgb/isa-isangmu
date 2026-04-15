@@ -124,10 +124,18 @@ export default function ChatScreen() {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
     setInput('');
+    // 멀티턴 — 이전 메시지를 history 로 전달 (initial bot message + 오류 메시지 제외, 최근 8개)
+    const history = messages
+      .filter((m) => m.text && !m.text.startsWith('오류:') && m !== INITIAL_BOT_MESSAGE)
+      .slice(-8)
+      .map((m) => ({
+        role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: m.text,
+      }));
     setMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
     setLoading(true);
     try {
-      const res: ChatResponse = await api.chat(trimmed);
+      const res: ChatResponse = await api.chat(trimmed, history);
       setMessages((prev) => [
         ...prev,
         {

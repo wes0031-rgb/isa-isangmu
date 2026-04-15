@@ -145,8 +145,17 @@ class ServiceReferral(BaseModel):
     description: str
 
 
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
+    history: list[ChatHistoryMessage] = Field(
+        default_factory=list,
+        description="이전 대화 히스토리 (멀티턴 지원). 최근 N개 messages, frontend에서 제공.",
+    )
 
 
 class ChatCitationModel(BaseModel):

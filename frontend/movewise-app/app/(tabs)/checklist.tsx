@@ -7,11 +7,13 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,9 +34,12 @@ import {
 import { CONCERN_GROUPS, CONCERN_OPTIONS } from '../../lib/specialConcerns';
 import {
   CompletionMap,
+  addCustomItem,
   clearChecklist,
   loadChecklist,
   loadCompletions,
+  loadCustomItems,
+  removeCustomItem,
   saveChecklist,
   setCompletion,
 } from '../../lib/storage';
@@ -101,6 +106,8 @@ export default function ChecklistScreen() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ChecklistResponse | null>(null);
   const [completions, setCompletions] = useState<CompletionMap>({});
+  const [customItems, setCustomItems] = useState<ChecklistItem[]>([]);
+  const [addItemOpen, setAddItemOpen] = useState(false);
   const loadingMessage = useRotatingText(CHECKLIST_LOADING_STEPS, loading, 2500);
 
   // 탭 포커스마다 저장된 체크리스트 복원
@@ -132,6 +139,8 @@ export default function ChecklistScreen() {
           setMode('result');
           const comp = await loadCompletions();
           setCompletions(comp);
+          const customs = await loadCustomItems();
+          setCustomItems(customs);
         }
       })();
     }, []),
@@ -158,6 +167,7 @@ export default function ChecklistScreen() {
       setError('계약 유형을 하나 이상 선택하세요');
       return;
     }
+    const isRegenerating = result !== null;  // 기존 결과 있으면 재생성 모드
     setLoading(true);
     setError(null);
     const payload: ChecklistRequest = {
@@ -181,7 +191,8 @@ export default function ChecklistScreen() {
       const res = await api.checklist(payload);
       setResult(res);
       await saveChecklist(payload, res);
-      setCompletions({});
+      // 재생성 시엔 기존 완료 상태 유지 (key 일치하는 항목은 체크된 채로 복원됨)
+      if (!isRegenerating) setCompletions({});
       setMode('result');
     } catch (e: any) {
       setError(e.message);
@@ -227,13 +238,59 @@ export default function ChecklistScreen() {
   async function handleNew() {
     const confirmed = await confirmAsync(
       '새 체크리스트',
-      '저장된 체크리스트를 지우고 새로 만드시겠어요?',
+      '저장된 체크리스트를 지우고 새로 만드시겠어요? (수동 추가 항목·메모도 함께 삭제됩니다)',
     );
     if (!confirmed) return;
     await clearChecklist();
     setResult(null);
     setCompletions({});
+    setCustomItems([]);
     setMode('form');
+  }
+
+  function handleEditConditions() {
+    // 폼 상태는 useFocusEffect 에서 이미 복원된 상태 → 그대로 form 모드 전환
+    // submit 시 saveChecklist 가 덮어쓰고 완료 상태는 유지
+    setMode('form');
+  }
+
+  async function handleAddCustomItem(draft: {
+    title: string;
+    category: string;
+    description: string;
+    d_day_offset: number;
+  }) {
+    const newItem: ChecklistItem = {
+      category: draft.category || '내가 추가',
+      title: draft.title,
+      description: draft.description,
+      d_day_offset: draft.d_day_offset,
+      start_date: '',
+      has_legal_deadline: false,
+      deadline_date: null,
+      deadline_days: null,
+      penalty: null,
+      method: null,
+      contact: null,
+      region_hint: null,
+      citations: [],
+    };
+    await addCustomItem(newItem);
+    setCustomItems((prev) => [...prev, newItem]);
+    setAddItemOpen(false);
+  }
+
+  async function handleRemoveCustomItem(item: ChecklistItem) {
+    const key = itemKey(item);
+    const confirmed = await confirmAsync(
+      '항목 삭제',
+      `"${item.title}" 을(를) 삭제할까요?`,
+    );
+    if (!confirmed) return;
+    await removeCustomItem(key);
+    setCustomItems((prev) =>
+      prev.filter((it) => itemKey(it) !== key),
+    );
   }
 
   const completedCount = result
@@ -253,6 +310,8 @@ export default function ChecklistScreen() {
         <ScrollView contentContainerStyle={styles.container}>
           {mode === 'form' ? (
             <FormView
+              editing={result !== null}
+              onCancelEdit={() => setMode('result')}
               household={household}
               setHousehold={setHousehold}
               contracts={contracts}
@@ -290,12 +349,16 @@ export default function ChecklistScreen() {
             result && (
               <ResultView
                 result={result}
+                customItems={customItems}
                 completions={completions}
                 progress={progress}
                 completedCount={completedCount}
                 onToggle={handleToggle}
                 onShare={handleShare}
                 onNew={handleNew}
+                onEditConditions={handleEditConditions}
+                onAddCustomItem={() => setAddItemOpen(true)}
+                onRemoveCustomItem={handleRemoveCustomItem}
                 onItemPress={(_item, idx) =>
                   router.push({
                     pathname: '/checklist/[id]',
@@ -321,13 +384,127 @@ export default function ChecklistScreen() {
         onClose={() => setRegionPickerOpen(false)}
         onSelect={setRegion}
       />
+      <AddItemModal
+        visible={addItemOpen}
+        onClose={() => setAddItemOpen(false)}
+        onSubmit={handleAddCustomItem}
+      />
     </SafeAreaView>
+  );
+}
+
+// ===== Add Custom Item Modal =====
+
+function AddItemModal({
+  visible,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (draft: {
+    title: string;
+    category: string;
+    description: string;
+    d_day_offset: number;
+  }) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [dDay, setDDay] = useState('0');
+
+  function reset() {
+    setTitle('');
+    setCategory('');
+    setDescription('');
+    setDDay('0');
+  }
+
+  function submit() {
+    if (!title.trim()) return;
+    onSubmit({
+      title: title.trim(),
+      category: category.trim() || '내가 추가',
+      description: description.trim(),
+      d_day_offset: parseInt(dDay, 10) || 0,
+    });
+    reset();
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>항목 추가</Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <Ionicons name="close" size={22} color={colors.textMute} />
+            </Pressable>
+          </View>
+
+          <Text style={styles.modalLabel}>제목 *</Text>
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="예: 새집 커튼 주문"
+            placeholderTextColor={colors.textMute}
+            style={styles.modalInput}
+          />
+
+          <Text style={styles.modalLabel}>카테고리 (선택)</Text>
+          <TextInput
+            value={category}
+            onChangeText={setCategory}
+            placeholder="예: 가전·가구 / 인테리어"
+            placeholderTextColor={colors.textMute}
+            style={styles.modalInput}
+          />
+
+          <Text style={styles.modalLabel}>설명 (선택)</Text>
+          <TextInput
+            value={description}
+            onChangeText={setDescription}
+            placeholder="간단한 메모"
+            placeholderTextColor={colors.textMute}
+            style={[styles.modalInput, { height: 70 }]}
+            multiline
+            textAlignVertical="top"
+          />
+
+          <Text style={styles.modalLabel}>D-day (이사일 기준, 음수=이사 전)</Text>
+          <TextInput
+            value={dDay}
+            onChangeText={(v) => setDDay(v.replace(/[^0-9-]/g, ''))}
+            placeholder="0"
+            placeholderTextColor={colors.textMute}
+            keyboardType="numbers-and-punctuation"
+            style={styles.modalInput}
+          />
+
+          <Pressable
+            style={[styles.submitBtn, !title.trim() && { opacity: 0.5 }]}
+            onPress={submit}
+            disabled={!title.trim()}
+          >
+            <Text style={styles.submitText}>추가</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
 // ===== Form sub-view =====
 
 interface FormViewProps {
+  editing: boolean;
+  onCancelEdit: () => void;
   household: HouseholdType;
   setHousehold: (v: HouseholdType) => void;
   contracts: ContractType[];
@@ -364,6 +541,8 @@ interface FormViewProps {
 
 function FormView(props: FormViewProps) {
   const {
+    editing,
+    onCancelEdit,
     household,
     setHousehold,
     contracts,
@@ -407,9 +586,22 @@ function FormView(props: FormViewProps) {
 
   return (
     <>
+      {editing ? (
+        <View style={styles.editingBanner}>
+          <Ionicons name="options" size={16} color={colors.primary} />
+          <Text style={styles.editingBannerText}>
+            조건 수정 중 — 제출하면 체크리스트를 재생성해요. 완료 상태는 유지돼요.
+          </Text>
+          <Pressable onPress={onCancelEdit} hitSlop={8}>
+            <Ionicons name="close" size={18} color={colors.textMute} />
+          </Pressable>
+        </View>
+      ) : null}
       <Text style={styles.h1}>이사 체크리스트</Text>
       <Text style={styles.h1Sub}>
-        조건을 입력하면 AI가 체크리스트를 만들어줍니다
+        {editing
+          ? '조건을 바꾼 뒤 아래 버튼을 눌러 재생성하세요'
+          : '조건을 입력하면 AI가 체크리스트를 만들어줍니다'}
       </Text>
 
       <Section label="세대 유형">
@@ -573,7 +765,9 @@ function FormView(props: FormViewProps) {
             <Text style={styles.submitText}>{loadingMessage}</Text>
           </>
         ) : (
-          <Text style={styles.submitText}>체크리스트 생성</Text>
+          <Text style={styles.submitText}>
+            {editing ? '체크리스트 재생성' : '체크리스트 생성'}
+          </Text>
         )}
       </Pressable>
 
@@ -591,35 +785,49 @@ function FormView(props: FormViewProps) {
 
 function ResultView({
   result,
+  customItems,
   completions,
   progress,
   completedCount,
   onToggle,
   onShare,
   onNew,
+  onEditConditions,
+  onAddCustomItem,
+  onRemoveCustomItem,
   onItemPress,
 }: {
   result: ChecklistResponse;
+  customItems: ChecklistItem[];
   completions: CompletionMap;
   progress: number;
   completedCount: number;
   onToggle: (item: ChecklistItem) => void;
   onShare: () => void;
   onNew: () => void;
+  onEditConditions: () => void;
+  onAddCustomItem: () => void;
+  onRemoveCustomItem: (item: ChecklistItem) => void;
   onItemPress: (item: ChecklistItem, idx: number) => void;
 }) {
+  const aiCount = result.items.length;
   return (
     <>
       <View style={styles.resultHeaderRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.h1}>체크리스트</Text>
-          <Text style={styles.h1Sub}>{result.total_items}개 항목</Text>
+          <Text style={styles.h1Sub}>
+            AI {aiCount}개{customItems.length > 0 ? ` + 내 ${customItems.length}개` : ''}
+          </Text>
         </View>
+        <Pressable onPress={onEditConditions} style={styles.iconBtn}>
+          <Ionicons name="options-outline" size={22} color={colors.primary} />
+        </Pressable>
         <Pressable onPress={onShare} style={styles.iconBtn}>
           <Ionicons name="share-outline" size={22} color={colors.primary} />
         </Pressable>
         <Pressable onPress={onNew} style={styles.iconBtn}>
-          <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
+          <Ionicons name="refresh" size={22} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -652,6 +860,34 @@ function ResultView({
           onPress={() => onItemPress(it, idx)}
         />
       ))}
+
+      {/* 내가 추가한 항목 섹션 */}
+      {customItems.length > 0 && (
+        <View style={styles.customSectionHeader}>
+          <Ionicons name="person-circle" size={16} color={colors.accent} />
+          <Text style={styles.customSectionTitle}>내가 추가한 항목</Text>
+        </View>
+      )}
+      {customItems.map((it, cIdx) => {
+        const combinedIdx = aiCount + cIdx;
+        return (
+          <ChecklistCard
+            key={`custom-${it.category}-${cIdx}`}
+            item={it}
+            index={combinedIdx}
+            done={!!completions[itemKey(it)]}
+            onToggle={() => onToggle(it)}
+            onPress={() => onItemPress(it, combinedIdx)}
+            onRemove={() => onRemoveCustomItem(it)}
+          />
+        );
+      })}
+
+      {/* 항목 추가 버튼 */}
+      <Pressable style={styles.addItemBtn} onPress={onAddCustomItem}>
+        <Ionicons name="add-circle" size={20} color={colors.primary} />
+        <Text style={styles.addItemText}>항목 직접 추가하기</Text>
+      </Pressable>
     </>
   );
 }
@@ -662,12 +898,14 @@ function ChecklistCard({
   done,
   onToggle,
   onPress,
+  onRemove,
 }: {
   item: ChecklistItem;
   index: number;
   done: boolean;
   onToggle: () => void;
   onPress: () => void;
+  onRemove?: () => void;
 }) {
   const legal = item.has_legal_deadline;
   const dDay =
@@ -740,7 +978,13 @@ function ChecklistCard({
           </View>
         )}
       </Pressable>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMute} />
+      {onRemove ? (
+        <Pressable onPress={onRemove} hitSlop={8} style={styles.removeBtn}>
+          <Ionicons name="trash-outline" size={18} color={colors.danger} />
+        </Pressable>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.textMute} />
+      )}
     </View>
   );
 }
@@ -826,6 +1070,24 @@ function ToggleChip({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  editingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primaryBg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+  },
+  editingBannerText: {
+    ...typography.caption,
+    flex: 1,
+    color: colors.primary,
+    fontWeight: '600',
+  },
   h1: { ...typography.display },
   h1Sub: {
     ...typography.caption,
@@ -942,6 +1204,78 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   submitText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+
+  // Custom items 섹션
+  customSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  customSectionTitle: {
+    ...typography.captionBold,
+    color: colors.accent,
+    fontSize: 13,
+  },
+  addItemBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primaryLight,
+    borderStyle: 'dashed',
+    backgroundColor: colors.cardBg,
+    marginTop: spacing.sm,
+  },
+  addItemText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  removeBtn: {
+    padding: spacing.xs,
+  },
+
+  // Add Item Modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: colors.cardBg,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  modalTitle: { ...typography.subtitle },
+  modalLabel: {
+    ...typography.captionBold,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  modalInput: {
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    fontSize: 14,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',

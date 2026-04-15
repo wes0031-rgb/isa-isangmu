@@ -3,11 +3,13 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { ChecklistRequest, ChecklistResponse } from './api';
+import { ChecklistItem, ChecklistRequest, ChecklistResponse } from './api';
 
 const K = {
   CHECKLIST: 'movewise:checklist',
   COMPLETIONS: 'movewise:completions',
+  CUSTOM_ITEMS: 'movewise:custom_items',
+  NOTES: 'movewise:notes',
   API_URL: 'movewise:api_url',
   USER_NAME: 'movewise:user_name',
 } as const;
@@ -56,6 +58,57 @@ export async function loadChecklist(): Promise<StoredChecklist | null> {
 export async function clearChecklist(): Promise<void> {
   await AsyncStorage.removeItem(K.CHECKLIST);
   await AsyncStorage.removeItem(K.COMPLETIONS);
+  await AsyncStorage.removeItem(K.CUSTOM_ITEMS);
+  await AsyncStorage.removeItem(K.NOTES);
+}
+
+// ===== Custom items (사용자가 직접 추가한 체크리스트 항목) =====
+
+export async function loadCustomItems(): Promise<ChecklistItem[]> {
+  const raw = await AsyncStorage.getItem(K.CUSTOM_ITEMS);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addCustomItem(item: ChecklistItem): Promise<void> {
+  const current = await loadCustomItems();
+  current.push(item);
+  await AsyncStorage.setItem(K.CUSTOM_ITEMS, JSON.stringify(current));
+}
+
+export async function removeCustomItem(key: string): Promise<void> {
+  const current = await loadCustomItems();
+  const filtered = current.filter((it) => `${it.category}::${it.title}` !== key);
+  await AsyncStorage.setItem(K.CUSTOM_ITEMS, JSON.stringify(filtered));
+}
+
+// ===== Personal notes (각 항목별 메모) =====
+
+export type NotesMap = Record<string, string>; // itemKey → note text
+
+export async function loadNotes(): Promise<NotesMap> {
+  const raw = await AsyncStorage.getItem(K.NOTES);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as NotesMap;
+  } catch {
+    return {};
+  }
+}
+
+export async function setNote(key: string, text: string): Promise<void> {
+  const current = await loadNotes();
+  if (text.trim()) {
+    current[key] = text;
+  } else {
+    delete current[key];
+  }
+  await AsyncStorage.setItem(K.NOTES, JSON.stringify(current));
 }
 
 // ===== Completion state =====

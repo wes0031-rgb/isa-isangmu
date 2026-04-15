@@ -399,8 +399,16 @@ def _search_unified(query: str) -> tuple[list[dict], list[dict], list[dict]]:
     return laws, procs, yts
 
 
-def generate_chat_reply(question: str) -> ChatReply:
-    """챗봇 응답 생성. Azure 있으면 LLM, 없으면 키워드 답변."""
+def generate_chat_reply(
+    question: str,
+    history: list[dict] | None = None,
+) -> ChatReply:
+    """챗봇 응답 생성. Azure 있으면 LLM, 없으면 키워드 답변.
+
+    history: 이전 대화 messages. 각 항목 {"role": "user"|"assistant", "content": str}.
+             멀티턴 지원 — LLM에 이전 맥락을 함께 전달하고, 검색 쿼리 재작성에도 활용.
+    """
+    history = history or []
     # 1. 인사말
     if _is_greeting(question):
         return ChatReply(
@@ -499,17 +507,27 @@ def generate_chat_reply(question: str) -> ChatReply:
         )
     context = "\n\n".join(context_parts)
 
+    # 멀티턴: 이전 대화를 system 뒤에 삽입 (최근 8개 메시지 = 4 turn)
+    llm_messages: list[dict] = [
+        {"role": "system", "content": CHAT_SYSTEM_PROMPT},
+    ]
+    for m in history[-8:]:
+        role = m.get("role")
+        content = m.get("content")
+        if role in ("user", "assistant") and isinstance(content, str) and content:
+            llm_messages.append({"role": role, "content": content})
+    llm_messages.append(
+        {
+            "role": "user",
+            "content": f"질문: {question}\n\n검색 결과:\n{context}",
+        }
+    )
+
     try:
         resp = client.chat.completions.create(
             model=settings.azure_openai_deployment_name,
             temperature=0.3,
-            messages=[
-                {"role": "system", "content": CHAT_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": f"질문: {question}\n\n검색 결과:\n{context}",
-                },
-            ],
+            messages=llm_messages,
             timeout=15,
         )
         answer = (resp.choices[0].message.content or "").strip()

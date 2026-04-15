@@ -11,6 +11,7 @@ import {
   ScrollView,
   Share,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,7 +24,10 @@ import {
   CompletionMap,
   loadChecklist,
   loadCompletions,
+  loadCustomItems,
+  loadNotes,
   setCompletion,
+  setNote,
 } from '../../lib/storage';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
@@ -37,6 +41,8 @@ export default function TaskDetail() {
   const [item, setItem] = useState<ChecklistItem | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [completions, setCompletions] = useState<CompletionMap>({});
+  const [note, setNoteText] = useState('');
+  const [noteSaved, setNoteSaved] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -45,8 +51,10 @@ export default function TaskDetail() {
         setNotFound(true);
         return;
       }
+      const customs = await loadCustomItems();
+      const all = [...saved.response.items, ...customs];
       const idx = parseInt(String(id ?? '0'), 10);
-      const it = saved.response.items[idx];
+      const it = all[idx];
       if (!it) {
         setNotFound(true);
         return;
@@ -54,6 +62,8 @@ export default function TaskDetail() {
       setItem(it);
       const c = await loadCompletions();
       setCompletions(c);
+      const notes = await loadNotes();
+      setNoteText(notes[itemKey(it)] || '');
     })();
   }, [id]);
 
@@ -124,6 +134,17 @@ export default function TaskDetail() {
     Linking.openURL(url).catch(() =>
       alertAsync('링크 열기 실패', '기본 브라우저로 열어주세요.'),
     );
+  }
+
+  function handleNoteChange(text: string) {
+    setNoteText(text);
+    setNoteSaved(false);
+  }
+
+  async function handleNoteSave() {
+    if (!item) return;
+    await setNote(itemKey(item), note);
+    setNoteSaved(true);
   }
 
   return (
@@ -208,6 +229,35 @@ export default function TaskDetail() {
             ))}
           </View>
         )}
+
+        {/* 개인 메모 */}
+        <View style={styles.card}>
+          <View style={styles.noteHeader}>
+            <SectionHeader icon="create" title="내 메모" />
+            {!noteSaved && (
+              <Pressable onPress={handleNoteSave} hitSlop={8}>
+                <Text style={styles.noteSaveBtn}>저장</Text>
+              </Pressable>
+            )}
+            {noteSaved && note.length > 0 && (
+              <Ionicons
+                name="checkmark-circle"
+                size={16}
+                color={colors.success}
+              />
+            )}
+          </View>
+          <TextInput
+            value={note}
+            onChangeText={handleNoteChange}
+            onBlur={handleNoteSave}
+            placeholder="담당자·주의사항·진행 메모를 자유롭게 적어보세요"
+            placeholderTextColor={colors.textMute}
+            multiline
+            textAlignVertical="top"
+            style={styles.noteInput}
+          />
+        </View>
 
         {/* 완료 토글 + 공유 */}
         <View style={styles.actions}>
@@ -414,6 +464,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   body: { ...typography.body, fontSize: 14, lineHeight: 22 },
+  noteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  noteSaveBtn: {
+    ...typography.captionBold,
+    color: colors.primary,
+    fontSize: 12,
+    marginBottom: spacing.sm,
+  },
+  noteInput: {
+    minHeight: 70,
+    backgroundColor: colors.bg,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

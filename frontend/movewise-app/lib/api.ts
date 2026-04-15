@@ -231,8 +231,17 @@ export const api = {
   safecontract(req: SafeContractRequest) {
     return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);
   },
-  chat(question: string) {
-    return post<{ question: string }, ChatResponse>('/chat', { question });
+  chat(
+    question: string,
+    history: { role: 'user' | 'assistant'; content: string }[] = [],
+  ) {
+    return post<
+      {
+        question: string;
+        history: { role: 'user' | 'assistant'; content: string }[];
+      },
+      ChatResponse
+    >('/chat', { question, history });
   },
   async chatPresets(): Promise<string[]> {
     const res = await fetch(`${getApiUrl()}/chat/presets`);

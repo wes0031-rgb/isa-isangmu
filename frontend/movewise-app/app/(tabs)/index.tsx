@@ -67,6 +67,17 @@ export default function Home() {
   const progress =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
+  // 오늘 시작해야 하는 일 (start_date 가 오늘, 미완료)
+  const todayTasks = saved
+    ? saved.response.items
+        .filter((it) => {
+          if (!it.start_date) return false;
+          if (completions[itemKey(it.category, it.title)]) return false;
+          return daysUntil(it.start_date) === 0;
+        })
+        .slice(0, 5)
+    : [];
+
   // 앞으로 가장 임박한 마감일 상위 3건
   const upcomingDeadlines = saved
     ? saved.response.items
@@ -175,6 +186,51 @@ export default function Home() {
             <Text style={styles.statusText}>백엔드 확인 중...</Text>
           )}
         </View>
+
+        {/* Today tasks — 오늘 시작할 일 */}
+        {todayTasks.length > 0 && (
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="today" size={18} color={colors.accent} />
+              <Text style={styles.sectionTitle}>오늘 할 일 · {todayTasks.length}건</Text>
+            </View>
+            {todayTasks.map((it, idx) => (
+              <Pressable
+                key={idx}
+                style={styles.todayCard}
+                onPress={() =>
+                  router.push({
+                    pathname: '/checklist/[id]',
+                    params: {
+                      id: String(
+                        saved!.response.items.findIndex(
+                          (x) =>
+                            x.category === it.category && x.title === it.title,
+                        ),
+                      ),
+                    },
+                  })
+                }
+              >
+                <View style={styles.todayBadge}>
+                  <Ionicons name="flash" size={16} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.todayTitle}>{it.title}</Text>
+                  <Text style={styles.todayMeta}>
+                    {it.category}
+                    {it.deadline_date ? ` · ${it.deadline_date} 까지` : ''}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.textMute}
+                />
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {/* Upcoming deadlines */}
         {upcomingDeadlines.length > 0 && (
@@ -445,6 +501,31 @@ const styles = StyleSheet.create({
   deadlineDayText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   deadlineTitle: { ...typography.bodyBold, fontSize: 15 },
   deadlineDate: { ...typography.caption, marginTop: 2 },
+
+  // Today tasks
+  todayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.cardBg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  todayBadge: {
+    backgroundColor: colors.accent,
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayTitle: { ...typography.bodyBold, fontSize: 15 },
+  todayMeta: { ...typography.caption, marginTop: 2 },
 
   // CTAs
   ctaGroup: { gap: spacing.md, marginBottom: spacing.lg },

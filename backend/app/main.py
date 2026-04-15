@@ -125,7 +125,8 @@ def post_checklist(req: ChecklistRequest) -> ChecklistResponse:
 @app.post("/chat", response_model=ChatResponse)
 def post_chat(req: ChatRequest) -> ChatResponse:
     """챗봇 — 이사·전월세 질문에 대한 RAG 답변 (Azure 있으면 LLM, 없으면 키워드 검색)."""
-    reply = generate_chat_reply(req.question)
+    history = [{"role": m.role, "content": m.content} for m in req.history]
+    reply = generate_chat_reply(req.question, history=history)
     return ChatResponse(
         answer=reply.answer,
         mode=reply.mode,
