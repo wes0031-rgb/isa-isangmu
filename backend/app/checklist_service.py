@@ -396,6 +396,7 @@ def structure_checklist_fallback(
             "title": "확정일자 취득",
             "description": "보증금 보호를 위해 전입신고 당일 확정일자를 받아두세요.",
             "d_day_offset": 1,
+            "deadline_days": 1,  # 전입신고 당일 권장 (우선변제권 확보 핵심)
             "has_legal_deadline": False,
             "method": "주민센터 방문 또는 인터넷등기소",
             "citations": [{"law_name": "주택임대차보호법", "article": "제3조의2"}],

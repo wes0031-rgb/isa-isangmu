@@ -111,12 +111,93 @@ def parse_articles(root: ET.Element) -> list[dict]:
     return articles
 
 
-def extract_keywords(text: str) -> list[str]:
-    # 간단한 키워드 추출: 반복 등장하는 명사
-    candidates = re.findall(r"[가-힣]{2,}", text)
+# ===== 키워드 추출 =====
+# 법률 용어 사전 — 이사이상무 도메인에서 검색 빈도가 높은 핵심 용어
+# 조문 본문에 등장하면 키워드로 즉시 채택 (빈도 무관)
+LEGAL_TERMS = frozenset([
+    # 임대차 핵심
+    "대항력", "우선변제권", "확정일자", "임차권등기명령", "전입신고",
+    "보증금", "임대차", "임대인", "임차인", "전세금", "월세",
+    "임대차기간", "존속기간", "갱신요구권", "묵시적갱신", "해지통고",
+    # 물권·담보·경매
+    "근저당권", "저당권", "가압류", "임의경매", "경매개시결정",
+    "배당순위", "최우선변제", "소액임차인", "신탁등기",
+    # 계약·채권
+    "계약해지", "계약갱신", "채무불이행", "원상회복", "손해배상",
+    "중도해지", "동시이행", "유치권",
+    # 등기·주민등록
+    "등기부", "주민등록", "주민등록번호", "말소", "전출", "전입",
+    "관할", "시장", "군수", "구청장",
+    # 행정·벌칙
+    "과태료", "벌금", "시행", "위반", "공고",
+    # 건축·관리
+    "공동주택", "관리비", "장기수선충당금", "관리비예치금", "위반건축물",
+    # 동물·가족
+    "반려동물", "소유자", "동물등록", "변경신고",
+])
+
+
+def extract_keywords(text: str, title: str = "") -> list[str]:
+    """법률 조문용 키워드 추출 — 3단계 병합.
+
+    1. title 에서 ( ) 안의 괄호 주제어 추출 (예: "제3조(대항력 등)" → "대항력")
+    2. 본문에서 LEGAL_TERMS 사전 매칭 (빈도 무관, 있으면 바로 채택)
+    3. 2회 이상 등장한 한글 2자+ 단어
+    4. fallback: 3자 이상 한글 단어 1회 등장 (짧은 조문용)
+
+    Args:
+        text: 조문 본문
+        title: 조문 제목 (예: "대항력 등"). 선택.
+
+    Returns:
+        중복 제거된 키워드 최대 10개
+    """
     from collections import Counter
-    top = [w for w, c in Counter(candidates).most_common() if c >= 2 and len(w) >= 2]
-    return top[:8]
+    result: list[str] = []
+    seen: set[str] = set()
+
+    def _add(word: str) -> None:
+        if word and word not in seen and len(result) < 10:
+            seen.add(word)
+            result.append(word)
+
+    # 1. title 파싱 — ( 안) 괄호 주제어 + 공백 분리 토큰
+    if title:
+        # 괄호 안 추출
+        for m in re.finditer(r"[(\(]([^)\)]+)[)\)]", title):
+            for w in re.findall(r"[가-힣]{2,}", m.group(1)):
+                _add(w)
+        # 괄호 밖 전체 토큰 (괄호 제거 후)
+        bare = re.sub(r"[(\(][^)\)]*[)\)]", " ", title)
+        for w in re.findall(r"[가-힣]{2,}", bare):
+            _add(w)
+
+    if not text:
+        return result
+
+    # 2. 법률 용어 사전 매칭
+    for term in LEGAL_TERMS:
+        if term in text:
+            _add(term)
+
+    # 3. 빈도 2회 이상
+    tokens = re.findall(r"[가-힣]{2,}", text)
+    counts = Counter(tokens)
+    for w, c in counts.most_common():
+        if c >= 2 and len(w) >= 2:
+            _add(w)
+        if len(result) >= 10:
+            break
+
+    # 4. fallback: 3자 이상 단어 1회 등장 (총 키워드 < 3 일 때만)
+    if len(result) < 3:
+        for w in tokens:
+            if len(w) >= 3:
+                _add(w)
+            if len(result) >= 5:
+                break
+
+    return result
 
 
 # RAG 품질 필터 — 아래 유형은 Index A 에서 제외:
@@ -145,6 +226,67 @@ def should_skip_article(content: str) -> bool:
 def is_deleted_article(content: str) -> bool:
     """Deprecated — use should_skip_article. 호환성을 위해 유지."""
     return bool(_DELETED_ARTICLE_RE.match((content or "").strip()))
+
+
+def minbeop_subcategory(article: str) -> str:
+    """민법 조문 번호 → 편별 서브카테고리 (한국 민법 구조).
+
+    §1-§184 총칙 / §185-§372 물권 / §373-§617 채권 총칙 /
+    §618-§654 임대차 / §655-§766 기타 전형계약 / §767-§996 친족 / §997-§1118 상속
+    """
+    m = re.match(r"제(\d+)조", article)
+    if not m:
+        return "민법 기타"
+    n = int(m.group(1))
+    if n <= 184: return "민법 총칙"
+    if n <= 372: return "민법 물권"
+    if n <= 617: return "민법 채권 총칙"
+    if n <= 654: return "민법 채권 — 임대차"
+    if n <= 766: return "민법 채권 — 기타 전형계약"
+    if n <= 996: return "민법 친족"
+    return "민법 상속"
+
+
+def resolve_category(law_name: str, article: str, fallback: str) -> str:
+    """법령별 카테고리 결정. 민법은 편별로 세분, 나머지는 ingest 설정의 fallback 사용."""
+    if law_name == "민법":
+        return minbeop_subcategory(article)
+    return fallback
+
+
+# ===== 과태료·기한 자동 추출 =====
+_PENALTY_PATTERNS = [
+    (re.compile(r"(\d+(?:,\d{3})*(?:만|억)?원?)\s*이하의?\s*과태료"), "과태료"),
+    (re.compile(r"과태료[^다]{0,15}?(\d+(?:,\d{3})*(?:만|억)?원?)"), "과태료"),
+    (re.compile(r"(\d+(?:,\d{3})*(?:만|억)?원?)\s*이하의?\s*벌금"), "벌금"),
+    (re.compile(r"벌금[^다]{0,15}?(\d+(?:,\d{3})*(?:만|억)?원?)"), "벌금"),
+    (re.compile(r"(\d+)년\s*이하의?\s*징역"), "징역"),
+]
+_DEADLINE_PATTERNS = [
+    re.compile(r"(\d+)\s*일\s*이내"),
+    re.compile(r"(\d+)\s*주\s*이내"),
+    re.compile(r"(\d+)\s*개월\s*이내"),
+    re.compile(r"(\d+)\s*년\s*이내"),
+]
+
+
+def extract_penalties(text: str) -> list[str]:
+    """본문에서 과태료·벌금·징역 금액 자동 추출."""
+    found: set[str] = set()
+    for pat, label in _PENALTY_PATTERNS:
+        for m in pat.finditer(text):
+            amount = m.group(1) if m.groups() else ""
+            found.add(f"{label} {amount}".strip())
+    return sorted(found)
+
+
+def extract_deadlines(text: str) -> list[str]:
+    """본문에서 '~일 이내', '~개월 이내' 같은 기한 표현 자동 추출."""
+    found: set[str] = set()
+    for pat in _DEADLINE_PATTERNS:
+        for m in pat.finditer(text):
+            found.add(m.group(0).strip())
+    return sorted(found)
 
 
 def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
@@ -183,8 +325,10 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
             "article": a["article"],
             "title": a["title"] or a["article"],
             "content": content,
-            "keywords": extract_keywords(content),
-            "category": [note],
+            "keywords": extract_keywords(content, a.get("title", "")),
+            "category": [resolve_category(name, a["article"], note)],
+            "penalties": extract_penalties(content),
+            "deadlines": extract_deadlines(content),
             "source_url": doc["source_url"],
             "last_updated": doc["fetched_at"],
         })
