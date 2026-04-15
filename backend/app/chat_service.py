@@ -1,11 +1,11 @@
-"""챗봇 서비스 — fallback 키워드 RAG + Azure OpenAI 승격 지원.
+"""챗봇 서비스 — Azure AI Search 통합 인덱스 RAG + Azure OpenAI 답변 생성.
 
-Azure 연결 전:
-  사용자 질문 → 토큰화 → Index A(법률) + Index B(절차) + Index C(유튜브) 검색 →
-  상위 청크로 구조화된 답변 + citation 생성
-
-Azure 연결 후:
-  같은 검색 결과를 GPT-4o 에 context 로 전달해서 자연어 답변 생성
+흐름:
+  1. 사용자 질문 → 도메인/인사 필터 → 키워드 추출
+  2. Azure AI Search 통합 인덱스 (semantic + 벡터) 단일 호출
+     → source_type 별로 law / procedure / video 분리
+  3. Azure OpenAI 가 검색 컨텍스트로 자연어 답변 생성
+  4. Azure 미설정 시 로컬 키워드 검색 + 룰베이스 답변 fallback
 """
 from __future__ import annotations
 
@@ -13,13 +13,13 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .azure_clients import get_openai_client
+from .azure_clients import get_openai_client, get_search_client_procedure
 from .config import get_settings
 from .local_search import (
     clean_hanja,
-    search as search_procedures,
-    search_laws,
-    search_youtube,
+    search as search_procedures_local,
+    search_laws as search_laws_local,
+    search_youtube as search_youtube_local,
 )
 
 logger = logging.getLogger("movewise")
@@ -46,11 +46,14 @@ CHAT_SYSTEM_PROMPT = """당신은 한국 이사·전월세 절차 전문 도우�
 사용자 질문에 대해 반드시 주어진 '검색 결과' 에 있는 내용만 사용하여 답변하세요.
 
 규칙:
-1. 답변은 한국어로 2~4문장, 쉬운 말로 작성
-2. 법 조항을 인용할 때는 [주민등록법 제16조] 형식으로 표기
+1. 답변은 한국어로 2~5문장, 쉬운 말로 작성
+2. 검색 결과는 [법률] / [절차] / [영상] 세 종류 — 셋을 균형 있게 활용
+   - 법 조항을 인용할 때는 [주민등록법 제16조] 형식으로 표기
+   - 절차/연락처는 본문에 자연스럽게 녹여서 설명
+   - 검색 결과에 [영상] 이 포함돼 있으면, 답변 끝에 줄을 바꿔
+     "🎥 참고 영상: [채널명] 영상제목" 형식으로 1건 언급
 3. 검색 결과에 없는 내용은 절대 지어내지 말 것
-4. 답변 끝에 "더 자세한 내용은 관련 기관에 확인하세요" 한 줄 추가
-5. 구체적 절차·연락처가 검색 결과에 있으면 포함
+4. 본문 마지막 줄에 "더 자세한 내용은 관련 기관에 확인하세요" 추가
 """
 
 
@@ -118,6 +121,14 @@ DOMAIN_KEYWORDS = [
     "대출", "디딤돌", "버팀목", "월세지원", "청년", "신혼",
     # 분쟁
     "분쟁", "조정", "소송", "법률", "변호사", "하자", "수선",
+    # 비용·돈·꿀팁
+    "비용", "가격", "요금", "돈", "절약", "꿀팁", "팁", "할인",
+    "지원금", "지원", "보조금", "감면",
+    # 일반 동작 어휘
+    "체크", "준비", "목록", "리스트", "체크리스트", "확인", "신청",
+    "신고", "변경", "발급", "받기", "내기", "옮기",
+    # 거주 형태
+    "원룸", "투룸", "오피스텔", "아파트", "빌라", "주택", "집",
     # 기본 질문 어휘
     "언제", "어떻게", "어디", "방법", "절차", "기한", "과태료",
 ]
@@ -176,25 +187,52 @@ def _clean_noise(text: str) -> str:
     return cleaned.strip()
 
 
+def _proc_title(h: dict) -> str:
+    """unified index 와 로컬 chunk 양쪽에서 동작하는 제목 추출."""
+    return clean_hanja(
+        h.get("title")
+        or h.get("doc_title")
+        or h.get("breadcrumb")
+        or "행정 절차"
+    )
+
+
+def _yt_title(h: dict) -> str:
+    return clean_hanja(h.get("title") or h.get("video_title") or "유튜브 영상")
+
+
+def _law_ref(h: dict) -> str:
+    return f"{h.get('law_name', '')} {h.get('article', '')}".strip()
+
+
 def _build_fallback_answer(
     question: str, law_hits: list[dict], proc_hits: list[dict], yt_hits: list[dict]
 ) -> str:
-    """키워드 검색 결과만으로 간단한 답변 생성."""
-    parts = []
+    """검색 결과만으로 간단한 답변 생성 (Azure OpenAI 미사용 시)."""
+    parts: list[str] = []
     if law_hits:
-        # 법률이 있으면 조문 내용을 우선 (가장 신뢰도 높음)
         top_law = law_hits[0]
         content = clean_hanja((top_law.get("content") or "")[:400])
         content = _clean_noise(content)
-        law_ref = f"{top_law.get('law_name', '')} {top_law.get('article', '')}"
-        parts.append(f"[{law_ref}]\n{content}")
+        ref = _law_ref(top_law)
+        if ref:
+            parts.append(f"[{ref}]\n{content}")
+        else:
+            parts.append(content)
     elif proc_hits:
-        # 법률 없으면 절차 청크 (네비게이션 제거)
         top = proc_hits[0]
         content = clean_hanja((top.get("content") or "")[:400])
         content = _clean_noise(content)
         if content:
             parts.append(content)
+
+    if yt_hits:
+        top_yt = yt_hits[0]
+        title = _yt_title(top_yt)
+        channel = top_yt.get("channel", "")
+        prefix = f"{channel} - " if channel else ""
+        parts.append(f"🎥 참고 영상: {prefix}{title}")
+
     if not parts:
         return (
             "질문에 대한 정확한 정보를 찾지 못했습니다. "
@@ -211,10 +249,11 @@ def _build_citations(
 ) -> list[ChatCitation]:
     cits: list[ChatCitation] = []
     for h in law_hits[:3]:
+        ref = _law_ref(h)
         cits.append(
             ChatCitation(
                 source_type="law",
-                title=f"{h.get('law_name', '')} {h.get('article', '')}",
+                title=ref or clean_hanja(h.get("title", "")),
                 content_snippet=clean_hanja((h.get("content") or "")[:200]),
                 url=h.get("source_url"),
                 meta={"article_title": h.get("title", "")},
@@ -224,22 +263,73 @@ def _build_citations(
         cits.append(
             ChatCitation(
                 source_type="procedure",
-                title=clean_hanja(h.get("doc_title") or h.get("breadcrumb") or "행정 절차"),
+                title=_proc_title(h),
                 content_snippet=clean_hanja((h.get("content") or "")[:200]),
                 url=h.get("source_url"),
             )
         )
     for h in yt_hits[:3]:
+        channel = h.get("channel", "")
+        title = _yt_title(h)
         cits.append(
             ChatCitation(
                 source_type="youtube",
-                title=f"{h.get('channel', '')}: {h.get('video_title', '')}",
+                title=f"{channel}: {title}" if channel else title,
                 content_snippet=clean_hanja((h.get("content") or "")[:200]),
                 url=h.get("deep_link") or h.get("source_url"),
                 meta={"timecode": h.get("timecode", "")},
             )
         )
     return cits
+
+
+def _search_unified(query: str) -> tuple[list[dict], list[dict], list[dict]]:
+    """Azure AI Search 통합 인덱스 단일 호출 → source_type 별 split.
+
+    Azure 미설정·SDK 미설치·호출 실패 시 ([], [], []) 반환 → 호출자가 로컬 폴백.
+    """
+    try:
+        client = get_search_client_procedure()
+    except Exception as exc:
+        logger.warning(
+            f"chat search client init failed ({type(exc).__name__}): {exc} — local fallback"
+        )
+        return [], [], []
+    if client is None:
+        return [], [], []
+
+    try:
+        hits = list(
+            client.search(
+                search_text=query,
+                top=12,
+                query_type="semantic",
+                semantic_configuration_name="movewise-semantic",
+            )
+        )
+    except Exception as exc:
+        logger.warning(
+            f"chat unified search failed ({type(exc).__name__}): {exc} — local fallback"
+        )
+        return [], [], []
+
+    laws: list[dict] = []
+    procs: list[dict] = []
+    yts: list[dict] = []
+    for h in hits:
+        d = dict(h)
+        st = d.get("source_type")
+        if st == "law":
+            laws.append(d)
+        elif st == "procedure":
+            procs.append(d)
+        elif st == "video":
+            yts.append(d)
+    logger.info(
+        f"chat unified search: query={query!r} total={len(hits)} "
+        f"law={len(laws)} proc={len(procs)} video={len(yts)}"
+    )
+    return laws, procs, yts
 
 
 def generate_chat_reply(question: str) -> ChatReply:
@@ -296,11 +386,17 @@ def generate_chat_reply(question: str) -> ChatReply:
             used_queries=[],
         )
 
-    # 세 인덱스 모두 검색
+    # 5. 검색 — Azure unified index 우선, 실패 시 로컬 키워드 검색
     query_joined = " ".join(keywords)
-    law_hits = search_laws([query_joined], top_k_per_query=3)
-    proc_hits = search_procedures([query_joined], top_k_per_query=3)
-    yt_hits = search_youtube([query_joined], top_k_per_query=3)
+    law_hits, proc_hits, yt_hits = _search_unified(query_joined)
+    if not (law_hits or proc_hits or yt_hits):
+        # Azure 미설정 또는 호출 실패 시 로컬 폴백
+        law_hits = search_laws_local([query_joined], top_k_per_query=3)
+        proc_hits = search_procedures_local([query_joined], top_k_per_query=3)
+        yt_hits = search_youtube_local([query_joined], top_k_per_query=3)
+        logger.info(
+            f"chat local fallback: law={len(law_hits)} proc={len(proc_hits)} video={len(yt_hits)}"
+        )
 
     citations = _build_citations(law_hits, proc_hits, yt_hits)
 
@@ -315,22 +411,23 @@ def generate_chat_reply(question: str) -> ChatReply:
             used_queries=[query_joined],
         )
 
-    # Azure 모드 — LLM 에 컨텍스트 전달
+    # Azure 모드 — LLM 에 컨텍스트 전달 (unified index field 사용)
     settings = get_settings()
     context_parts = []
     for h in law_hits[:5]:
+        ref = _law_ref(h)
         context_parts.append(
-            f"[법률] {h.get('law_name')} {h.get('article')}: "
+            f"[법률] {ref or clean_hanja(h.get('title', ''))}: "
             f"{clean_hanja((h.get('content') or '')[:400])}"
         )
     for h in proc_hits[:5]:
         context_parts.append(
-            f"[절차] {clean_hanja(h.get('doc_title') or '')}: "
+            f"[절차] {_proc_title(h)}: "
             f"{clean_hanja((h.get('content') or '')[:400])}"
         )
     for h in yt_hits[:3]:
         context_parts.append(
-            f"[유튜브] {h.get('channel')} - {h.get('video_title')}: "
+            f"[영상] {h.get('channel', '')} - {_yt_title(h)}: "
             f"{clean_hanja((h.get('content') or '')[:300])}"
         )
     context = "\n\n".join(context_parts)
