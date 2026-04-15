@@ -331,8 +331,12 @@ def _sanitize_answer(
         out = yt_line_pat.sub("", out)
         out = out.replace("[영상]", "")
     else:
-        # backend 가 직접 만든 정확한 유튜브 블록
-        top = yt_hits[0]
+        # backend 가 직접 만든 정확한 유튜브 블록.
+        # timestamp > 0 인 chunk 를 우선 선택 — 0초(인트로) 보다 의미 있는 부분 권장.
+        top = next(
+            (h for h in yt_hits if int(h.get("start_seconds") or 0) > 0),
+            yt_hits[0],
+        )
         title = _yt_title(top)
         channel = top.get("channel", "")
         # deep_link 우선 — 타임스탬프 포함 URL → 클릭 시 해당 시점부터 자동 재생
