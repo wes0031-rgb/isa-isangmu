@@ -1,0 +1,51 @@
+{
+  "total": 1982,
+  "by_source_type": {
+    "law": 1635,
+    "procedure": 200,
+    "video": 147
+  },
+  "by_law_name": {
+    "민법": 1094,
+    "부동산등기법": 118,
+    "공동주택관리법": 104,
+    "동물보호법": 102,
+    "주민등록법 시행령": 86,
+    "주민등록법": 55,
+    "주택임대차보호법": 41,
+    "주택임대차보호법 시행령": 35
+  },
+  "output_file": "backend/data/indexes/index_unified.jsonl",
+  "fields": [
+    "id",
+    "source_id",
+    "source_type",
+    "title",
+    "content",
+    "source_url",
+    "deep_link",
+    "keywords",
+    "category",
+    "fetched_at",
+    "applicable_to",
+    "contract_type",
+    "region",
+    "penalties",
+    "deadlines",
+    "related_laws",
+    "related_procedures",
+    "related_videos",
+    "law_name",
+    "article",
+    "parent_doc",
+    "breadcrumb",
+    "chunk_index",
+    "chunk_total",
+    "video_id",
+    "channel",
+    "start_seconds",
+    "end_seconds",
+    "timecode",
+    "content_vector"
+  ]
+}

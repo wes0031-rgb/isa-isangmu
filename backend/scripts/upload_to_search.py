@@ -1,13 +1,15 @@
-"""Create Azure AI Search indexes and upload chunks.
+"""Create Azure AI Search 통합 인덱스 + 단일 jsonl 업로드.
 
 Prereq:
   - AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_API_KEY in .env
   - AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY (for embeddings)
-  - Index A chunks: data/indexes/index_a_chunks.jsonl (run ingest_laws.py first)
-  - Index B chunks: data/indexes/index_b_chunks_curated.jsonl (run curate_chunks.py first)
+  - 통합 인덱스 파일: data/indexes/index_unified.jsonl
+    (먼저 `python3 backend/scripts/unify_indexes.py` 실행 필요)
 
 Usage:
-  python3 upload_to_search.py [--create-indexes] [--skip-embeddings]
+  python3 backend/scripts/upload_to_search.py [--create-index] [--skip-embeddings]
+
+구 버전 (3 인덱스 분리 업로드) 은 option B 채택 후 단일 인덱스로 통합.
 """
 from __future__ import annotations
 
@@ -16,36 +18,27 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(ROOT / "backend"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 
-from app.config import get_settings  # noqa: E402
+from backend.app.config import get_settings  # noqa: E402
+from backend.schemas.unified_index import UnifiedChunk, azure_index_schema  # noqa: E402
 
-SCHEMA_DIR = ROOT / "backend" / "schemas"
-INDEX_A_DATA = ROOT / "backend" / "data" / "indexes" / "index_a_chunks.jsonl"
-INDEX_B_DATA = ROOT / "backend" / "data" / "indexes" / "index_b_chunks_curated.jsonl"
+UNIFIED_DATA = ROOT / "backend" / "data" / "indexes" / "index_unified.jsonl"
+UNIFIED_INDEX_NAME = "moving-unified-index"
 
-# Index A / B 스키마에 있는 필드만 남기고 나머지 잘라냄 (upload 시 거부 방지)
-INDEX_A_FIELDS = {
-    "id", "law_name", "article", "title", "content",
-    "keywords", "category", "source_url", "last_updated", "content_vector",
-}
-INDEX_B_FIELDS = {
-    "id", "parent_doc", "doc_title", "breadcrumb", "content",
-    "category", "applicable_to", "contract_type", "region",
-    "deadlines", "penalties", "related_laws", "source_url",
-    "fetched_at", "content_vector",
-}
+# Azure Search 가 거부하는 null 필드 제외 + datetime ISO 변환용
+_DATE_FIELDS = ("fetched_at",)
 
 
-def load_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+def load_unified() -> list[dict]:
+    if not UNIFIED_DATA.exists():
+        print(f"❌ {UNIFIED_DATA} 가 없습니다. 먼저 unify_indexes.py 를 실행하세요.")
+        sys.exit(2)
+    return [json.loads(l) for l in UNIFIED_DATA.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-def _to_iso_datetime(value: str | None) -> str | None:
-    """'2026-04-13' → '2026-04-13T00:00:00Z' (Azure DateTimeOffset)."""
+def _to_iso(value):
     if not value:
         return None
     if "T" in value:
@@ -53,12 +46,22 @@ def _to_iso_datetime(value: str | None) -> str | None:
     return f"{value}T00:00:00Z"
 
 
-def _normalize_chunk(d: dict, allowed_fields: set[str], date_fields: tuple[str, ...]) -> dict:
-    """스키마 필드만 남기고 날짜는 ISO로 변환."""
-    out = {k: v for k, v in d.items() if k in allowed_fields}
-    for df in date_fields:
+def _prepare_for_azure(d: dict) -> dict:
+    """Azure Search 업로드용 정규화.
+
+    - null 값 필드 제거 (sparse storage 상 필수는 아니지만 upload 거부 방지)
+    - 날짜 필드 ISO DateTimeOffset 변환
+    - Pydantic 검증으로 타입 안전성 확보
+    """
+    # Pydantic 검증
+    chunk = UnifiedChunk.model_validate(d)
+    out = chunk.model_dump(exclude_none=True)
+    for df in _DATE_FIELDS:
         if df in out:
-            out[df] = _to_iso_datetime(out[df])
+            out[df] = _to_iso(out[df])
+    # 빈 문자열 fetched_at 은 제거 (Azure DateTimeOffset 이 빈 문자열 거부)
+    if out.get("fetched_at") == "T00:00:00Z":
+        out.pop("fetched_at", None)
     return out
 
 
@@ -78,23 +81,22 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return [item.embedding for item in resp.data]
 
 
-def create_index(schema_path: Path) -> None:
-    s = get_settings()
-    schema = json.loads(schema_path.read_text())
-    # Raw REST 직접 호출 — Azure SDK 대신 httpx 사용 (더 단순)
+def create_index() -> None:
     import httpx
 
+    s = get_settings()
+    schema = azure_index_schema(UNIFIED_INDEX_NAME)
     headers = {
         "api-key": s.azure_search_api_key,
         "Content-Type": "application/json",
     }
-    url = f"{s.azure_search_endpoint}/indexes/{schema['name']}?api-version=2024-07-01"
+    url = f"{s.azure_search_endpoint}/indexes/{UNIFIED_INDEX_NAME}?api-version=2024-07-01"
     r = httpx.put(url, headers=headers, json=schema, timeout=30)
     r.raise_for_status()
-    print(f"  ✅ index created/updated: {schema['name']}")
+    print(f"  ✅ index created/updated: {UNIFIED_INDEX_NAME}")
 
 
-def upload_documents(index_name: str, docs: list[dict], batch: int = 50) -> None:
+def upload_documents(docs: list[dict], batch: int = 50) -> None:
     import httpx
 
     s = get_settings()
@@ -102,7 +104,7 @@ def upload_documents(index_name: str, docs: list[dict], batch: int = 50) -> None
         "api-key": s.azure_search_api_key,
         "Content-Type": "application/json",
     }
-    url = f"{s.azure_search_endpoint}/indexes/{index_name}/docs/index?api-version=2024-07-01"
+    url = f"{s.azure_search_endpoint}/indexes/{UNIFIED_INDEX_NAME}/docs/index?api-version=2024-07-01"
     total = 0
     for i in range(0, len(docs), batch):
         chunk = docs[i : i + batch]
@@ -117,65 +119,53 @@ def upload_documents(index_name: str, docs: list[dict], batch: int = 50) -> None
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--create-indexes", action="store_true")
-    parser.add_argument("--skip-embeddings", action="store_true")
+    parser.add_argument("--create-index", action="store_true", help="인덱스 스키마 생성/업데이트")
+    parser.add_argument("--skip-embeddings", action="store_true", help="벡터 임베딩 생략 (텍스트 검색만)")
+    parser.add_argument("--dry-run", action="store_true", help="Azure 호출 없이 변환만 검증")
     args = parser.parse_args()
+
+    raw = load_unified()
+    print(f"Loaded {len(raw)} unified chunks from {UNIFIED_DATA.relative_to(ROOT)}")
+
+    # Pydantic 검증 + Azure 변환
+    docs = []
+    by_type = {"law": 0, "procedure": 0, "video": 0}
+    for d in raw:
+        try:
+            prepared = _prepare_for_azure(d)
+            docs.append(prepared)
+            by_type[prepared["source_type"]] += 1
+        except Exception as e:
+            print(f"❌ invalid chunk {d.get('id')}: {e}")
+            sys.exit(1)
+
+    print(f"Validated: law={by_type['law']} procedure={by_type['procedure']} video={by_type['video']}")
+
+    if args.dry_run:
+        print("dry-run — Azure 호출 없이 검증만 완료")
+        return
 
     s = get_settings()
     if not s.azure_ready:
         print("❌ Azure credentials not set in .env")
         sys.exit(2)
 
-    if args.create_indexes:
-        create_index(SCHEMA_DIR / "index_a_law.json")
-        create_index(SCHEMA_DIR / "index_b_procedure.json")
+    if args.create_index:
+        create_index()
 
-    # Index A (법률 조문)
-    raw_a = load_jsonl(INDEX_A_DATA)
-    if raw_a:
-        print(f"Index A: {len(raw_a)} law articles")
-        # id 는 영/한 혼용이라 Azure Search key 규칙(영숫자·_·-·=) 에 맞게 변환
-        index_a_docs = []
-        for d in raw_a:
-            safe_id = "law_" + str(hash(d["id"]) & 0xFFFFFFFFFFFFFFFF)
-            d["id"] = safe_id
-            index_a_docs.append(_normalize_chunk(d, INDEX_A_FIELDS, ("last_updated",)))
-        if not args.skip_embeddings:
-            texts = [d["content"] for d in index_a_docs]
-            embeddings = []
-            for i in range(0, len(texts), 16):
-                batch = texts[i : i + 16]
-                embeddings.extend(embed_texts(batch))
-                print(f"    embedded {i + len(batch)}/{len(texts)}")
-            for doc, emb in zip(index_a_docs, embeddings):
-                doc["content_vector"] = emb
-        upload_documents(s.azure_search_law_index, index_a_docs)
+    if not args.skip_embeddings:
+        print("Embedding contents...")
+        texts = [d["content"] for d in docs]
+        embeddings: list[list[float]] = []
+        for i in range(0, len(texts), 16):
+            batch_texts = texts[i : i + 16]
+            embeddings.extend(embed_texts(batch_texts))
+            print(f"    embedded {i + len(batch_texts)}/{len(texts)}")
+        for doc, emb in zip(docs, embeddings):
+            doc["content_vector"] = emb
 
-    # Index B (행정 절차)
-    raw_b = load_jsonl(INDEX_B_DATA)
-    if raw_b:
-        print(f"Index B: {len(raw_b)} procedure chunks")
-        index_b_docs = []
-        for d in raw_b:
-            # region 필드가 list 면 단일 문자열로
-            if isinstance(d.get("region"), list):
-                d["region"] = d["region"][0] if d["region"] else "전국"
-            safe_id = "proc_" + str(hash(d["id"]) & 0xFFFFFFFFFFFFFFFF)
-            d["id"] = safe_id
-            index_b_docs.append(_normalize_chunk(d, INDEX_B_FIELDS, ("fetched_at",)))
-        if not args.skip_embeddings:
-            texts = [d["content"] for d in index_b_docs]
-            embeddings = []
-            for i in range(0, len(texts), 16):
-                batch = texts[i : i + 16]
-                embeddings.extend(embed_texts(batch))
-                print(f"    embedded {i + len(batch)}/{len(texts)}")
-            for doc, emb in zip(index_b_docs, embeddings):
-                doc["content_vector"] = emb
-        upload_documents(s.azure_search_procedure_index, index_b_docs)
-
-    print()
-    print("✅ done")
+    upload_documents(docs)
+    print("\n✅ done")
 
 
 if __name__ == "__main__":

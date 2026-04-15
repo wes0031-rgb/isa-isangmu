@@ -63,9 +63,32 @@ def _scrub_record(rec: dict) -> dict:
 _INDEX_DIR = (
     Path(__file__).resolve().parent.parent / "data" / "indexes"
 )
+# 통합 인덱스 (Option B) — source_type 으로 구분
+UNIFIED_FILE = _INDEX_DIR / "index_unified.jsonl"
+# 레거시 3 인덱스 (unified 가 없을 때 fallback)
 CHUNKS_FILE = _INDEX_DIR / "index_b_chunks_curated.jsonl"
 LAW_FILE = _INDEX_DIR / "index_a_chunks.jsonl"
 YOUTUBE_FILE = _INDEX_DIR / "index_c_youtube_chunks.jsonl"
+
+
+# ---------- 통합 인덱스 로더 ----------
+
+
+@lru_cache(maxsize=1)
+def load_unified() -> list[dict]:
+    """통합 인덱스 전체 로드. 파일 없으면 빈 리스트."""
+    if not UNIFIED_FILE.exists():
+        return []
+    out = []
+    with UNIFIED_FILE.open(encoding="utf-8") as fp:
+        for line in fp:
+            if line.strip():
+                out.append(_scrub_record(json.loads(line)))
+    return out
+
+
+def _filter_by_source_type(chunks: list[dict], source_type: str) -> list[dict]:
+    return [c for c in chunks if c.get("source_type") == source_type]
 
 
 # ---------- Index B (행정 절차) ----------
@@ -73,6 +96,17 @@ YOUTUBE_FILE = _INDEX_DIR / "index_c_youtube_chunks.jsonl"
 
 @lru_cache(maxsize=1)
 def load_chunks() -> list[dict]:
+    """행정절차(Index B) 청크 로드.
+
+    통합 인덱스(`index_unified.jsonl`) 가 있으면 거기서 source_type=procedure
+    필터해서 반환. 없으면 레거시 `index_b_chunks_curated.jsonl` 로 fallback.
+    """
+    unified = load_unified()
+    if unified:
+        # 통합 인덱스 레코드는 unified 스키마 필드를 쓰므로 기존 scorer 가 참조하는
+        # doc_title 필드를 title 로 매핑해 호환성 유지
+        procs = _filter_by_source_type(unified, "procedure")
+        return [{**c, "doc_title": c.get("title") or c.get("doc_title") or ""} for c in procs]
     if not CHUNKS_FILE.exists():
         return []
     out = []
@@ -138,6 +172,10 @@ def search(queries: list[str], top_k_per_query: int = 3) -> list[dict]:
 
 @lru_cache(maxsize=1)
 def load_laws() -> list[dict]:
+    """법률 조문(Index A) 로드. 통합 인덱스 우선, 레거시 fallback."""
+    unified = load_unified()
+    if unified:
+        return _filter_by_source_type(unified, "law")
     if not LAW_FILE.exists():
         return []
     out = []
@@ -235,6 +273,18 @@ def search_laws(queries: list[str], top_k_per_query: int = 2) -> list[dict]:
 
 @lru_cache(maxsize=1)
 def load_youtube() -> list[dict]:
+    """유튜브 자막(Index C) 로드. 통합 인덱스 우선, 레거시 fallback.
+
+    통합 인덱스 레코드는 video_title 대신 title 필드를 쓰므로
+    호환성을 위해 video_title 도 함께 채워줌.
+    """
+    unified = load_unified()
+    if unified:
+        vids = _filter_by_source_type(unified, "video")
+        return [
+            {**c, "video_title": c.get("title") or c.get("video_title") or ""}
+            for c in vids
+        ]
     if not YOUTUBE_FILE.exists():
         return []
     out = []
