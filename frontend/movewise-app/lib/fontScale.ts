@@ -32,8 +32,14 @@ const listeners = new Set<(level: FontScaleLevel) => void>();
 export async function loadFontScale(): Promise<FontScaleLevel> {
   try {
     const v = (await AsyncStorage.getItem(STORAGE_KEY)) as FontScaleLevel | null;
-    if (v && v in SCALE_FACTORS) {
+    if (v && v in SCALE_FACTORS && v !== currentScale) {
       currentScale = v;
+      // UI 가 이미 렌더된 상태에서 저장값을 나중에 로드할 수 있으므로
+      // listener 에 알려 AppText 들이 새 scale 로 재렌더되게 함.
+      listeners.forEach((l) => l(v));
+      return v;
+    }
+    if (v && v in SCALE_FACTORS) {
       return v;
     }
   } catch {}

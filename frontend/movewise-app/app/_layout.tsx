@@ -1,19 +1,20 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { loadFontScale } from '../lib/fontScale';
 import { colors } from '../theme/colors';
 
 export default function RootLayout() {
-  const [ready, setReady] = useState(false);
-
+  // 폰트 스케일은 async 로드 중 UI 를 막지 않음.
+  // 과거: `if (!ready) return null` 패턴이 loadFontScale() hang 시 무한 로딩 유발.
+  // 현재: 기본값(normal) 으로 즉시 렌더하고, 로드 완료 후 listener 로 재렌더.
   useEffect(() => {
-    loadFontScale().then(() => setReady(true));
+    loadFontScale().catch(() => {
+      /* AsyncStorage 에러는 조용히 무시 — 기본값(normal) 유지 */
+    });
   }, []);
-
-  if (!ready) return null;
 
   return (
     <SafeAreaProvider>
