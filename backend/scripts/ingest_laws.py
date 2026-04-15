@@ -119,6 +119,34 @@ def extract_keywords(text: str) -> list[str]:
     return top[:8]
 
 
+# RAG 품질 필터 — 아래 유형은 Index A 에서 제외:
+#   1) 폐지된 조문 ("제5조 삭제 <1989.12.30>", "제36조의2 삭제 <2020.6.9>")
+#   2) 장·절·관·편 헤더 ("제1장 총칙", "제2절 동물의 보호 등")
+#   3) 40자 미만의 의미 없는 토막 (제목만 있는 stub)
+_DELETED_ARTICLE_RE = re.compile(r"^제\d+조(?:의\d+)?\s*삭제\s*<")
+_STRUCTURAL_HEADER_RE = re.compile(r"^제\d+\s*[편장절관]\s")
+_MIN_CONTENT_LEN = 40
+
+
+def should_skip_article(content: str) -> bool:
+    """RAG 품질 저해 청크 (폐지·헤더·stub) 판별."""
+    c = (content or "").strip()
+    if not c:
+        return True
+    if _DELETED_ARTICLE_RE.match(c):
+        return True
+    if _STRUCTURAL_HEADER_RE.match(c):
+        return True
+    if len(c) < _MIN_CONTENT_LEN:
+        return True
+    return False
+
+
+def is_deleted_article(content: str) -> bool:
+    """Deprecated — use should_skip_article. 호환성을 위해 유지."""
+    return bool(_DELETED_ARTICLE_RE.match((content or "").strip()))
+
+
 def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
     print(f"  ▶ {name} (MST={mst}) ...", end=" ")
     root = fetch_law(oc, mst)
@@ -139,10 +167,15 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
     out_file.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"OK {len(articles)} articles")
 
-    # Index A chunks: one per article
+    # Index A chunks: one per article. RAG 품질 저해 청크 제외
+    # (폐지 조문 / 장·절 헤더 / 40자 미만 stub)
     chunks = []
+    skipped = 0
     for a in articles:
         content = a["content"]
+        if should_skip_article(content):
+            skipped += 1
+            continue
         chunk_id = f"{name}__{a['article']}".replace(" ", "")
         chunks.append({
             "id": chunk_id,
@@ -155,6 +188,8 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
             "source_url": doc["source_url"],
             "last_updated": doc["fetched_at"],
         })
+    if skipped:
+        print(f"    (RAG 품질 필터 {skipped} 건 제외)")
     return chunks
 
 
