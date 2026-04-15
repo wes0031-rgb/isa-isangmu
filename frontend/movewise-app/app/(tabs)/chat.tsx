@@ -35,6 +35,50 @@ function resolveCitationUrl(c: ChatCitation): string | null {
   return c.url || null;
 }
 
+type SourceKind = 'law' | 'procedure' | 'video';
+
+const SOURCE_META: Record<SourceKind, { label: string; color: string; bg: string }> = {
+  law: { label: '법률', color: '#003A75', bg: '#E6EEF8' },
+  procedure: { label: '절차', color: '#4A5568', bg: '#EDF2F7' },
+  video: { label: '영상', color: '#C53030', bg: '#FFF5F5' },
+};
+
+/** 본문의 [법률]/[절차]/[영상] 태그를 배지로 렌더링. */
+function renderAnswerWithTags(text: string, textColor: string) {
+  const parts = text.split(/(\[법률\]|\[절차\]|\[영상\])/g);
+  return parts.map((p, i) => {
+    let kind: SourceKind | null = null;
+    if (p === '[법률]') kind = 'law';
+    else if (p === '[절차]') kind = 'procedure';
+    else if (p === '[영상]') kind = 'video';
+    if (kind) {
+      const meta = SOURCE_META[kind];
+      return (
+        <Text
+          key={i}
+          style={{
+            fontSize: 10,
+            fontWeight: '800',
+            color: meta.color,
+            backgroundColor: meta.bg,
+            paddingHorizontal: 5,
+            paddingVertical: 1,
+            borderRadius: 4,
+            overflow: 'hidden',
+          }}
+        >
+          {' '}{meta.label}{' '}
+        </Text>
+      );
+    }
+    return (
+      <Text key={i} style={{ color: textColor }}>
+        {p}
+      </Text>
+    );
+  });
+}
+
 interface ChatMessage {
   role: 'user' | 'bot';
   text: string;
@@ -212,46 +256,101 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             isBot ? { color: colors.text } : { color: '#fff' },
           ]}
         >
-          {message.text}
+          {isBot
+            ? renderAnswerWithTags(message.text, colors.text)
+            : message.text}
         </Text>
       </View>
       {isBot && message.citations && message.citations.length > 0 && (
-        <View style={styles.citationsBox}>
-          <Text style={styles.citationsLabel}>출처</Text>
-          {message.citations.slice(0, 3).map((c, i) => (
-            <Pressable
-              key={i}
-              style={styles.citationChip}
-              onPress={() => {
-                const url = resolveCitationUrl(c);
-                if (url) Linking.openURL(url);
+        <CitationsGrouped citations={message.citations} />
+      )}
+    </View>
+  );
+}
+
+/** source_type 별 그룹핑된 출처 목록. 아이콘/색/한글 라벨로 구분. */
+function CitationsGrouped({ citations }: { citations: ChatCitation[] }) {
+  // backend source_type: 'law' | 'procedure' | 'youtube'
+  // UI: law / procedure / video (youtube 를 video 로 매핑)
+  const groups: Record<SourceKind, ChatCitation[]> = {
+    law: [],
+    procedure: [],
+    video: [],
+  };
+  for (const c of citations) {
+    if (c.source_type === 'law') groups.law.push(c);
+    else if (c.source_type === 'procedure') groups.procedure.push(c);
+    else if (c.source_type === 'youtube') groups.video.push(c);
+  }
+  const order: SourceKind[] = ['law', 'procedure', 'video'];
+  return (
+    <View style={styles.citationsBox}>
+      <Text style={styles.citationsLabel}>출처</Text>
+      {order.map((kind) => {
+        const items = groups[kind];
+        if (items.length === 0) return null;
+        const meta = SOURCE_META[kind];
+        return (
+          <View key={kind} style={{ marginBottom: 4 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                marginBottom: 2,
               }}
             >
               <Ionicons
                 name={
-                  c.source_type === 'law'
+                  kind === 'law'
                     ? 'library'
-                    : c.source_type === 'youtube'
+                    : kind === 'video'
                     ? 'logo-youtube'
                     : 'document-text'
                 }
-                size={12}
-                color={colors.primaryLight}
+                size={11}
+                color={meta.color}
               />
-              <Text style={styles.citationText} numberOfLines={1}>
-                {c.title}
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: '800',
+                  color: meta.color,
+                }}
+              >
+                {meta.label} · {items.length}건
               </Text>
-              {c.url && (
-                <Ionicons
-                  name="open-outline"
-                  size={10}
-                  color={colors.textMute}
-                />
-              )}
-            </Pressable>
-          ))}
-        </View>
-      )}
+            </View>
+            {items.slice(0, 3).map((c, i) => (
+              <Pressable
+                key={i}
+                style={[
+                  styles.citationChip,
+                  { backgroundColor: meta.bg, marginLeft: spacing.sm },
+                ]}
+                onPress={() => {
+                  const url = resolveCitationUrl(c);
+                  if (url) Linking.openURL(url);
+                }}
+              >
+                <Text
+                  style={[styles.citationText, { color: meta.color }]}
+                  numberOfLines={1}
+                >
+                  {c.title}
+                </Text>
+                {c.url && (
+                  <Ionicons
+                    name="open-outline"
+                    size={10}
+                    color={meta.color}
+                  />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        );
+      })}
     </View>
   );
 }
