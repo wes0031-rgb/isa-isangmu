@@ -175,23 +175,6 @@ export interface SafeContractUploadParams {
   expected_market_price_krw: number;
 }
 
-export interface CodefRegisterCandidate {
-  unique_no: string;
-  address: string;
-  real_estate_type: string;
-  state: string;
-}
-
-export interface CodefRegisterSearchResponse {
-  ok: boolean;
-  env_mode: string;
-  candidates: CodefRegisterCandidate[];
-  total: number;
-  transaction_id?: string | null;
-  message?: string | null;
-  note: string;
-}
-
 async function postMultipart<TRes>(path: string, form: FormData): Promise<TRes> {
   const res = await fetch(`${getApiUrl()}${path}`, {
     method: 'POST',
@@ -268,14 +251,5 @@ export const api = {
     form.append('deposit_krw', String(params.deposit_krw));
     form.append('expected_market_price_krw', String(params.expected_market_price_krw));
     return postMultipart<SafeContractResponse>('/safecontract/upload', form);
-  },
-  registerSearch(address: string, realEstateType: string = '1') {
-    return post<
-      { address: string; real_estate_type: string },
-      CodefRegisterSearchResponse
-    >('/safecontract/register-search', {
-      address,
-      real_estate_type: realEstateType,
-    });
   },
 };

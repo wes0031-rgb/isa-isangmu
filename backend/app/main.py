@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .chat_service import generate_chat_reply, get_preset_questions
 from .checklist_service import generate_checklist
-from . import codef_client
 from .config import get_settings
 from .local_search import load_chunks, load_laws, load_youtube
 from .models import (
@@ -17,9 +16,6 @@ from .models import (
     ChatResponse,
     ChecklistRequest,
     ChecklistResponse,
-    CodefRegisterCandidate,
-    CodefRegisterSearchRequest,
-    CodefRegisterSearchResponse,
     SafeContractRequest,
     SafeContractResponse,
 )
@@ -77,13 +73,10 @@ def root() -> dict:
         "service": "이사이상무",
         "version": "0.2.0",
         "azure_ready": settings.azure_ready,
-        "codef_ready": codef_client.is_configured(),
-        "codef_env": codef_client.env_mode(),
         "endpoints": [
             "/checklist",
             "/safecontract",
             "/safecontract/upload",
-            "/safecontract/register-search",
             "/chat",
             "/health",
         ],
@@ -121,8 +114,6 @@ def health() -> dict:
         "azure": azure,
         "external_apis": external,
         "azure_ready": settings.azure_ready,
-        "codef_ready": codef_client.is_configured(),
-        "codef_env": codef_client.env_mode(),
     }
 
 
@@ -225,60 +216,3 @@ async def post_safecontract_upload(
         raise HTTPException(
             status_code=500, detail=f"PDF 처리 실패: {exc}"
         )
-
-
-@app.post(
-    "/safecontract/register-search",
-    response_model=CodefRegisterSearchResponse,
-)
-def post_register_search(
-    req: CodefRegisterSearchRequest,
-) -> CodefRegisterSearchResponse:
-    """
-    CODEF 등기부등본 주소 검색 — 주소 → 해당 주소의 등기부 후보 목록.
-
-    개발환경(demo)에서는 실제 대법원 등기소 데이터를 무료로 반환.
-    실 등기부등본 본문 조회는 운영환경 + 선불카드 필요.
-    """
-    client = codef_client.get_client()
-    if client is None:
-        raise HTTPException(
-            status_code=503,
-            detail="CODEF API 미설정 — .env 에 CODEF_CLIENT_ID / CLIENT_SECRET 필요",
-        )
-    try:
-        res = client.search_real_estate_candidates(
-            address=req.address,
-            real_estate_type=req.real_estate_type,
-        )
-    except Exception as exc:
-        logger.exception("CODEF register search 실패: %s", exc)
-        raise HTTPException(status_code=502, detail=f"CODEF 호출 실패: {exc}")
-
-    result = res.get("result", {})
-    data = res.get("data", {}) or {}
-    extra = data.get("extraInfo", {}) or {}
-    raw_list = extra.get("resAddrList", []) or []
-
-    # CODEF 응답 필드값은 URL-encoded (공백이 +). 디코딩해서 사용자에게 깔끔하게.
-    from urllib.parse import unquote_plus
-    candidates = [
-        CodefRegisterCandidate(
-            unique_no=item.get("commUniqueNo", ""),
-            address=unquote_plus(item.get("commAddrLotNumber", "")),
-            real_estate_type=unquote_plus(item.get("resType", "")),
-            state=unquote_plus(item.get("resState", "")),
-        )
-        for item in raw_list
-        if item.get("commUniqueNo")
-    ]
-
-    ok = result.get("code") in ("CF-00000", "CF-03002")
-    return CodefRegisterSearchResponse(
-        ok=ok,
-        env_mode=codef_client.env_mode(),
-        candidates=candidates,
-        total=len(candidates),
-        transaction_id=result.get("transactionId"),
-        message=unquote_plus(result.get("message", "")) if result.get("message") else None,
-    )

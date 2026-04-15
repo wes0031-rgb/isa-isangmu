@@ -182,31 +182,3 @@ class SafeContractResponse(BaseModel):
     )
 
 
-# ---------- CODEF 등기부등본 주소 검색 ----------
-
-
-class CodefRegisterSearchRequest(BaseModel):
-    address: str = Field(description="조회할 주소 (지번 또는 도로명)")
-    real_estate_type: str = Field(
-        default="1",
-        description="1=집합건물(아파트/오피스텔) 2=토지 3=건물",
-    )
-
-
-class CodefRegisterCandidate(BaseModel):
-    unique_no: str = Field(description="등기부 고유번호 (13자리)")
-    address: str = Field(description="전체 주소")
-    real_estate_type: str = Field(description="토지 / 집합건물 / 건물")
-    state: str = Field(description="현행 / 폐쇄 등")
-
-
-class CodefRegisterSearchResponse(BaseModel):
-    ok: bool
-    env_mode: str = Field(description="demo / prod / unavailable")
-    candidates: list[CodefRegisterCandidate] = Field(default_factory=list)
-    total: int = 0
-    transaction_id: Optional[str] = None
-    message: Optional[str] = None
-    note: str = Field(
-        default="개발환경(demo) — CODEF 샘플 모드. 실 등기부 발급은 운영환경 전환 필요.",
-    )
