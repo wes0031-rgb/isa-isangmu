@@ -131,20 +131,32 @@ export default function MyScreen() {
             value="v0.1.0"
           />
           <InfoRow
-            icon="shield-checkmark"
-            label="개인정보"
-            value="즉시 파기 · 비로그인"
-          />
-          <InfoRow
-            icon="document-text"
-            label="법적 면책"
-            value="참고용 도구, 법률 자문 아님"
-          />
-          <InfoRow
             icon="people"
             label="소속"
             value="MSAI09 2차 프로젝트"
           />
+        </View>
+
+        {/* 개인정보 처리 방침 */}
+        <View style={styles.card}>
+          <View style={styles.policyHeader}>
+            <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+            <Text style={styles.sectionTitle}>개인정보 처리 방침</Text>
+          </View>
+          <Text style={styles.policyBody}>
+            본 서비스는 <Text style={{ fontWeight: '800' }}>비로그인</Text>으로 동작하며, 이름·연락처·주민번호 등 식별 정보를 수집하지 않습니다. 체크리스트 조건·등기부등본 본문·챗봇 질문은 <Text style={{ fontWeight: '800' }}>서버에 저장되지 않고 응답 생성 직후 즉시 파기</Text>됩니다. 저장되는 것은 사용자가 기기에 직접 저장한 체크리스트뿐이며, 이 데이터는 아래 "체크리스트 초기화" 버튼으로 언제든 삭제할 수 있습니다.
+          </Text>
+        </View>
+
+        {/* 법적 면책 고지 */}
+        <View style={styles.card}>
+          <View style={styles.policyHeader}>
+            <Ionicons name="document-text" size={18} color={colors.warning} />
+            <Text style={styles.sectionTitle}>법적 면책 고지</Text>
+          </View>
+          <Text style={styles.policyBody}>
+            본 서비스는 <Text style={{ fontWeight: '800' }}>이사 절차에 대한 참고용 사전 검토 도구</Text>이며, 변호사·법무사 등 전문가의 법률 자문이 아닙니다. AI 모델 특성상 검색 결과에 포함되지 않은 정보는 답변에 제공되지 않으며, 법 개정·최신 판례 미반영 등으로 오차가 있을 수 있습니다. 실제 계약·분쟁·행정 처리는 반드시 해당 기관(주민센터·법률구조공단 132·변호사) 에 확인하시기 바랍니다.
+          </Text>
         </View>
 
         {/* 데이터 관리 */}
@@ -204,6 +216,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.subtitle,
     marginBottom: spacing.md,
+  },
+  policyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  policyBody: {
+    ...typography.caption,
+    fontSize: 12,
+    lineHeight: 19,
+    color: colors.textSub,
   },
   label: {
     ...typography.captionBold,

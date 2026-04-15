@@ -214,6 +214,14 @@ export default function ChatScreen() {
           </ScrollView>
         )}
 
+        {/* 법적 면책 + 개인정보 고지 (항상 보임) */}
+        <View style={styles.disclaimerBar}>
+          <Ionicons name="shield-checkmark-outline" size={12} color={colors.textSub} />
+          <Text style={styles.disclaimerText}>
+            참고용 답변입니다. 법률 자문이 아니며, 질문·답변은 서버에 저장되지 않아요.
+          </Text>
+        </View>
+
         {/* 입력창 */}
         <View style={styles.inputBar}>
           <TextInput
@@ -476,14 +484,27 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  disclaimerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    backgroundColor: colors.primaryBg,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  disclaimerText: {
+    fontSize: 10,
+    color: colors.textSub,
+    flex: 1,
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     padding: spacing.md,
     backgroundColor: colors.cardBg,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
   },
   input: {
     flex: 1,

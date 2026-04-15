@@ -60,9 +60,21 @@ export default function Onboarding() {
       <AppPressable style={styles.cta} onPress={() => router.replace('/(tabs)')}>
         <Text style={styles.ctaText}>시작하기</Text>
       </AppPressable>
-      <Text style={styles.disclaimer}>
-        ※ 참고용 도구입니다. 법률 자문이 아닙니다.
-      </Text>
+
+      <View style={styles.disclaimerBox}>
+        <View style={styles.disclaimerRow}>
+          <Ionicons name="shield-checkmark" size={14} color={colors.textSub} />
+          <Text style={styles.disclaimerText}>
+            개인정보 처리: 질문·답변은 서버에 저장되지 않고 즉시 파기됩니다 · 비로그인
+          </Text>
+        </View>
+        <View style={styles.disclaimerRow}>
+          <Ionicons name="document-text" size={14} color={colors.textSub} />
+          <Text style={styles.disclaimerText}>
+            법적 면책: 본 서비스는 참고용 도구이며 법률 자문이 아닙니다. 정확한 판단은 전문가 상담을 권합니다.
+          </Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -139,9 +151,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  disclaimer: {
-    ...typography.caption,
-    textAlign: 'center',
+  disclaimerBox: {
+    gap: 6,
+    backgroundColor: colors.primaryBg,
+    padding: spacing.md,
+    borderRadius: radius.md,
     marginBottom: spacing.md,
+  },
+  disclaimerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  disclaimerText: {
+    ...typography.caption,
+    fontSize: 11,
+    lineHeight: 16,
+    flex: 1,
   },
 });
