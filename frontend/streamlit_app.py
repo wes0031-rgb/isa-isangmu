@@ -245,13 +245,18 @@ with tab_safe:
                 },
             )
         if data:
-            ratio = data["jeontse_ratio"]
-            ratio_pct = ratio * 100
-            color = "red" if ratio >= 1.0 else ("orange" if ratio >= 0.8 else "green")
+            jeontse = data["jeontse_ratio"]
+            mortgage = data.get("mortgage_ratio", 0.0)
+            risk_level = data.get("risk_level", "green")
+            jeontse_pct = min(jeontse * 100, 999)
+            mortgage_pct = min(mortgage * 100, 999)
+            color = {"red": "red", "yellow": "orange", "green": "green"}[risk_level]
             st.markdown(
-                f"### 깡통전세 비율 <span style='color:{color};'>{ratio_pct:.1f}%</span>",
+                f"### 전세가율 <span style='color:{color};'>{jeontse_pct:.1f}%</span>",
                 unsafe_allow_html=True,
             )
+            if mortgage > 0:
+                st.caption(f"근저당비율 {mortgage_pct:.1f}%")
             st.info(data["summary"])
 
             st.subheader("🚨 위험 항목")

@@ -143,6 +143,8 @@ export interface ChatResponse {
 export interface SafeContractResponse {
   extraction: Record<string, unknown>;
   jeontse_ratio: number;
+  mortgage_ratio: number;
+  risk_level: 'green' | 'yellow' | 'red';
   summary: string;
   risks: RiskItem[];
   referrals: ServiceReferral[];

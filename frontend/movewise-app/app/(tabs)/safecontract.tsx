@@ -655,20 +655,24 @@ function ResultView({
   onReset: () => void;
   onGoChecklist: () => void;
 }) {
-  const pct = Math.round(result.jeontse_ratio * 100);
+  const jeontsePct = Math.min(Math.round(result.jeontse_ratio * 100), 999);
+  const mortgagePct = Math.min(Math.round((result.mortgage_ratio ?? 0) * 100), 999);
   const color =
-    result.jeontse_ratio >= 1.0
+    result.risk_level === 'red'
       ? colors.danger
-      : result.jeontse_ratio >= 0.8
+      : result.risk_level === 'yellow'
       ? colors.warning
       : colors.success;
 
   return (
     <View style={styles.resultSection}>
-      {/* 깡통전세 비율 Hero */}
+      {/* 전세가율 Hero */}
       <View style={[styles.ratioCard, { borderColor: color }]}>
-        <Text style={styles.ratioLabel}>깡통전세 비율</Text>
-        <Text style={[styles.ratioValue, { color }]}>{pct}%</Text>
+        <Text style={styles.ratioLabel}>전세가율</Text>
+        <Text style={[styles.ratioValue, { color }]}>{jeontsePct}%</Text>
+        {result.mortgage_ratio > 0 && (
+          <Text style={styles.ratioSubLabel}>근저당비율 {mortgagePct}%</Text>
+        )}
         <Text style={styles.ratioSummary}>{result.summary}</Text>
       </View>
 
@@ -1285,6 +1289,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   ratioLabel: { ...typography.captionBold, color: colors.textSub },
+  ratioSubLabel: {
+    ...typography.caption,
+    color: colors.textSub,
+    marginTop: spacing.xs,
+  },
   ratioValue: {
     fontSize: 64,
     fontWeight: '900',

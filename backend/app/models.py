@@ -166,7 +166,12 @@ class ChatResponse(BaseModel):
 
 class SafeContractResponse(BaseModel):
     extraction: RegistryExtraction
-    jeontse_ratio: float = Field(description="(근저당액 + 보증금) / 시세")
+    jeontse_ratio: float = Field(description="전세가율 = 보증금 / 시세 (0~1, 깡통전세인 경우 1 초과 가능)")
+    mortgage_ratio: float = Field(default=0.0, description="근저당비율 = 근저당 실 추정액 / 시세")
+    risk_level: Literal["green", "yellow", "red"] = Field(
+        default="green",
+        description="종합 위험도 (jeontse + mortgage 합산 기준)",
+    )
     summary: str
     risks: list[RiskItem]
     referrals: list[ServiceReferral]

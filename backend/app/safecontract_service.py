@@ -202,20 +202,44 @@ def _search_law_context(extraction: RegistryExtraction) -> list[dict]:
     return hits
 
 
-def _compute_jeontse_ratio(extraction: RegistryExtraction, deposit: int, market: int) -> float:
+def _compute_ratios(
+    extraction: RegistryExtraction, deposit: int, market: int
+) -> tuple[float, float, str]:
+    """전세가율·근저당비율·위험도 계산.
+
+    Returns:
+        (jeontse_ratio, mortgage_ratio, risk_level)
+        - jeontse_ratio: 보증금 / 시세 (정식 전세가율, 보통 <1.0)
+        - mortgage_ratio: 근저당 실 추정액 / 시세
+        - risk_level: "red" | "yellow" | "green"
+          * 두 비율 합이 1.0 이상 → red (근저당+보증금 시세 초과)
+          * 전세가율 단독으로 >= 0.8 → yellow (전세가율 경계)
+          * 그 외 → green
+    """
     if market <= 0:
-        return 0.0
-    return round((extraction.mortgage_total_krw + deposit) / market, 3)
+        return 0.0, 0.0, "green"
+    jeontse = round(deposit / market, 3)
+    mortgage = round(extraction.mortgage_total_krw / market, 3)
+    combined = jeontse + mortgage
+
+    if combined >= 1.0 or extraction.seizure_count > 0 or extraction.trust_registration or extraction.auction_in_progress:
+        level = "red"
+    elif jeontse >= 0.8 or mortgage >= 0.5:
+        level = "yellow"
+    else:
+        level = "green"
+    return jeontse, mortgage, level
 
 
 def _explain_with_llm(
     extraction: RegistryExtraction,
-    ratio: float,
+    jeontse_ratio: float,
+    mortgage_ratio: float,
     law_hits: list[dict],
 ) -> tuple[str, list[RiskItem]]:
     client = get_openai_client()
     if client is None:
-        return _explain_rule_based(extraction, ratio)
+        return _explain_rule_based(extraction, jeontse_ratio, mortgage_ratio)
 
     settings = get_settings()
     context = "\n---\n".join(
@@ -224,7 +248,8 @@ def _explain_with_llm(
     )
     payload = {
         "extraction": extraction.model_dump(),
-        "jeontse_ratio": ratio,
+        "jeontse_ratio": jeontse_ratio,
+        "mortgage_ratio": mortgage_ratio,
         "law_context": context,
     }
     resp = client.chat.completions.create(
@@ -243,20 +268,33 @@ def _explain_with_llm(
         risks = [RiskItem(**r) for r in data.get("risks", [])]
         return summary, risks
     except Exception:
-        return _explain_rule_based(extraction, ratio)
+        return _explain_rule_based(extraction, jeontse_ratio, mortgage_ratio)
 
 
-def _explain_rule_based(extraction: RegistryExtraction, ratio: float) -> tuple[str, list[RiskItem]]:
+def _explain_rule_based(
+    extraction: RegistryExtraction,
+    jeontse_ratio: float,
+    mortgage_ratio: float,
+) -> tuple[str, list[RiskItem]]:
     risks: list[RiskItem] = []
     summary_parts = []
 
-    if ratio >= 1.0:
+    jeontse_pct = min(int(round(jeontse_ratio * 100)), 999)
+    mortgage_pct = min(int(round(mortgage_ratio * 100)), 999)
+    combined = jeontse_ratio + mortgage_ratio
+
+    # 1) 근저당+보증금이 시세를 초과 → RED (깡통전세)
+    if combined >= 1.0:
+        label = (
+            "근저당이 시세를 초과" if mortgage_ratio >= 1.0
+            else f"근저당+보증금이 시세 초과 (전세가율 {jeontse_pct}% · 근저당비율 {mortgage_pct}%)"
+        )
         risks.append(RiskItem(
             severity="red",
-            label=f"깡통전세 비율 {ratio * 100:.0f}%",
+            label=label,
             explanation_plain=(
                 "근저당과 보증금의 합이 시세를 넘습니다. "
-                "집이 경매에 넘어가면 보증금을 돌려받지 못할 위험이 있습니다. "
+                "집이 경매에 넘어가면 낙찰가가 대출을 먼저 갚느라 보증금을 돌려받지 못할 위험이 있습니다. "
                 "주택임대차보호법의 우선변제권으로도 보증금 전액을 돌려받지 못할 수 있어요."
             ),
             related_laws=[
@@ -264,25 +302,25 @@ def _explain_rule_based(extraction: RegistryExtraction, ratio: float) -> tuple[s
                 _cite("주택임대차보호법", "제8조"),
             ],
         ))
-        summary_parts.append("🔴 깡통전세 위험")
-    elif ratio >= 0.8:
+        summary_parts.append(f"🔴 깡통전세 위험 · 전세가율 {jeontse_pct}%")
+    elif jeontse_ratio >= 0.8 or mortgage_ratio >= 0.5:
         risks.append(RiskItem(
             severity="yellow",
-            label=f"부채비율 {ratio * 100:.0f}%",
+            label=f"전세가율 {jeontse_pct}% · 근저당비율 {mortgage_pct}%",
             explanation_plain=(
                 "안전 범위를 약간 벗어났습니다. HUG 보증보험 가입 여부를 확인해보세요. "
                 "전입신고+확정일자로 대항력·우선변제권을 확보해두는 것이 필수입니다."
             ),
             related_laws=[_cite("주택임대차보호법", "제3조의2")],
         ))
-        summary_parts.append("🟡 부채비율 주의")
+        summary_parts.append(f"🟡 전세가율 {jeontse_pct}% 주의")
     else:
-        summary_parts.append("🟢 부채비율은 안전 범위")
+        summary_parts.append(f"🟢 전세가율 {jeontse_pct}% · 안전 범위")
         risks.append(RiskItem(
             severity="green",
-            label=f"부채비율 {ratio * 100:.0f}%",
+            label=f"전세가율 {jeontse_pct}% · 근저당비율 {mortgage_pct}%",
             explanation_plain=(
-                "부채비율은 안전 범위입니다. 그래도 전입신고+확정일자로 "
+                "전세가율과 근저당비율 모두 안전 범위입니다. 그래도 전입신고+확정일자로 "
                 "대항력을 확보해두세요."
             ),
             related_laws=[_cite("주택임대차보호법", "제3조의2")],
@@ -455,13 +493,17 @@ def analyze_safecontract(req: SafeContractRequest) -> SafeContractResponse:
     if effective_market_price <= 0 and market and market.median_price_krw:
         effective_market_price = market.median_price_krw
 
-    ratio = _compute_jeontse_ratio(extraction, req.deposit_krw, effective_market_price)
+    jeontse_ratio, mortgage_ratio, risk_level = _compute_ratios(
+        extraction, req.deposit_krw, effective_market_price
+    )
     law_hits = _search_law_context(extraction)
-    summary, risks = _explain_with_llm(extraction, ratio, law_hits)
+    summary, risks = _explain_with_llm(extraction, jeontse_ratio, mortgage_ratio, law_hits)
 
     return SafeContractResponse(
         extraction=extraction,
-        jeontse_ratio=ratio,
+        jeontse_ratio=jeontse_ratio,
+        mortgage_ratio=mortgage_ratio,
+        risk_level=risk_level,
         summary=summary,
         risks=risks,
         referrals=_build_referrals(),
