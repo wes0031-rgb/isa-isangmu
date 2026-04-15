@@ -2,7 +2,7 @@
   "service": "전세피해지원센터",
   "authority": "국토교통부 / HUG",
   "category": "safecontract_referral",
-  "website": "https://jeonse119.molit.go.kr",
+  "website": "https://jeonse.kgeop.go.kr/",
   "call": "1533-8119",
   "call_label": "전세피해지원센터 대표콜센터",
   "purpose": "전세사기 피해자 종합 지원 (상담·금융·법률·주거)",
@@ -59,12 +59,12 @@
     "경매 대응 지원"
   ],
   "fee": "전체 무료",
-  "source": "https://jeonse119.molit.go.kr (2026-04)",
+  "source": "https://jeonse.kgeop.go.kr/ (2026-04)",
   "generated_at": "2026-04-14",
   "_source_metadata": {
     "category": "전세피해지원센터",
     "authority": "국토교통부",
-    "source_url": "https://jeonse119.molit.go.kr",
+    "source_url": "https://jeonse.kgeop.go.kr/",
     "license": "공공누리 제1유형",
     "update_cycle": "수동",
     "how_collected": "ingest_services_v2.py",

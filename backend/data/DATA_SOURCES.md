@@ -84,7 +84,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -94,7 +94,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -104,7 +104,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -114,7 +114,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -124,7 +124,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -134,7 +134,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -144,7 +144,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -154,7 +154,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -164,7 +164,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -174,7 +174,7 @@
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/DRF/lawService.do
+- **출처 URL**: https://www.law.go.kr/
 - **API**: 국가법령정보 Open API (DRF)
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **갱신 주기**: 시행일 기준 즉시 반영
@@ -241,7 +241,7 @@
 
 - **카테고리**: HUG 안심전세 / 임대인 공개
 - **담당 기관**: 주택도시보증공사 (HUG)
-- **출처 URL**: https://www.khug.or.kr, https://jeonse.khug.or.kr
+- **출처 URL**: https://www.khug.or.kr/jeonse/index_jeonse.jsp
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 수동
 - **수집 방법**: ingest_services_v2.py
@@ -250,7 +250,7 @@
 
 - **카테고리**: HUG 안심전세 / 임대인 공개
 - **담당 기관**: 주택도시보증공사 (HUG)
-- **출처 URL**: https://www.khug.or.kr, https://jeonse.khug.or.kr
+- **출처 URL**: https://www.khug.or.kr/jeonse/index_jeonse.jsp
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 수동
 - **수집 방법**: ingest_services_v2.py
@@ -268,7 +268,7 @@
 
 - **카테고리**: 전세피해지원센터
 - **담당 기관**: 국토교통부
-- **출처 URL**: https://jeonse119.molit.go.kr
+- **출처 URL**: https://jeonse.kgeop.go.kr/
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 수동
 - **수집 방법**: ingest_services_v2.py
@@ -295,7 +295,7 @@
 
 - **카테고리**: 주택임대차분쟁조정위원회
 - **담당 기관**: 법무부 / 대한법률구조공단
-- **출처 URL**: https://www.hldcc.or.kr
+- **출처 URL**: https://www.myhome.go.kr/hws/portal/cont/selectHouseLsTrubl.do
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 수동
 - **수집 방법**: ingest_services_v2.py
@@ -331,7 +331,7 @@
 
 - **카테고리**: 보증금 반환 분쟁 5단계 가이드
 - **담당 기관**: 법무부 · 주택임대차분쟁조정위원회 · 대한법률구조공단 참고
-- **출처 URL**: https://www.hldcc.or.kr, https://www.klac.or.kr
+- **출처 URL**: https://www.myhome.go.kr/hws/portal/cont/selectHouseLsTrubl.do, https://www.klac.or.kr/
 - **라이선스**: 원본 법률은 공공누리, 편집본은 프로젝트 소유
 - **갱신 주기**: 수동
 - **수집 방법**: ingest_moveout.py
@@ -426,7 +426,7 @@
 
 - **카테고리**: 서울시 전월세 정보몽땅
 - **담당 기관**: 서울특별시
-- **출처 URL**: https://rent.seoul.go.kr
+- **출처 URL**: https://housing.seoul.go.kr/
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 수동
 - **수집 방법**: ingest_services_v2.py
@@ -945,7 +945,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=4i-e1OmEGCQ
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -955,7 +955,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=BtbnY7enQMQ
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -965,7 +965,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=Ej8MDFj37zg
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -975,7 +975,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=Gpf8slBLVe4
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -985,7 +985,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=MIEObuovrSc
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -995,7 +995,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=OCtjQJqtYyc
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -1005,7 +1005,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=PamLLxiCPqo
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -1015,7 +1015,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=aw-cvULahyA
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -1025,7 +1025,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=dFCz_ONk86o
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -1035,7 +1035,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=gkeglF2m_WA
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -1045,7 +1045,7 @@
 
 - **카테고리**: 공휴일
 - **담당 기관**: 한국천문연구원
-- **출처 URL**: http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService
+- **출처 URL**: https://www.data.go.kr/data/15012690/openapi.do
 - **API**: 특일정보 API
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 연 1회 (연말)
@@ -1055,7 +1055,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=iY3d1JAQsKY
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동
@@ -1065,7 +1065,7 @@
 
 - **카테고리**: 유튜브 자막 원본
 - **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
+- **출처 URL**: https://www.youtube.com/watch?v=oYt9Xv3d2Wo
 - **API**: youtube-transcript-api (무료)
 - **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
 - **갱신 주기**: 수동

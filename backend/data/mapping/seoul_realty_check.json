@@ -2,7 +2,7 @@
   "service": "서울시 전월세 정보몽땅",
   "authority": "서울특별시",
   "category": "safecontract_referral",
-  "website": "https://rent.seoul.go.kr",
+  "website": "https://housing.seoul.go.kr/",
   "call": "120",
   "call_label": "서울 다산콜센터",
   "purpose": "서울 지역 전월세 계약 시 종합 검토 도구 (서울 한정)",
@@ -14,12 +14,12 @@
     "안심거래 서비스 (중개사 인증)"
   ],
   "note": "서울 거주자 또는 서울 지역 계약 시 유용. 다른 지역은 HUG 안심전세 앱 권장.",
-  "source": "https://rent.seoul.go.kr (2026-04)",
+  "source": "https://housing.seoul.go.kr/ (2026-04)",
   "generated_at": "2026-04-14",
   "_source_metadata": {
     "category": "서울시 전월세 정보몽땅",
     "authority": "서울특별시",
-    "source_url": "https://rent.seoul.go.kr",
+    "source_url": "https://housing.seoul.go.kr/",
     "license": "공공누리 제1유형",
     "update_cycle": "수동",
     "how_collected": "ingest_services_v2.py",

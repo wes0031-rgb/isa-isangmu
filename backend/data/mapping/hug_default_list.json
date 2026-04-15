@@ -25,7 +25,7 @@
   "_source_metadata": {
     "category": "HUG 안심전세 / 임대인 공개",
     "authority": "주택도시보증공사 (HUG)",
-    "source_url": "https://www.khug.or.kr, https://jeonse.khug.or.kr",
+    "source_url": "https://www.khug.or.kr, https://www.khug.or.kr/jeonse/index_jeonse.jsp",
     "license": "공공누리 제1유형",
     "update_cycle": "수동",
     "how_collected": "ingest_services_v2.py",
