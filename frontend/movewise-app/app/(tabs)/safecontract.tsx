@@ -633,14 +633,95 @@ function ResultView({
         </View>
       )}
 
-      {/* 전세가율 Hero */}
-      <View style={[styles.ratioCard, { borderColor: color }]}>
-        <Text style={styles.ratioLabel}>전세가율</Text>
-        <Text style={[styles.ratioValue, { color }]}>{jeontsePct}%</Text>
-        {result.mortgage_ratio > 0 && (
-          <Text style={styles.ratioSubLabel}>근저당비율 {mortgagePct}%</Text>
-        )}
-        <Text style={styles.ratioSummary}>{result.summary}</Text>
+      {/* 1. 전세가율 평가 — 수치 자체만 (다른 위험요소 섞지 않음) */}
+      {(() => {
+        const jVerdict =
+          jeontsePct < 70
+            ? { c: colors.success, t: '🟢 안전 범위' }
+            : jeontsePct < 80
+            ? { c: colors.warning, t: '🟡 주의' }
+            : { c: colors.danger, t: '🔴 위험 (깡통전세 가능)' };
+        return (
+          <View style={[styles.ratioCard, { borderColor: jVerdict.c }]}>
+            <Text style={styles.ratioLabel}>전세가율 평가</Text>
+            <Text style={[styles.ratioValue, { color: jVerdict.c }]}>
+              {jeontsePct}%
+            </Text>
+            {result.mortgage_ratio > 0 && (
+              <Text style={styles.ratioSubLabel}>근저당비율 {mortgagePct}%</Text>
+            )}
+            <Text style={[styles.ratioSummary, { color: jVerdict.c }]}>
+              {jVerdict.t}
+            </Text>
+            <Text style={styles.ratioExplainSmall}>
+              시세 대비 보증금 비율만 본 평가예요. 아래 위험 요소와 종합 판정을 꼭 함께 확인하세요.
+            </Text>
+          </View>
+        );
+      })()}
+
+      {/* 2. 위험 요소 — 신탁·경매·가압류·근저당 분리 표시 (있을 때만) */}
+      {(() => {
+        const ex = result.extraction as {
+          auction_in_progress?: boolean;
+          trust_registration?: boolean;
+          seizure_count?: number;
+        };
+        const hasHazard =
+          !!ex.auction_in_progress ||
+          !!ex.trust_registration ||
+          (ex.seizure_count ?? 0) > 0 ||
+          (result.mortgage_ratio ?? 0) > 0;
+        if (!hasHazard) return null;
+        return (
+          <View style={styles.hazardCard}>
+            <View style={styles.hazardHeaderRow}>
+              <Ionicons name="warning" size={16} color={colors.danger} />
+              <Text style={styles.hazardHeader}>감지된 위험 요소</Text>
+            </View>
+            {ex.auction_in_progress && (
+              <HazardLine
+                icon="hammer"
+                text="임의경매 진행 중"
+                sub="이미 경매 개시 — 계약 시 보증금 회수 매우 어려움"
+              />
+            )}
+            {ex.trust_registration && (
+              <HazardLine
+                icon="document-text"
+                text="신탁 등기"
+                sub="실소유권이 신탁회사에 있음 — 신탁사 동의 없으면 대항력 무효"
+              />
+            )}
+            {(ex.seizure_count ?? 0) > 0 && (
+              <HazardLine
+                icon="alert-circle"
+                text={`가압류 ${ex.seizure_count}건`}
+                sub="집주인 채무 신호 — 경매 넘어갈 가능성"
+              />
+            )}
+            {result.mortgage_ratio > 0 && (
+              <HazardLine
+                icon="cash"
+                text={`근저당 ${mortgagePct}% (시세 대비)`}
+                sub="선순위 채권자 존재 — 경매 시 보증금보다 먼저 변제됨"
+              />
+            )}
+          </View>
+        );
+      })()}
+
+      {/* 3. 종합 판정 — 전세가율 + 위험요소 통합 결론 */}
+      <View style={[styles.verdictCard, { borderLeftColor: color }]}>
+        <Text style={styles.verdictTitle}>종합 판정</Text>
+        <Text style={[styles.verdictBig, { color }]}>
+          {result.risk_level === 'red'
+            ? '🔴 위험 — 계약 비권장'
+            : result.risk_level === 'yellow'
+            ? '🟡 주의 — HUG 보증보험 필수'
+            : '🟢 안전 — 대항력 확보만 하세요'}
+        </Text>
+        <Text style={styles.verdictBody}>{result.summary}</Text>
       </View>
 
       {/* 전세가율 기준 안내 */}
@@ -764,6 +845,26 @@ function PropertyRow({
       <Text style={styles.propertyRowValue} numberOfLines={2}>
         {value}
       </Text>
+    </View>
+  );
+}
+
+function HazardLine({
+  icon,
+  text,
+  sub,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  sub: string;
+}) {
+  return (
+    <View style={styles.hazardLine}>
+      <Ionicons name={icon} size={14} color={colors.danger} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.hazardLineText}>{text}</Text>
+        <Text style={styles.hazardLineSub}>{sub}</Text>
+      </View>
     </View>
   );
 }
@@ -1091,6 +1192,80 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
+    color: colors.text,
+  },
+  ratioExplainSmall: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMute,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    lineHeight: 15,
+  },
+  hazardCard: {
+    backgroundColor: colors.dangerBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.danger,
+  },
+  hazardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  hazardHeader: {
+    ...typography.captionBold,
+    color: colors.danger,
+    fontSize: 13,
+  },
+  hazardLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.sm,
+    marginBottom: 6,
+  },
+  hazardLineText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.danger,
+    marginBottom: 2,
+  },
+  hazardLineSub: {
+    fontSize: 11,
+    color: colors.textSub,
+    lineHeight: 15,
+  },
+  verdictCard: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  verdictTitle: {
+    ...typography.captionBold,
+    fontSize: 12,
+    color: colors.textSub,
+    marginBottom: spacing.xs,
+  },
+  verdictBig: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: spacing.sm,
+  },
+  verdictBody: {
+    ...typography.body,
+    fontSize: 13,
+    lineHeight: 19,
     color: colors.text,
   },
   thresholdCard: {
