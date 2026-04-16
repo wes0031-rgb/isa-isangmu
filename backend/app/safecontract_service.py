@@ -576,8 +576,14 @@ def analyze_safecontract(req: SafeContractRequest) -> SafeContractResponse:
 
     extraction = _extract_with_llm(req.text)
 
-    # region 주어지고 expected_market_price_krw 가 0 또는 없으면 실거래가로 자동 추정
-    market = _fetch_market_estimate(req.region)
+    # region 우선순위: (1) 사용자 명시 (2) LLM 이 추출한 address 에서 파싱 (3) raw text 파싱
+    # LLM 이 address 를 정제해서 주니까 정규식 매칭 훨씬 안정적
+    effective_region = (
+        req.region
+        or _parse_region_from_address(extraction.address)
+        or _parse_region_from_address(req.text)
+    )
+    market = _fetch_market_estimate(effective_region)
     effective_market_price = req.expected_market_price_krw
     if effective_market_price <= 0 and market and market.median_price_krw:
         effective_market_price = market.median_price_krw
