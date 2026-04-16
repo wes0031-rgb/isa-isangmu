@@ -170,6 +170,14 @@ EXPLAIN_SYSTEM = """당신은 부동산 등기부등본 해석 도우미입니�
 1. 각 위험 항목별로 쉬운 말로 설명 (explanation_plain)
 2. severity는 green/yellow/red 중 하나
 3. 관련 법 조항 citations 첨부 (검색 결과에 있는 것만)
+
+**summary 작성 절대 규칙 (매우 중요)**
+- auction_in_progress=true 이면 summary 앞에 반드시 "🔴 경매 진행 중"
+- trust_registration=true 이면 "🔴 신탁 등기"
+- seizure_count > 0 이면 "🔴 가압류 N건"
+- 위 셋 중 하나라도 있으면 전세가율이 낮아도 **절대 "안전 범위" 라고 쓰지 말 것**
+- 치명 상태가 없고 전세가율 < 0.8 + 근저당비율 < 0.5 일 때만 "🟢 안전 범위" 가능
+
 출력은 JSON: {"summary": "...", "risks": [{...}]}"""
 
 
@@ -372,6 +380,15 @@ def _explain_rule_based(
     mortgage_pct = min(int(round(mortgage_ratio * 100)), 999)
     combined = jeontse_ratio + mortgage_ratio
 
+    # 0) 치명적 상태 먼저 체크 (경매·신탁·가압류) — 전세가율이 낮아도 RED
+    critical_flags: list[str] = []
+    if extraction.auction_in_progress:
+        critical_flags.append("경매 진행 중")
+    if extraction.trust_registration:
+        critical_flags.append("신탁 등기")
+    if extraction.seizure_count > 0:
+        critical_flags.append(f"가압류 {extraction.seizure_count}건")
+
     # 1) 근저당+보증금이 시세를 초과 → RED (깡통전세)
     if combined >= 1.0:
         label = (
@@ -391,7 +408,13 @@ def _explain_rule_based(
                 _cite("주택임대차보호법", "제8조"),
             ],
         ))
-        summary_parts.append(f"🔴 깡통전세 위험 · 전세가율 {jeontse_pct}%")
+        if critical_flags:
+            summary_parts.append(f"🔴 {' · '.join(critical_flags)} · 깡통전세 위험 (전세가율 {jeontse_pct}%)")
+        else:
+            summary_parts.append(f"🔴 깡통전세 위험 · 전세가율 {jeontse_pct}%")
+    elif critical_flags:
+        # 전세가율은 낮아도 경매/신탁/가압류 있으면 무조건 RED
+        summary_parts.append(f"🔴 {' · '.join(critical_flags)} · 계약 주의 (전세가율 {jeontse_pct}%)")
     elif jeontse_ratio >= 0.8 or mortgage_ratio >= 0.5:
         risks.append(RiskItem(
             severity="yellow",
@@ -586,7 +609,25 @@ def analyze_safecontract(req: SafeContractRequest) -> SafeContractResponse:
     market = _fetch_market_estimate(effective_region)
     effective_market_price = req.expected_market_price_krw
     if effective_market_price <= 0 and market and market.median_price_krw:
-        effective_market_price = market.median_price_krw
+        # 건물 용도별 시세 보정 — 국토부 API 는 아파트 기준
+        # 다세대·빌라·단독주택은 같은 지역 아파트보다 저렴하므로 보정계수 적용
+        # (실거래 통계 기반 경험치, 발표 후 연립·다세대 API 직접 호출로 개선 예정)
+        use = (extraction.building_use or "").lower()
+        if any(k in use for k in ("다세대", "빌라", "연립")):
+            correction = 0.5  # 아파트 대비 50% 수준
+        elif any(k in use for k in ("단독", "다가구")):
+            correction = 0.6
+        elif "오피스텔" in use:
+            correction = 0.7
+        else:  # 아파트 or 미상
+            correction = 1.0
+        effective_market_price = int(market.median_price_krw * correction)
+        # market_estimate 에 보정 사실 기록 (프론트 표시용)
+        if correction < 1.0 and market:
+            market.error = (
+                f"⚠ {extraction.building_use} 는 아파트 실거래가보다 저렴함. "
+                f"보정계수 {correction:.0%} 적용. 실제 시세 확인 권장."
+            )
 
     jeontse_ratio, mortgage_ratio, risk_level = _compute_ratios(
         extraction, req.deposit_krw, effective_market_price
