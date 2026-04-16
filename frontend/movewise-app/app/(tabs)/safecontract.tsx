@@ -553,12 +553,24 @@ function ResultView({
     owner_name?: string | null;
     owner_registration_front?: string | null;
     co_owner_name?: string | null;
+    co_owners?: string[];
     ownership_type?: string | null;
     mortgage_creditor?: string | null;
     mortgage_claim_amount_krw?: number | null;
     seizure_text?: string | null;
     special_note?: string | null;
+    injunction_registered?: boolean;
+    provisional_registration?: boolean;
+    jeonse_right_registered?: boolean;
+    non_residential_use?: boolean;
+    owner_change_within_2_years?: number;
   };
+  const coOwnersList =
+    ext.co_owners && ext.co_owners.length > 0
+      ? ext.co_owners
+      : ext.co_owner_name
+      ? [ext.co_owner_name]
+      : [];
   const hasPropertyInfo =
     !!ext.address || !!ext.owner_name || !!ext.area_m2 || !!ext.property_id;
 
@@ -589,10 +601,10 @@ function ResultView({
           {ext.owner_name && (
             <PropertyRow
               icon="person"
-              label="소유자"
+              label={coOwnersList.length > 0 ? `소유자 ${1 + coOwnersList.length}명` : '소유자'}
               value={`${ext.owner_name}${
                 ext.owner_registration_front ? ` (${ext.owner_registration_front}-)` : ''
-              }${ext.co_owner_name ? `, ${ext.co_owner_name}` : ''}${
+              }${coOwnersList.length > 0 ? `, ${coOwnersList.join(', ')}` : ''}${
                 ext.ownership_type ? ` · ${ext.ownership_type}` : ''
               }`}
             />
@@ -707,6 +719,68 @@ function ResultView({
                 sub="선순위 채권자 존재 — 경매 시 보증금보다 먼저 변제됨"
               />
             )}
+          </View>
+        );
+      })()}
+
+      {/* 2.5 주의사항 (YELLOW 단계) — 확인·조치 필요 */}
+      {(() => {
+        const cautions: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [];
+        if (coOwnersList.length > 0) {
+          const n = 1 + coOwnersList.length;
+          cautions.push({
+            icon: 'people',
+            title: `공동명의 ${n}인`,
+            sub: '공유자 전원의 동의서·인감증명서 필수 (민법 265조). 대리인 계약 시 위임장 반드시 확인.',
+          });
+        }
+        if (ext.provisional_registration) {
+          cautions.push({
+            icon: 'document-lock',
+            title: '가등기 존재',
+            sub: '본등기 완료 시 소유권 이전 가능. 가등기 해제 여부 확인 권장.',
+          });
+        }
+        if (ext.jeonse_right_registered) {
+          cautions.push({
+            icon: 'key',
+            title: '선순위 전세권',
+            sub: '이미 전세권자 존재. 경매 시 배당 순위 뒤로 밀릴 수 있음.',
+          });
+        }
+        if ((ext.owner_change_within_2_years ?? 0) >= 2) {
+          cautions.push({
+            icon: 'swap-horizontal',
+            title: `소유권 이전 ${ext.owner_change_within_2_years}회 (최근 2년)`,
+            sub: '투자·명의신탁·갭투자 가능성. 집주인 실소유권·재정상태 확인 권장.',
+          });
+        }
+        if (ext.building_use && /다세대|빌라|오피스텔|연립/.test(ext.building_use)) {
+          cautions.push({
+            icon: 'home',
+            title: `${ext.building_use} 시세 주의`,
+            sub: '아파트 실거래가보다 낮게 거래됨. 동일 지역 다세대 실거래 직접 확인 권장.',
+          });
+        }
+        if (cautions.length === 0) return null;
+        return (
+          <View style={styles.cautionCard}>
+            <View style={styles.cautionHeaderRow}>
+              <Ionicons name="alert-circle" size={16} color={colors.warning} />
+              <Text style={styles.cautionHeader}>주의사항 · 확인 권장</Text>
+            </View>
+            {cautions.map((c, i) => (
+              <View key={i} style={styles.cautionLine}>
+                <Ionicons name={c.icon} size={14} color={colors.warning} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cautionLineText}>{c.title}</Text>
+                  <Text style={styles.cautionLineSub}>{c.sub}</Text>
+                </View>
+              </View>
+            ))}
+            <Text style={styles.cautionFooter}>
+              ※ 계약 자체를 피할 수준은 아니지만 추가 확인·조치로 안전을 확보하세요.
+            </Text>
           </View>
         );
       })()}
@@ -1241,6 +1315,56 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSub,
     lineHeight: 15,
+  },
+  cautionCard: {
+    backgroundColor: colors.warningBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.warning,
+  },
+  cautionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  cautionHeader: {
+    ...typography.captionBold,
+    color: colors.warning,
+    fontSize: 13,
+  },
+  cautionLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.sm,
+    marginBottom: 6,
+  },
+  cautionLineText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.warning,
+    marginBottom: 2,
+  },
+  cautionLineSub: {
+    fontSize: 11,
+    color: colors.textSub,
+    lineHeight: 15,
+  },
+  cautionFooter: {
+    ...typography.caption,
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.textMute,
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
   },
   verdictCard: {
     backgroundColor: colors.cardBg,

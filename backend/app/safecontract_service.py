@@ -146,11 +146,26 @@ EXTRACT_SYSTEM = """당신은 한국 부동산 등기사항전부증명서(등�
 - building_use: 표제부 "건물 내역" 칸의 "용도" 값 (예: "아파트", "다세대주택", "단독주택", "오피스텔")
 - owner_name: 갑구 최신 소유권 레코드 또는 "주요 등기사항 요약 - 소유지분현황" 의 등기명의인 (첫 번째)
 - owner_registration_front: 등기명의인 주민등록번호 앞 6자리 (예: "800101"). 뒷자리 "1******" 은 제외. 없으면 null
-- co_owner_name: 공유 소유자 2명 이상일 때 두 번째 등기명의인 (단독소유면 null)
+- co_owner_name: [deprecated] co_owners 대신 사용. 호환용으로 두 번째 소유자만 넣으면 됨
+- co_owners: 공유 소유자 전체 이름 리스트 (owner_name 제외). 단독이면 빈 배열 []. 3명 이상 상속·가족 등기 대응.
 - ownership_type: "주요 등기사항 요약" 의 "최종지분" 칸 값 ("단독소유" / "공유 1/2" 등)
 - mortgage_creditor: 을구 근저당권자. 다건이면 ", " 로 연결. 없으면 null
 - seizure_text: 갑구에 가압류 기재 있으면 채권자·금액 한 줄 요약 (예: "○○은행 3천만원"), 없으면 null
-- special_note: 특이사항 한 줄 요약. 신탁등기·임의경매·가압류·소유권 이전 이력 복잡 등 주목할 점. 복수면 ", " 로 연결. 해당 없으면 null. (예: "임의경매 진행 중, 가압류 1건")
+- special_note: 특이사항 한 줄 요약. 복수면 ", " 로 연결. 해당 없으면 null.
+
+**위험·주의 플래그 추출**
+- injunction_registered: 갑구에 "가처분" 등기목적 있으면 true (소송 중 · RED)
+- provisional_registration: "가등기" 기재 있으면 true (본등기 시 소유권 이전 가능 · YELLOW)
+- jeonse_right_registered: 을구에 "전세권설정" 있으면 true (선순위 전세권자 존재 · YELLOW)
+- non_residential_use: 표제부 "용도" 에 "근린생활시설·상가·사무실·업무시설" 등 비주거 용어 있으면 true (주거 계약 위법 소지 · RED)
+
+**caution_notes 작성 규칙**
+YELLOW 단계 주의사항 문자열 리스트. 계약 자체를 피할 필요는 없지만 확인·조치가 필요한 경우:
+- co_owners 비어있지 않으면: "공유자 전원의 동의서·인감 필수 (민법 제265조)"
+- provisional_registration=true 이면: "가등기 해제 여부 확인 권장 (본등기 시 소유권 이전 가능)"
+- jeonse_right_registered=true 이면: "선순위 전세권자 존재 — 배당 순위 확인"
+- owner_change_within_2_years >= 2 이면: "최근 2년 내 소유권 이전 N회 — 투자용 매물 가능성"
+- building_use 가 "다세대주택·빌라·오피스텔" 이면: "아파트보다 실거래가 낮음 — 시세 직접 확인 권장"
 
 **위험 분석 수치**
 - owner_change_within_2_years: 갑구에서 최근 2년 내 "소유권이전" 건수
@@ -321,9 +336,27 @@ def _compute_ratios(
     mortgage = round(extraction.mortgage_total_krw / market, 3)
     combined = jeontse + mortgage
 
-    if combined >= 1.0 or extraction.seizure_count > 0 or extraction.trust_registration or extraction.auction_in_progress:
+    # RED 트리거 (치명)
+    critical = (
+        combined >= 1.0
+        or extraction.seizure_count > 0
+        or extraction.trust_registration
+        or extraction.auction_in_progress
+        or extraction.injunction_registered  # 가처분
+        or extraction.non_residential_use  # 비주거용
+    )
+    # YELLOW 트리거 (주의)
+    cautionary = (
+        jeontse >= 0.8
+        or mortgage >= 0.5
+        or extraction.provisional_registration  # 가등기
+        or extraction.jeonse_right_registered  # 전세권
+        or len(extraction.co_owners) > 0  # 공동명의
+        or extraction.owner_change_within_2_years >= 2  # 잦은 소유권 이전
+    )
+    if critical:
         level = "red"
-    elif jeontse >= 0.8 or mortgage >= 0.5:
+    elif cautionary:
         level = "yellow"
     else:
         level = "green"
@@ -382,7 +415,7 @@ def _explain_rule_based(
     mortgage_pct = min(int(round(mortgage_ratio * 100)), 999)
     combined = jeontse_ratio + mortgage_ratio
 
-    # 0) 치명적 상태 먼저 체크 (경매·신탁·가압류) — 전세가율이 낮아도 RED
+    # 0) 치명적 상태 먼저 체크 — 전세가율이 낮아도 RED
     critical_flags: list[str] = []
     if extraction.auction_in_progress:
         critical_flags.append("경매 진행 중")
@@ -390,6 +423,10 @@ def _explain_rule_based(
         critical_flags.append("신탁 등기")
     if extraction.seizure_count > 0:
         critical_flags.append(f"가압류 {extraction.seizure_count}건")
+    if extraction.injunction_registered:
+        critical_flags.append("가처분")
+    if extraction.non_residential_use:
+        critical_flags.append("비주거용 등재")
 
     # 1) 근저당+보증금이 시세를 초과 → RED (깡통전세)
     if combined >= 1.0:
@@ -469,6 +506,63 @@ def _explain_rule_based(
                 "이미 경매 중인 부동산은 낙찰 후 소유권이 바뀌므로 임차인 권리 주장이 매우 어렵습니다."
             ),
             related_laws=[_cite("주택임대차보호법", "제3조의5")],
+        ))
+    if extraction.injunction_registered:
+        risks.append(RiskItem(
+            severity="red",
+            label="가처분 등기",
+            explanation_plain=(
+                "가처분은 소유권 다툼 등 소송이 진행 중임을 뜻합니다. "
+                "결과에 따라 소유자가 바뀔 수 있어 임차인 권리가 불안정합니다. 계약 피하는 것을 권장."
+            ),
+        ))
+    if extraction.non_residential_use:
+        risks.append(RiskItem(
+            severity="red",
+            label="비주거용 건물",
+            explanation_plain=(
+                "등기상 용도가 근린생활시설·상가·사무실 등 비주거입니다. "
+                "주거 목적 전세 계약은 주택임대차보호법 적용이 제한될 수 있고, 불법 거주로 과태료·퇴거 위험."
+            ),
+        ))
+    # === YELLOW 단계 주의 ===
+    if extraction.provisional_registration:
+        risks.append(RiskItem(
+            severity="yellow",
+            label="가등기 존재",
+            explanation_plain=(
+                "가등기는 향후 본등기 권리를 미리 표시한 것. 본등기 완료 시 소유권이 "
+                "다른 사람에게 넘어갈 수 있으므로 가등기 해제 여부 확인 필요."
+            ),
+        ))
+    if extraction.jeonse_right_registered:
+        risks.append(RiskItem(
+            severity="yellow",
+            label="선순위 전세권 존재",
+            explanation_plain=(
+                "을구에 전세권이 이미 설정돼 있습니다. 배당 순위에서 이 전세권이 우선하므로 "
+                "본인 보증금 회수 순위가 뒤로 밀릴 수 있어요."
+            ),
+            related_laws=[_cite("주택임대차보호법", "제3조의2")],
+        ))
+    if len(extraction.co_owners) > 0:
+        owner_count = 1 + len(extraction.co_owners)
+        risks.append(RiskItem(
+            severity="yellow",
+            label=f"공동명의 {owner_count}인",
+            explanation_plain=(
+                f"공유 소유자 {owner_count}명 전원의 동의·서명이 계약에 필수입니다 (민법 제265조). "
+                "대리인 계약이라면 인감증명서 · 위임장 반드시 확인하세요."
+            ),
+        ))
+    if extraction.owner_change_within_2_years >= 2:
+        risks.append(RiskItem(
+            severity="yellow",
+            label=f"소유권 이전 {extraction.owner_change_within_2_years}회 (최근 2년)",
+            explanation_plain=(
+                "최근 2년 내 소유자가 여러 번 바뀐 매물. 투자·명의신탁·갭투자 가능성이 있어 "
+                "집주인의 실소유권·재정상태 확인을 권장."
+            ),
         ))
 
     # 기본 안내: 임차권등기명령은 계약 후 반환 문제 대비

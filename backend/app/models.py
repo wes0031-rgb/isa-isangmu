@@ -142,7 +142,11 @@ class RegistryExtraction(BaseModel):
     )
     co_owner_name: Optional[str] = Field(
         default=None,
-        description="공유 소유자 2명 이상일 때 두 번째 소유자 이름 (단독이면 null)",
+        description="[deprecated, co_owners 참조] 공유 소유자 두 번째 이름 (호환용)",
+    )
+    co_owners: list[str] = Field(
+        default_factory=list,
+        description="공유 소유자 전체 이름 리스트 (2명 이상). 본인(owner_name) 제외. 단독이면 빈 배열.",
     )
     ownership_type: Optional[str] = Field(
         default=None,
@@ -173,6 +177,31 @@ class RegistryExtraction(BaseModel):
     trust_registration: bool = False
     auction_in_progress: bool = False
     raw_notes: list[str] = Field(default_factory=list)
+
+    # 추가 위험·주의 플래그 (2026-04-16)
+    injunction_registered: bool = Field(
+        default=False, description="가처분 등기 여부 (갑구 '가처분' 등기목적)"
+    )
+    provisional_registration: bool = Field(
+        default=False,
+        description="가등기 여부 (소유권이전청구권가등기·담보가등기 등)",
+    )
+    jeonse_right_registered: bool = Field(
+        default=False,
+        description="을구 전세권 설정 여부 (선순위 전세권자 존재)",
+    )
+    non_residential_use: bool = Field(
+        default=False,
+        description="비주거용 등재 여부 (근린생활시설·상가·사무실 등 → 주거 계약 위법 위험)",
+    )
+    caution_notes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "주의 단계(YELLOW) 안내 문구 리스트. 계약 자체를 피할 필요는 없지만 "
+            "추가 확인·조치가 필요한 사항. 예: '공유자 전원 동의서 필수', "
+            "'가등기 해제 확인 권장' 등."
+        ),
+    )
 
 
 class RiskItem(BaseModel):
