@@ -131,7 +131,15 @@ class RegistryExtraction(BaseModel):
         description="건물 전체 주소 (시·구·동·번지·건물명·호수)",
     )
     area_m2: Optional[float] = Field(default=None, description="전용면적 (m²)")
+    building_use: Optional[str] = Field(
+        default=None,
+        description="건물 용도 (예: 아파트, 다세대주택, 단독주택, 오피스텔)",
+    )
     owner_name: Optional[str] = Field(default=None, description="현재 소유자 이름")
+    co_owner_name: Optional[str] = Field(
+        default=None,
+        description="공유 소유자 2명 이상일 때 두 번째 소유자 이름 (단독이면 null)",
+    )
     ownership_type: Optional[str] = Field(
         default=None,
         description="소유 형태: '단독소유' 또는 '공유 1/2' 등",
@@ -139,6 +147,10 @@ class RegistryExtraction(BaseModel):
     mortgage_creditor: Optional[str] = Field(
         default=None,
         description="근저당 채권자 (다건이면 ', ' 연결, 없으면 null)",
+    )
+    seizure_text: Optional[str] = Field(
+        default=None,
+        description="가압류 원문 요약 (예: '○○저축은행 가압류 3,000만원', 없으면 null)",
     )
 
     # 위험 분석용 수치 (기존 필드, 변경 금지)

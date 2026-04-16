@@ -549,9 +549,12 @@ function ResultView({
     property_id?: string | null;
     address?: string | null;
     area_m2?: number | null;
+    building_use?: string | null;
     owner_name?: string | null;
+    co_owner_name?: string | null;
     ownership_type?: string | null;
     mortgage_creditor?: string | null;
+    seizure_text?: string | null;
   };
   const hasPropertyInfo =
     !!ext.address || !!ext.owner_name || !!ext.area_m2 || !!ext.property_id;
@@ -568,11 +571,16 @@ function ResultView({
           {ext.address && (
             <PropertyRow icon="location" label="주소" value={ext.address} />
           )}
-          {ext.area_m2 && (
+          {(ext.area_m2 || ext.building_use) && (
             <PropertyRow
               icon="resize"
-              label="면적"
-              value={`${ext.area_m2} m²`}
+              label="건물"
+              value={[
+                ext.building_use,
+                ext.area_m2 ? `${ext.area_m2} m²` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             />
           )}
           {ext.owner_name && (
@@ -580,8 +588,8 @@ function ResultView({
               icon="person"
               label="소유자"
               value={`${ext.owner_name}${
-                ext.ownership_type ? ` · ${ext.ownership_type}` : ''
-              }`}
+                ext.co_owner_name ? `, ${ext.co_owner_name}` : ''
+              }${ext.ownership_type ? ` · ${ext.ownership_type}` : ''}`}
             />
           )}
           {ext.mortgage_creditor && (
@@ -589,6 +597,13 @@ function ResultView({
               icon="cash"
               label="근저당권자"
               value={ext.mortgage_creditor}
+            />
+          )}
+          {ext.seizure_text && (
+            <PropertyRow
+              icon="warning"
+              label="가압류"
+              value={ext.seizure_text}
             />
           )}
           {ext.property_id && (
