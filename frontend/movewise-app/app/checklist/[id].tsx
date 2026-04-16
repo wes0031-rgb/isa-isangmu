@@ -50,6 +50,13 @@ function computeDDayLabel(startDate: string | null | undefined): string {
   return `D+${-days}`;
 }
 
+/** 이사일 기준 오프셋 → 사용자 친화적 라벨 ("이사 14일 전" / "이사 당일" / "이사 3일 후"). */
+function formatMoveOffsetLabel(offset: number): string {
+  if (offset === 0) return '이사 당일';
+  if (offset < 0) return `이사 ${-offset}일 전`;
+  return `이사 ${offset}일 후`;
+}
+
 export default function TaskDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -170,22 +177,27 @@ export default function TaskDetail() {
       <Stack.Screen options={{ title: '항목 상세' }} />
       <ScrollView contentContainerStyle={styles.container}>
         {/* D-day 배지 (오늘 → start_date 기준) */}
-        {computeDDayLabel(item.start_date) ? (
-          <View
-            style={[
-              styles.badge,
-              {
-                backgroundColor: item.has_legal_deadline
-                  ? colors.warning
-                  : colors.primaryLight,
-              },
-            ]}
-          >
-            <Text style={styles.badgeText}>
-              {computeDDayLabel(item.start_date)}
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.badgeRow}>
+          {computeDDayLabel(item.start_date) ? (
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: item.has_legal_deadline
+                    ? colors.warning
+                    : colors.primaryLight,
+                },
+              ]}
+            >
+              <Text style={styles.badgeText}>
+                {computeDDayLabel(item.start_date)}
+              </Text>
+            </View>
+          ) : null}
+          <Text style={styles.offsetLabel}>
+            {formatMoveOffsetLabel(item.d_day_offset)}
+          </Text>
+        </View>
 
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.category}>{item.category}</Text>
@@ -454,12 +466,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   backBtnText: { color: '#fff', fontWeight: '700' },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  offsetLabel: {
+    ...typography.captionBold,
+    fontSize: 12,
+    color: colors.primary,
+  },
   badge: {
-    alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.pill,
-    marginBottom: spacing.sm,
   },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   title: { ...typography.display, fontSize: 24, marginBottom: spacing.xs },

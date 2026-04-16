@@ -82,6 +82,13 @@ function computeDDayLabel(startDate: string | null | undefined): string {
   return `D+${-days}`;
 }
 
+/** 이사일 기준 오프셋 → 사용자 친화적 라벨 ("이사 14일 전" / "이사 당일" / "이사 3일 후"). */
+function formatMoveOffsetLabel(offset: number): string {
+  if (offset === 0) return '이사 당일';
+  if (offset < 0) return `이사 ${-offset}일 전`;
+  return `이사 ${offset}일 후`;
+}
+
 function formatDateLabel(ymd: string): string {
   if (!ymd) return '날짜 선택';
   const [y, m, d] = ymd.split('-');
@@ -1016,7 +1023,9 @@ function ChecklistCard({
           </Text>
         </View>
         {item.start_date ? (
-          <Text style={styles.itemSubDate}>{item.start_date}</Text>
+          <Text style={styles.itemSubDate}>
+            {formatMoveOffsetLabel(item.d_day_offset)} · {item.start_date}
+          </Text>
         ) : null}
         {item.deadline_date && (
           <View style={styles.deadlineBox}>
