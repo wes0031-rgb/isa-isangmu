@@ -66,6 +66,21 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** 오늘 → start_date 까지의 일수 기반 D-day 문자열 (YYYY-MM-DD, 로컬 기준). */
+function computeDDayLabel(startDate: string | null | undefined): string {
+  if (!startDate) return '';
+  const parts = startDate.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return '';
+  const [y, m, d] = parts;
+  const start = new Date(y, m - 1, d);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const days = Math.round((start.getTime() - now.getTime()) / 86400000);
+  if (days === 0) return 'D-DAY';
+  if (days > 0) return `D-${days}`;
+  return `D+${-days}`;
+}
+
 function formatDateLabel(ymd: string): string {
   if (!ymd) return '날짜 선택';
   const [y, m, d] = ymd.split('-');
@@ -110,7 +125,7 @@ export default function ChecklistScreen() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const loadingMessage = useRotatingText(CHECKLIST_LOADING_STEPS, loading, 2500);
 
-  // 탭 포커스마다 저장된 체크리스트 복원
+  // 탭 포커스마다 저장된 체크리스트 복원 (또는 마이에서 삭제된 경우 상태 초기화)
   useFocusEffect(
     useCallback(() => {
       (async () => {
@@ -141,6 +156,12 @@ export default function ChecklistScreen() {
           setCompletions(comp);
           const customs = await loadCustomItems();
           setCustomItems(customs);
+        } else {
+          // 마이 탭에서 초기화된 직후 → 로컬 state 도 리셋하고 form 모드로
+          setResult(null);
+          setCompletions({});
+          setCustomItems([]);
+          setMode('form');
         }
       })();
     }, []),
@@ -223,7 +244,8 @@ export default function ChecklistScreen() {
       ...result.items.map((it, idx) => {
         const done = completions[itemKey(it)] ? '[✔]' : '[ ]';
         const dl = it.deadline_date ? ` ⚠ 마감 ${it.deadline_date}` : '';
-        return `${done} ${idx + 1}. ${it.title} (D${it.d_day_offset >= 0 ? '+' : ''}${it.d_day_offset})${dl}`;
+        const dday = computeDDayLabel(it.start_date);
+        return `${done} ${idx + 1}. ${it.title}${dday ? ` (${dday})` : ''}${dl}`;
       }),
       '',
       `생성: ${result.generated_at}`,
@@ -258,14 +280,16 @@ export default function ChecklistScreen() {
     title: string;
     category: string;
     description: string;
-    d_day_offset: number;
+    days_from_today: number;
   }) {
+    // 사용자가 "며칠 뒤" 로 입력 → 오늘 + N 의 실제 날짜로 저장
+    const start = todayPlus(draft.days_from_today);
     const newItem: ChecklistItem = {
       category: draft.category || '내가 추가',
       title: draft.title,
       description: draft.description,
-      d_day_offset: draft.d_day_offset,
-      start_date: '',
+      d_day_offset: draft.days_from_today, // 하위 스키마 호환용 (표시엔 사용 안 함)
+      start_date: start,
       has_legal_deadline: false,
       deadline_date: null,
       deadline_days: null,
@@ -349,6 +373,7 @@ export default function ChecklistScreen() {
             result && (
               <ResultView
                 result={result}
+                region={region}
                 customItems={customItems}
                 completions={completions}
                 progress={progress}
@@ -406,19 +431,19 @@ function AddItemModal({
     title: string;
     category: string;
     description: string;
-    d_day_offset: number;
+    days_from_today: number;
   }) => void;
 }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [dDay, setDDay] = useState('0');
+  const [days, setDays] = useState('0');
 
   function reset() {
     setTitle('');
     setCategory('');
     setDescription('');
-    setDDay('0');
+    setDays('0');
   }
 
   function submit() {
@@ -427,7 +452,7 @@ function AddItemModal({
       title: title.trim(),
       category: category.trim() || '내가 추가',
       description: description.trim(),
-      d_day_offset: parseInt(dDay, 10) || 0,
+      days_from_today: Math.max(0, parseInt(days, 10) || 0),
     });
     reset();
   }
@@ -439,8 +464,16 @@ function AddItemModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.modalBackdrop}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <ScrollView
+          contentContainerStyle={styles.modalCard}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>항목 추가</Text>
             <Pressable onPress={onClose} hitSlop={8}>
@@ -477,13 +510,13 @@ function AddItemModal({
             textAlignVertical="top"
           />
 
-          <Text style={styles.modalLabel}>D-day (이사일 기준, 음수=이사 전)</Text>
+          <Text style={styles.modalLabel}>며칠 뒤에 할 일인가요? (오늘=0)</Text>
           <TextInput
-            value={dDay}
-            onChangeText={(v) => setDDay(v.replace(/[^0-9-]/g, ''))}
+            value={days}
+            onChangeText={(v) => setDays(v.replace(/[^0-9]/g, ''))}
             placeholder="0"
             placeholderTextColor={colors.textMute}
-            keyboardType="numbers-and-punctuation"
+            keyboardType="number-pad"
             style={styles.modalInput}
           />
 
@@ -494,8 +527,8 @@ function AddItemModal({
           >
             <Text style={styles.submitText}>추가</Text>
           </Pressable>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -785,6 +818,7 @@ function FormView(props: FormViewProps) {
 
 function ResultView({
   result,
+  region,
   customItems,
   completions,
   progress,
@@ -798,6 +832,7 @@ function ResultView({
   onItemPress,
 }: {
   result: ChecklistResponse;
+  region: string;
   customItems: ChecklistItem[];
   completions: CompletionMap;
   progress: number;
@@ -816,6 +851,12 @@ function ResultView({
       <View style={styles.resultHeaderRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.h1}>체크리스트</Text>
+          <View style={styles.resultMetaRow}>
+            <Ionicons name="location" size={13} color={colors.primary} />
+            <Text style={styles.resultRegionText} numberOfLines={1}>
+              {region}
+            </Text>
+          </View>
           <Text style={styles.h1Sub}>
             AI {aiCount}개{customItems.length > 0 ? ` + 내 ${customItems.length}개` : ''}
           </Text>
@@ -908,10 +949,7 @@ function ChecklistCard({
   onRemove?: () => void;
 }) {
   const legal = item.has_legal_deadline;
-  const dDay =
-    item.d_day_offset >= 0
-      ? `D+${item.d_day_offset}`
-      : `D${item.d_day_offset}`;
+  const dDay = computeDDayLabel(item.start_date);
   return (
     <View
       style={[
@@ -929,34 +967,30 @@ function ChecklistCard({
       </Pressable>
       <Pressable style={{ flex: 1 }} onPress={onPress}>
         <View style={styles.itemHeader}>
-          <View
-            style={[
-              styles.dDayBadge,
-              { backgroundColor: legal ? colors.warning : colors.primaryLight },
-            ]}
-          >
-            <Text style={styles.dDayText}>{dDay}</Text>
-          </View>
+          {dDay ? (
+            <View
+              style={[
+                styles.dDayBadge,
+                { backgroundColor: legal ? colors.warning : colors.primaryLight },
+              ]}
+            >
+              <Text style={styles.dDayText}>{dDay}</Text>
+            </View>
+          ) : null}
           <Text
             style={[styles.itemTitle, done && styles.strike]}
           >
             {item.title}
           </Text>
         </View>
-        <Text style={styles.itemSubDate}>{item.start_date}</Text>
+        {item.start_date ? (
+          <Text style={styles.itemSubDate}>{item.start_date}</Text>
+        ) : null}
         {item.deadline_date && (
           <View style={styles.deadlineBox}>
             <Ionicons name="alarm" size={14} color={colors.warning} />
             <Text style={styles.deadlineText}>
               마감 {item.deadline_date} ({item.deadline_days}일 기한)
-            </Text>
-          </View>
-        )}
-        {item.region_hint && (
-          <View style={styles.metaRow}>
-            <Ionicons name="location" size={12} color={colors.primary} />
-            <Text style={styles.metaText} numberOfLines={1}>
-              {item.region_hint}
             </Text>
           </View>
         )}
@@ -1098,6 +1132,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
+  },
+  resultMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+  },
+  resultRegionText: {
+    ...typography.captionBold,
+    color: colors.primary,
+    fontSize: 12,
+    flex: 1,
   },
   iconBtn: {
     width: 40,

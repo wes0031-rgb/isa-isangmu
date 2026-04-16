@@ -35,6 +35,21 @@ function itemKey(it: ChecklistItem): string {
   return `${it.category}::${it.title}`;
 }
 
+/** 오늘 → start_date 까지의 일수 기반 D-day 문자열 (YYYY-MM-DD, 로컬 기준). */
+function computeDDayLabel(startDate: string | null | undefined): string {
+  if (!startDate) return '';
+  const parts = startDate.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return '';
+  const [y, m, d] = parts;
+  const start = new Date(y, m - 1, d);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const days = Math.round((start.getTime() - now.getTime()) / 86400000);
+  if (days === 0) return 'D-DAY';
+  if (days > 0) return `D-${days}`;
+  return `D+${-days}`;
+}
+
 export default function TaskDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -111,10 +126,14 @@ export default function TaskDetail() {
 
   async function handleShare() {
     if (!item) return;
+    const dday = computeDDayLabel(item.start_date);
+    const startLine = item.start_date
+      ? `시작일: ${item.start_date}${dday ? ` (${dday})` : ''}`
+      : '';
     const lines = [
       `[${item.title}]`,
       `카테고리: ${item.category}`,
-      `시작일: ${item.start_date} (D${item.d_day_offset >= 0 ? '+' : ''}${item.d_day_offset})`,
+      startLine,
       item.deadline_date ? `마감: ${item.deadline_date} (${item.deadline_days}일 기한)` : '',
       item.penalty ? `과태료: ${item.penalty}` : '',
       '',
@@ -151,22 +170,23 @@ export default function TaskDetail() {
     <SafeAreaView style={styles.root}>
       <Stack.Screen options={{ title: '항목 상세' }} />
       <ScrollView contentContainerStyle={styles.container}>
-        {/* D-day 배지 */}
-        <View
-          style={[
-            styles.badge,
-            {
-              backgroundColor: item.has_legal_deadline
-                ? colors.warning
-                : colors.primaryLight,
-            },
-          ]}
-        >
-          <Text style={styles.badgeText}>
-            D{item.d_day_offset >= 0 ? '+' : ''}
-            {item.d_day_offset}
-          </Text>
-        </View>
+        {/* D-day 배지 (오늘 → start_date 기준) */}
+        {computeDDayLabel(item.start_date) ? (
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: item.has_legal_deadline
+                  ? colors.warning
+                  : colors.primaryLight,
+              },
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {computeDDayLabel(item.start_date)}
+            </Text>
+          </View>
+        ) : null}
 
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.category}>{item.category}</Text>
