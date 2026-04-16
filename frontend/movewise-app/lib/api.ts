@@ -194,6 +194,7 @@ export interface SafeContractUploadParams {
   mimeType?: string;
   deposit_krw: number;
   expected_market_price_krw: number;
+  region?: string;
 }
 
 async function postMultipart<TRes>(path: string, form: FormData, timeoutMs = 60000): Promise<TRes> {
@@ -295,6 +296,7 @@ export const api = {
     } as any);
     form.append('deposit_krw', String(params.deposit_krw));
     form.append('expected_market_price_krw', String(params.expected_market_price_krw));
+    if (params.region) form.append('region', params.region);
     return postMultipart<SafeContractResponse>('/safecontract/upload', form);
   },
 };

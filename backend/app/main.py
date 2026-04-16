@@ -189,11 +189,15 @@ def post_safecontract(req: SafeContractRequest) -> SafeContractResponse:
 async def post_safecontract_upload(
     file: UploadFile = File(..., description="등기부등본 PDF"),
     deposit_krw: int = Form(..., description="보증금 (원)"),
-    expected_market_price_krw: int = Form(..., description="예상 시세 (원)"),
+    expected_market_price_krw: int = Form(0, description="예상 시세 (원, 0 = 자동 조회)"),
+    region: str = Form("", description="시·군·구 (비워두면 PDF 주소에서 자동 파싱)"),
 ) -> SafeContractResponse:
     """등기부등본 PDF 업로드 → Document Intelligence 파싱 → 기존 분석.
 
     기획서 3.5.2 P1 목표. Azure Document Intelligence 가 설정돼야 동작.
+
+    expected_market_price_krw = 0 이고 region 이 비어있으면 PDF 에서 주소 파싱 후
+    국토부 실거래가 API 로 시세 자동 조회.
     """
     if not file.filename or not file.filename.lower().endswith((".pdf",)):
         raise HTTPException(status_code=400, detail="PDF 파일만 업로드 가능합니다")
@@ -208,6 +212,7 @@ async def post_safecontract_upload(
             contents,
             deposit_krw=deposit_krw,
             expected_market_price_krw=expected_market_price_krw,
+            region=region or None,
         )
     except DocumentIntelligenceNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc))

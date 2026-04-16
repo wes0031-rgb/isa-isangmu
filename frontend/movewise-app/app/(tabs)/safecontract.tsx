@@ -136,6 +136,7 @@ export default function SafeContractScreen() {
           mimeType: pickedFile.mimeType,
           deposit_krw: depositN,
           expected_market_price_krw: marketN,
+          region: region || undefined,
         });
         setResult(res);
       } catch (e: any) {
@@ -358,20 +359,22 @@ export default function SafeContractScreen() {
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.sectionLabel}>예상 시세 (선택)</Text>
+                  <Text style={styles.sectionLabel}>시세 (모르면 비워두세요)</Text>
                   <TextInput
                     value={formatNumber(market)}
                     onChangeText={(v) => setMarket(v.replace(/\D/g, ''))}
                     keyboardType="numeric"
                     style={styles.input}
-                    placeholder="비워두면 자동"
+                    placeholder="자동 조회"
                   />
                   <Text style={styles.amountHint}>
                     {parseInt(market, 10) > 0
                       ? formatKoreanAmount(market)
+                      : mode === 'pdf'
+                      ? '📍 PDF 주소 → 국토부 실거래가 자동 조회'
                       : region
-                      ? '지역 기반 자동 추정'
-                      : '지역 선택 또는 직접 입력'}
+                      ? '📍 국토부 실거래가 자동 조회'
+                      : '지역 선택하면 자동 조회'}
                   </Text>
                 </View>
               </View>
@@ -724,6 +727,12 @@ function MarketEstimateCard({ estimate }: { estimate: MarketEstimate }) {
       <Text style={styles.marketTotalText}>
         이번 달 거래 {estimate.total_count}건 · 아파트 매매 기준
       </Text>
+      <View style={styles.marketBadgeRow}>
+        <Ionicons name="calculator" size={11} color={colors.success} />
+        <Text style={styles.marketBadgeText}>
+          이 값으로 전세가율 자동 계산됨
+        </Text>
+      </View>
       {estimate.recent_deals.length > 0 && (
         <View style={styles.marketDealsBox}>
           <Text style={styles.marketDealsTitle}>최근 거래 상위 {estimate.recent_deals.length}</Text>
@@ -977,6 +986,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+  },
+  marketBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  marketBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.success,
   },
   marketCard: {
     backgroundColor: colors.primaryBg,

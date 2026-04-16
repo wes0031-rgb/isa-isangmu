@@ -66,20 +66,53 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
     return clean_hanja(text)  # 한자 병기 제거
 
 
+def _parse_region_from_address(address: Optional[str]) -> Optional[str]:
+    """추출된 주소 문자열에서 '시/도 + 시/군/구' 부분 추출.
+
+    예: '서울특별시 강남구 역삼동 123-45 역삼파크빌 제 301 호'
+        → '서울특별시 강남구'
+    """
+    if not address:
+        return None
+    text = re.sub(r"\s+", " ", address).strip()
+    # 시/도 + 시/군/구 패턴 — 광역시·특별시·도, 자치도 포함
+    m = re.match(
+        r"(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|"
+        r"세종특별자치시|경기도|강원특별자치도|강원도|충청북도|충청남도|"
+        r"전북특별자치도|전라북도|전라남도|경상북도|경상남도|제주특별자치도)"
+        r"\s+([가-힣0-9]+(?:시\s+[가-힣]+구)?|[가-힣]+구|[가-힣]+군)",
+        text,
+    )
+    if m:
+        return f"{m.group(1)} {m.group(2)}"
+    return None
+
+
 def analyze_safecontract_pdf(
-    file_bytes: bytes, deposit_krw: int, expected_market_price_krw: int
+    file_bytes: bytes,
+    deposit_krw: int,
+    expected_market_price_krw: int,
+    region: Optional[str] = None,
 ) -> SafeContractResponse:
     """PDF 업로드 → Document Intelligence → 기존 분석 파이프라인.
 
     기획서 3.5.2 P1 목표 — Azure Document Intelligence 연결 시 활성화.
+
+    region 이 None 이면 추출된 주소에서 자동 파싱 (사용자가 시세 몰라도 자동 조회).
     """
     text = extract_text_from_pdf(file_bytes)
     if not text:
         raise ValueError("PDF 에서 텍스트를 추출하지 못했습니다. 스캔 품질을 확인하세요.")
+
+    # region 자동 유도: (1) 사용자 명시 > (2) 레이아웃 텍스트에서 직접 정규식 파싱
+    # LLM 두 번 호출 피하려고 raw text 에서 먼저 시/도+시군구 패턴 찾음
+    effective_region = region or _parse_region_from_address(text)
+
     req = SafeContractRequest(
         text=text,
         deposit_krw=deposit_krw,
         expected_market_price_krw=expected_market_price_krw,
+        region=effective_region,
     )
     return analyze_safecontract(req)
 
