@@ -201,11 +201,11 @@ STRUCTURE_SYSTEM_PROMPT = """당신은 이사 전·당일·후의 행정 절차 
 
 def structure_checklist_llm(
     req: ChecklistRequest, chunks: list[dict]
-) -> list[ChecklistItem]:
+) -> tuple[list[ChecklistItem], bool]:
     client = get_openai_client()
     if client is None:
         # 폴백도 검색된 청크의 메타데이터를 활용
-        return structure_checklist_fallback(req, chunks)
+        return structure_checklist_fallback(req, chunks), True
 
     settings = get_settings()
     context = "\n\n---\n\n".join(
@@ -233,7 +233,7 @@ def structure_checklist_llm(
         _logger.warning(
             f"structure LLM failed ({type(exc).__name__}): {exc} — falling back"
         )
-        return structure_checklist_fallback(req, chunks)
+        return structure_checklist_fallback(req, chunks), True
 
     raw = resp.choices[0].message.content or '{"items": []}'
     try:
@@ -270,11 +270,11 @@ def structure_checklist_llm(
             _logger.warning(
                 f"structure LLM 0 items (parsed type={type(parsed).__name__}, keys={list(parsed.keys()) if isinstance(parsed, dict) else 'list'}) — falling back"
             )
-            return structure_checklist_fallback(req, chunks)
-        return items
+            return structure_checklist_fallback(req, chunks), True
+        return items, False
     except (json.JSONDecodeError, ValueError) as exc:
         _logger.warning(f"structure LLM parse error: {exc} — falling back")
-        return structure_checklist_fallback(req, chunks)
+        return structure_checklist_fallback(req, chunks), True
 
 
 def _item_from_dict(d: dict, move_date: date) -> ChecklistItem:
@@ -794,17 +794,21 @@ def structure_checklist_fallback(
 def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     queries = build_queries_llm(req)
     chunks = search_procedures(queries, req)
-    items = structure_checklist_llm(req, chunks)
+    items, fallback_used = structure_checklist_llm(req, chunks)
     items.sort(key=lambda x: x.d_day_offset)
+
+    if fallback_used:
+        warning = "AI 서버가 일시적으로 불안정하여 기본 체크리스트를 제공합니다. 나중에 다시 생성하면 맞춤 결과를 받을 수 있어요."
+    elif not get_settings().azure_ready:
+        warning = "Azure 자격 증명이 설정되지 않아 rule-based fallback 결과입니다."
+    else:
+        warning = None
+
     return ChecklistResponse(
         request=req,
         generated_at=date.today(),
         items=items,
         total_items=len(items),
         used_queries=queries,
-        warning=(
-            None
-            if get_settings().azure_ready
-            else "Azure 자격 증명이 설정되지 않아 rule-based fallback 결과입니다."
-        ),
+        warning=warning,
     )

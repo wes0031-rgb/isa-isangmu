@@ -69,7 +69,20 @@ export async function loadCustomItems(): Promise<ChecklistItem[]> {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // 마이그레이션: 빈 start_date 를 오늘 날짜로 채움
+    const today = new Date().toISOString().slice(0, 10);
+    let migrated = false;
+    for (const item of parsed) {
+      if (!item.start_date) {
+        item.start_date = today;
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      await AsyncStorage.setItem(K.CUSTOM_ITEMS, JSON.stringify(parsed));
+    }
+    return parsed;
   } catch {
     return [];
   }

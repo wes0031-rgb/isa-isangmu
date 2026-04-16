@@ -225,8 +225,29 @@ export const api = {
       error: d.error,
     };
   },
-  checklist(req: ChecklistRequest) {
-    return post<ChecklistRequest, ChecklistResponse>('/checklist', req);
+  async checklist(req: ChecklistRequest): Promise<ChecklistResponse> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45000);
+    try {
+      const res = await fetch(`${getApiUrl()}/checklist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API ${res.status}: ${text}`);
+      }
+      return (await res.json()) as ChecklistResponse;
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        throw new Error('서버 응답 시간 초과 — 잠시 후 다시 시도해주세요');
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
   },
   safecontract(req: SafeContractRequest) {
     return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);

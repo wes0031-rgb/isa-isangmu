@@ -39,8 +39,14 @@ def next_business_day(d: date) -> date:
 
 
 def compute_start_date(move_date: date, d_day_offset: int) -> date:
-    """이사일 기준 오프셋만큼 이동. 공휴일/주말이면 다음 평일로 밀어줌."""
+    """이사일 기준 오프셋만큼 이동. 공휴일/주말이면 다음 평일로 밀어줌.
+
+    단, d_day_offset == 0 (이사 당일)은 주말/공휴일이어도 밀지 않음.
+    실제 이사일은 사용자가 정한 날짜 그대로여야 함.
+    """
     raw = move_date + timedelta(days=d_day_offset)
+    if d_day_offset == 0:
+        return raw
     return next_business_day(raw)
 
 

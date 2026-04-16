@@ -202,12 +202,7 @@ export default function Home() {
                   router.push({
                     pathname: '/checklist/[id]',
                     params: {
-                      id: String(
-                        saved!.response.items.findIndex(
-                          (x) =>
-                            x.category === it.category && x.title === it.title,
-                        ),
-                      ),
+                      id: itemKey(it.category, it.title),
                     },
                   })
                 }
@@ -256,12 +251,7 @@ export default function Home() {
                     router.push({
                       pathname: '/checklist/[id]',
                       params: {
-                        id: String(
-                          saved!.response.items.findIndex(
-                            (x) =>
-                              x.category === it.category && x.title === it.title,
-                          ),
-                        ),
+                        id: itemKey(it.category, it.title),
                       },
                     })
                   }

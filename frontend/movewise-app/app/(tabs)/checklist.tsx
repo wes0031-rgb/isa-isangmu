@@ -89,6 +89,10 @@ function formatDateLabel(ymd: string): string {
   return `${y}년 ${Number(m)}월 ${Number(d)}일 (${dow})`;
 }
 
+function normalizeKey(k: string): string {
+  return k.replace(/\s/g, '');
+}
+
 function itemKey(it: ChecklistItem): string {
   return `${it.category}::${it.title}`;
 }
@@ -155,6 +159,7 @@ export default function ChecklistScreen() {
           const comp = await loadCompletions();
           setCompletions(comp);
           const customs = await loadCustomItems();
+          // loadCustomItems 내부에서 빈 start_date 마이그레이션 처리됨
           setCustomItems(customs);
         } else {
           // 마이 탭에서 초기화된 직후 → 로컬 state 도 리셋하고 form 모드로
@@ -210,10 +215,32 @@ export default function ChecklistScreen() {
     };
     try {
       const res = await api.checklist(payload);
+      // 재생성 시 완료 상태 마이그레이션 (title 공백 차이로 유실 방지)
+      if (isRegenerating) {
+        const oldComp = await loadCompletions();
+        const oldKeys = Object.keys(oldComp).filter((k) => oldComp[k]);
+        if (oldKeys.length > 0) {
+          const newItems = res.items;
+          for (const oldKey of oldKeys) {
+            const normOld = normalizeKey(oldKey);
+            const match = newItems.find(
+              (it) => normalizeKey(itemKey(it)) === normOld,
+            );
+            if (match) {
+              const newKey = itemKey(match);
+              if (newKey !== oldKey) {
+                await setCompletion(newKey, true);
+              }
+            }
+          }
+          const migrated = await loadCompletions();
+          setCompletions(migrated);
+        }
+      } else {
+        setCompletions({});
+      }
       setResult(res);
       await saveChecklist(payload, res);
-      // 재생성 시엔 기존 완료 상태 유지 (key 일치하는 항목은 체크된 채로 복원됨)
-      if (!isRegenerating) setCompletions({});
       setMode('result');
     } catch (e: any) {
       setError(e.message);
@@ -384,10 +411,10 @@ export default function ChecklistScreen() {
                 onEditConditions={handleEditConditions}
                 onAddCustomItem={() => setAddItemOpen(true)}
                 onRemoveCustomItem={handleRemoveCustomItem}
-                onItemPress={(_item, idx) =>
+                onItemPress={(item, _idx) =>
                   router.push({
                     pathname: '/checklist/[id]',
-                    params: { id: String(idx) },
+                    params: { id: itemKey(item) },
                   })
                 }
               />

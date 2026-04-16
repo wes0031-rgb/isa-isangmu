@@ -68,8 +68,7 @@ export default function TaskDetail() {
       }
       const customs = await loadCustomItems();
       const all = [...saved.response.items, ...customs];
-      const idx = parseInt(String(id ?? '0'), 10);
-      const it = all[idx];
+      const it = all.find((x) => itemKey(x) === id);
       if (!it) {
         setNotFound(true);
         return;
