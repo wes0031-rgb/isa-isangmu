@@ -130,13 +130,14 @@ export default function SafeContractScreen() {
       setLoading(true);
       setResult(null);
       try {
+        // PDF 모드는 region·market 전부 서버가 주소/실거래가로 자동 유도 → 빈 값으로 전달
         const res = await api.safecontractUpload({
           uri: pickedFile.uri,
           name: pickedFile.name,
           mimeType: pickedFile.mimeType,
           deposit_krw: depositN,
-          expected_market_price_krw: marketN,
-          region: region || undefined,
+          expected_market_price_krw: 0,
+          region: undefined,
         });
         setResult(res);
       } catch (e: any) {
@@ -324,24 +325,39 @@ export default function SafeContractScreen() {
                   </Pressable>
                 </>
               )}
-              {/* 지역 (실거래가 자동 조회용) */}
-              <Text style={styles.sectionLabel}>지역 (자동 시세 조회)</Text>
-              <Pressable
-                style={styles.regionSelector}
-                onPress={() => setRegionPickerOpen(true)}
-              >
-                <Ionicons name="location-outline" size={18} color={colors.primary} />
-                <Text
-                  style={[
-                    styles.regionText,
-                    !region && { color: colors.textMute },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {region || '지역을 선택하면 국토부 실거래가 자동 조회'}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMute} />
-              </Pressable>
+              {/* 지역 — 텍스트 모드일 때만 표시 (PDF 는 주소에서 자동 파싱) */}
+              {mode === 'text' && (
+                <>
+                  <Text style={styles.sectionLabel}>지역 (자동 시세 조회)</Text>
+                  <Pressable
+                    style={styles.regionSelector}
+                    onPress={() => setRegionPickerOpen(true)}
+                  >
+                    <Ionicons name="location-outline" size={18} color={colors.primary} />
+                    <Text
+                      style={[
+                        styles.regionText,
+                        !region && { color: colors.textMute },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {region || '지역을 선택하면 국토부 실거래가 자동 조회'}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color={colors.textMute} />
+                  </Pressable>
+                </>
+              )}
+
+              {/* PDF 모드는 자동 안내 카드 */}
+              {mode === 'pdf' && (
+                <View style={styles.autoInfoCard}>
+                  <Ionicons name="sparkles" size={16} color={colors.primary} />
+                  <Text style={styles.autoInfoText}>
+                    주소·면적·소유자·시세 전부 PDF 에서 자동 추출해요.{'\n'}
+                    <Text style={{ fontWeight: '800' }}>보증금만 입력</Text>하시면 돼요.
+                  </Text>
+                </View>
+              )}
 
               {/* 보증금·시세 */}
               <View style={styles.row}>
@@ -358,25 +374,26 @@ export default function SafeContractScreen() {
                     {formatKoreanAmount(deposit) || '금액 입력'}
                   </Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.sectionLabel}>시세 (모르면 비워두세요)</Text>
-                  <TextInput
-                    value={formatNumber(market)}
-                    onChangeText={(v) => setMarket(v.replace(/\D/g, ''))}
-                    keyboardType="numeric"
-                    style={styles.input}
-                    placeholder="자동 조회"
-                  />
-                  <Text style={styles.amountHint}>
-                    {parseInt(market, 10) > 0
-                      ? formatKoreanAmount(market)
-                      : mode === 'pdf'
-                      ? '📍 PDF 주소 → 국토부 실거래가 자동 조회'
-                      : region
-                      ? '📍 국토부 실거래가 자동 조회'
-                      : '지역 선택하면 자동 조회'}
-                  </Text>
-                </View>
+                {/* 텍스트 모드만 직접 시세 입력, PDF 는 자동 */}
+                {mode === 'text' && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sectionLabel}>시세 (모르면 비워두세요)</Text>
+                    <TextInput
+                      value={formatNumber(market)}
+                      onChangeText={(v) => setMarket(v.replace(/\D/g, ''))}
+                      keyboardType="numeric"
+                      style={styles.input}
+                      placeholder="자동 조회"
+                    />
+                    <Text style={styles.amountHint}>
+                      {parseInt(market, 10) > 0
+                        ? formatKoreanAmount(market)
+                        : region
+                        ? '📍 국토부 실거래가 자동 조회'
+                        : '지역 선택하면 자동 조회'}
+                    </Text>
+                  </View>
+                )}
               </View>
 
               <Pressable
@@ -986,6 +1003,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+  },
+  autoInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.primaryBg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    marginBottom: spacing.md,
+  },
+  autoInfoText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
+    color: colors.primary,
   },
   marketBadgeRow: {
     flexDirection: 'row',
