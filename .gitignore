@@ -41,6 +41,10 @@ web-build/
 # ===== Project-specific large/raw data =====
 # 원본 스크랩 데이터 — 수집 리포트는 유지, 개별 파일은 제외 (선택)
 backend/data/samples/
+# 임베딩 대용량 (Azure AI Search 에만 배포, 재생성 가능)
+backend/data/indexes/index_unified_embeddings.jsonl
+# 로컬 export 중복 복제본
+/code_export/
 
 # ===== Logs =====
 *.log
