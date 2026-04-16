@@ -154,17 +154,38 @@ export interface SafeContractResponse {
 
 // ===== Client =====
 
-async function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  const res = await fetch(`${getApiUrl()}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API ${res.status}: ${text}`);
+function withTimeout(ms: number): { signal: AbortSignal; clear: () => void } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, clear: () => clearTimeout(timer) };
+}
+
+function wrapAbort(e: unknown): never {
+  if (e instanceof Error && e.name === 'AbortError') {
+    throw new Error('서버 응답 시간 초과 — 잠시 후 다시 시도해주세요');
   }
-  return res.json() as Promise<TRes>;
+  throw e;
+}
+
+async function post<TReq, TRes>(path: string, body: TReq, timeoutMs = 30000): Promise<TRes> {
+  const { signal, clear } = withTimeout(timeoutMs);
+  try {
+    const res = await fetch(`${getApiUrl()}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`API ${res.status}: ${text}`);
+    }
+    return res.json() as Promise<TRes>;
+  } catch (e) {
+    return wrapAbort(e);
+  } finally {
+    clear();
+  }
 }
 
 export interface SafeContractUploadParams {
@@ -175,29 +196,44 @@ export interface SafeContractUploadParams {
   expected_market_price_krw: number;
 }
 
-async function postMultipart<TRes>(path: string, form: FormData): Promise<TRes> {
-  const res = await fetch(`${getApiUrl()}${path}`, {
-    method: 'POST',
-    body: form,
-  });
-  if (!res.ok) {
-    let detail: string;
-    try {
-      const body = await res.json();
-      detail = body?.detail || JSON.stringify(body);
-    } catch {
-      detail = await res.text();
+async function postMultipart<TRes>(path: string, form: FormData, timeoutMs = 60000): Promise<TRes> {
+  const { signal, clear } = withTimeout(timeoutMs);
+  try {
+    const res = await fetch(`${getApiUrl()}${path}`, {
+      method: 'POST',
+      body: form,
+      signal,
+    });
+    if (!res.ok) {
+      let detail: string;
+      try {
+        const body = await res.json();
+        detail = body?.detail || JSON.stringify(body);
+      } catch {
+        detail = await res.text();
+      }
+      throw new Error(`API ${res.status}: ${detail}`);
     }
-    throw new Error(`API ${res.status}: ${detail}`);
+    return res.json() as Promise<TRes>;
+  } catch (e) {
+    return wrapAbort(e);
+  } finally {
+    clear();
   }
-  return res.json() as Promise<TRes>;
 }
 
 export const api = {
   async health(): Promise<{ service: string; version: string; azure_ready: boolean }> {
-    const res = await fetch(`${getApiUrl()}/`);
-    if (!res.ok) throw new Error(`health ${res.status}`);
-    return res.json();
+    const { signal, clear } = withTimeout(10000);
+    try {
+      const res = await fetch(`${getApiUrl()}/`, { signal });
+      if (!res.ok) throw new Error(`health ${res.status}`);
+      return res.json();
+    } catch (e) {
+      return wrapAbort(e);
+    } finally {
+      clear();
+    }
   },
   async realtySummary(region: string): Promise<MarketEstimate> {
     const res = await fetch(
@@ -225,29 +261,8 @@ export const api = {
       error: d.error,
     };
   },
-  async checklist(req: ChecklistRequest): Promise<ChecklistResponse> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 45000);
-    try {
-      const res = await fetch(`${getApiUrl()}/checklist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(req),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API ${res.status}: ${text}`);
-      }
-      return (await res.json()) as ChecklistResponse;
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
-        throw new Error('서버 응답 시간 초과 — 잠시 후 다시 시도해주세요');
-      }
-      throw e;
-    } finally {
-      clearTimeout(timer);
-    }
+  checklist(req: ChecklistRequest) {
+    return post<ChecklistRequest, ChecklistResponse>('/checklist', req, 45000);
   },
   safecontract(req: SafeContractRequest) {
     return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);

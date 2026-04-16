@@ -144,6 +144,10 @@ export async function setCompletion(key: string, done: boolean): Promise<void> {
   await AsyncStorage.setItem(K.COMPLETIONS, JSON.stringify(current));
 }
 
+export async function clearCompletions(): Promise<void> {
+  await AsyncStorage.removeItem(K.COMPLETIONS);
+}
+
 // ===== Settings =====
 
 export async function loadApiUrl(): Promise<string | null> {

@@ -36,6 +36,7 @@ import {
   CompletionMap,
   addCustomItem,
   clearChecklist,
+  clearCompletions,
   loadChecklist,
   loadCompletions,
   loadCustomItems,
@@ -215,27 +216,27 @@ export default function ChecklistScreen() {
     };
     try {
       const res = await api.checklist(payload);
-      // 재생성 시 완료 상태 마이그레이션 (title 공백 차이로 유실 방지)
+      // 재생성 시 완료 상태 마이그레이션 (title 공백 차이로 유실 방지) + 구 key 정리
       if (isRegenerating) {
         const oldComp = await loadCompletions();
-        const oldKeys = Object.keys(oldComp).filter((k) => oldComp[k]);
-        if (oldKeys.length > 0) {
-          const newItems = res.items;
-          for (const oldKey of oldKeys) {
-            const normOld = normalizeKey(oldKey);
-            const match = newItems.find(
-              (it) => normalizeKey(itemKey(it)) === normOld,
-            );
-            if (match) {
-              const newKey = itemKey(match);
-              if (newKey !== oldKey) {
-                await setCompletion(newKey, true);
-              }
-            }
+        const oldKeys = Object.keys(oldComp);
+        const freshComp: CompletionMap = {};
+        for (const oldKey of oldKeys) {
+          if (!oldComp[oldKey]) continue;
+          const normOld = normalizeKey(oldKey);
+          const match = res.items.find(
+            (it) => normalizeKey(itemKey(it)) === normOld,
+          );
+          if (match) {
+            freshComp[itemKey(match)] = true;
           }
-          const migrated = await loadCompletions();
-          setCompletions(migrated);
         }
+        // storage 를 새 key 셋으로 완전 교체 (구 key 잔류 방지)
+        await clearCompletions();
+        for (const [k, v] of Object.entries(freshComp)) {
+          await setCompletion(k, v);
+        }
+        setCompletions(freshComp);
       } else {
         setCompletions({});
       }
