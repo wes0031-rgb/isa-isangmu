@@ -174,12 +174,12 @@ export default function ChecklistScreen() {
   );
 
   function toggleContract(c: ContractType) {
+    // 단일 선택 모드 (라디오 버튼 동작):
+    // - 이미 선택된 항목 클릭 → 아무 반응 없음 (최소 1개 유지)
+    // - 다른 항목 클릭 → 그것만 선택 (기존 선택 자동 해제)
     setContracts((prev) => {
-      if (prev.includes(c)) {
-        if (prev.length === 1) return prev; // 최소 1개 유지
-        return prev.filter((x) => x !== c);
-      }
-      return [...prev, c];
+      if (prev.length === 1 && prev[0] === c) return prev;
+      return [c];
     });
   }
 
@@ -677,7 +677,7 @@ function FormView(props: FormViewProps) {
         />
       </Section>
 
-      <Section label="계약 유형 (중복 선택 가능)">
+      <Section label="계약 유형">
         <View style={styles.multiRow}>
           {CONTRACTS.map((c) => {
             const active = contracts.includes(c);
