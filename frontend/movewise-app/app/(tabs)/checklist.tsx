@@ -465,69 +465,73 @@ function AddItemModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.modalBackdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <ScrollView
-          contentContainerStyle={styles.modalCard}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>항목 추가</Text>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={22} color={colors.textMute} />
-            </Pressable>
+        <View style={styles.modalBackdrop}>
+          {/* 카드 위 빈 영역 — 탭하면 닫힘 */}
+          <Pressable style={{ flex: 1 }} onPress={onClose} />
+          {/* 카드 본체 */}
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>항목 추가</Text>
+              <Pressable onPress={onClose} hitSlop={8}>
+                <Ionicons name="close" size={22} color={colors.textMute} />
+              </Pressable>
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.modalLabel}>제목 *</Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="예: 새집 커튼 주문"
+                placeholderTextColor={colors.textMute}
+                style={styles.modalInput}
+              />
+
+              <Text style={styles.modalLabel}>카테고리 (선택)</Text>
+              <TextInput
+                value={category}
+                onChangeText={setCategory}
+                placeholder="예: 가전·가구 / 인테리어"
+                placeholderTextColor={colors.textMute}
+                style={styles.modalInput}
+              />
+
+              <Text style={styles.modalLabel}>설명 (선택)</Text>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder="간단한 메모"
+                placeholderTextColor={colors.textMute}
+                style={[styles.modalInput, { height: 70 }]}
+                multiline
+                textAlignVertical="top"
+              />
+
+              <Text style={styles.modalLabel}>며칠 뒤에 할 일인가요? (오늘=0)</Text>
+              <TextInput
+                value={days}
+                onChangeText={(v) => setDays(v.replace(/[^0-9]/g, ''))}
+                placeholder="0"
+                placeholderTextColor={colors.textMute}
+                keyboardType="number-pad"
+                style={styles.modalInput}
+              />
+
+              <Pressable
+                style={[styles.submitBtn, !title.trim() && { opacity: 0.5 }]}
+                onPress={submit}
+                disabled={!title.trim()}
+              >
+                <Text style={styles.submitText}>추가</Text>
+              </Pressable>
+            </ScrollView>
           </View>
-
-          <Text style={styles.modalLabel}>제목 *</Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="예: 새집 커튼 주문"
-            placeholderTextColor={colors.textMute}
-            style={styles.modalInput}
-          />
-
-          <Text style={styles.modalLabel}>카테고리 (선택)</Text>
-          <TextInput
-            value={category}
-            onChangeText={setCategory}
-            placeholder="예: 가전·가구 / 인테리어"
-            placeholderTextColor={colors.textMute}
-            style={styles.modalInput}
-          />
-
-          <Text style={styles.modalLabel}>설명 (선택)</Text>
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder="간단한 메모"
-            placeholderTextColor={colors.textMute}
-            style={[styles.modalInput, { height: 70 }]}
-            multiline
-            textAlignVertical="top"
-          />
-
-          <Text style={styles.modalLabel}>며칠 뒤에 할 일인가요? (오늘=0)</Text>
-          <TextInput
-            value={days}
-            onChangeText={(v) => setDays(v.replace(/[^0-9]/g, ''))}
-            placeholder="0"
-            placeholderTextColor={colors.textMute}
-            keyboardType="number-pad"
-            style={styles.modalInput}
-          />
-
-          <Pressable
-            style={[styles.submitBtn, !title.trim() && { opacity: 0.5 }]}
-            onPress={submit}
-            disabled={!title.trim()}
-          >
-            <Text style={styles.submitText}>추가</Text>
-          </Pressable>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -1299,6 +1303,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
