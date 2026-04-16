@@ -551,10 +551,13 @@ function ResultView({
     area_m2?: number | null;
     building_use?: string | null;
     owner_name?: string | null;
+    owner_registration_front?: string | null;
     co_owner_name?: string | null;
     ownership_type?: string | null;
     mortgage_creditor?: string | null;
+    mortgage_claim_amount_krw?: number | null;
     seizure_text?: string | null;
+    special_note?: string | null;
   };
   const hasPropertyInfo =
     !!ext.address || !!ext.owner_name || !!ext.area_m2 || !!ext.property_id;
@@ -588,15 +591,24 @@ function ResultView({
               icon="person"
               label="소유자"
               value={`${ext.owner_name}${
-                ext.co_owner_name ? `, ${ext.co_owner_name}` : ''
-              }${ext.ownership_type ? ` · ${ext.ownership_type}` : ''}`}
+                ext.owner_registration_front ? ` (${ext.owner_registration_front}-)` : ''
+              }${ext.co_owner_name ? `, ${ext.co_owner_name}` : ''}${
+                ext.ownership_type ? ` · ${ext.ownership_type}` : ''
+              }`}
             />
           )}
-          {ext.mortgage_creditor && (
+          {(ext.mortgage_creditor || ext.mortgage_claim_amount_krw) && (
             <PropertyRow
               icon="cash"
-              label="근저당권자"
-              value={ext.mortgage_creditor}
+              label="근저당"
+              value={[
+                ext.mortgage_claim_amount_krw
+                  ? fmtKoreanAmount(ext.mortgage_claim_amount_krw)
+                  : null,
+                ext.mortgage_creditor,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             />
           )}
           {ext.seizure_text && (
@@ -604,6 +616,13 @@ function ResultView({
               icon="warning"
               label="가압류"
               value={ext.seizure_text}
+            />
+          )}
+          {ext.special_note && (
+            <PropertyRow
+              icon="alert-circle"
+              label="특이사항"
+              value={ext.special_note}
             />
           )}
           {ext.property_id && (
@@ -622,6 +641,36 @@ function ResultView({
           <Text style={styles.ratioSubLabel}>근저당비율 {mortgagePct}%</Text>
         )}
         <Text style={styles.ratioSummary}>{result.summary}</Text>
+      </View>
+
+      {/* 전세가율 기준 안내 */}
+      <View style={styles.thresholdCard}>
+        <View style={styles.thresholdHeaderRow}>
+          <Ionicons name="information-circle" size={14} color={colors.primaryLight} />
+          <Text style={styles.thresholdHeader}>전세가율 기준</Text>
+        </View>
+        <ThresholdRow
+          color={colors.success}
+          range="~ 70%"
+          label="🟢 안전"
+          active={jeontsePct < 70}
+        />
+        <ThresholdRow
+          color={colors.warning}
+          range="70 ~ 80%"
+          label="🟡 주의"
+          active={jeontsePct >= 70 && jeontsePct < 80}
+        />
+        <ThresholdRow
+          color={colors.danger}
+          range="80% 이상"
+          label="🔴 위험 (깡통전세 가능)"
+          active={jeontsePct >= 80}
+        />
+        <Text style={styles.thresholdNote}>
+          ※ 전세가율이 낮아도 경매·가압류·신탁 등기가 있으면 위험 매물이에요.
+          근저당비율 50% 이상이거나 두 비율 합이 100% 넘으면 보증금 회수가 어려울 수 있어요.
+        </Text>
       </View>
 
       {/* 실거래가 자동 조회 결과 */}
@@ -715,6 +764,31 @@ function PropertyRow({
       <Text style={styles.propertyRowValue} numberOfLines={2}>
         {value}
       </Text>
+    </View>
+  );
+}
+
+function ThresholdRow({
+  color,
+  range,
+  label,
+  active,
+}: {
+  color: string;
+  range: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <View style={[styles.thresholdRow, active && { backgroundColor: color + '15' }]}>
+      <View style={[styles.thresholdDot, { backgroundColor: color }]} />
+      <Text style={[styles.thresholdRange, active && { fontWeight: '800' }]}>
+        {range}
+      </Text>
+      <Text style={[styles.thresholdLabel, active && { fontWeight: '800', color }]}>
+        {label}
+      </Text>
+      {active && <Text style={[styles.thresholdActive, { color }]}>현재</Text>}
     </View>
   );
 }
@@ -1018,6 +1092,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+  },
+  thresholdCard: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  thresholdHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: spacing.sm,
+  },
+  thresholdHeader: {
+    ...typography.captionBold,
+    fontSize: 12,
+    color: colors.textSub,
+  },
+  thresholdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 5,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    marginBottom: 3,
+  },
+  thresholdDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  thresholdRange: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSub,
+    minWidth: 75,
+  },
+  thresholdLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  thresholdActive: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  thresholdNote: {
+    ...typography.caption,
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.textMute,
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
   },
   autoInfoCard: {
     flexDirection: 'row',

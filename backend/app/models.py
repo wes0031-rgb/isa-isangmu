@@ -136,6 +136,10 @@ class RegistryExtraction(BaseModel):
         description="건물 용도 (예: 아파트, 다세대주택, 단독주택, 오피스텔)",
     )
     owner_name: Optional[str] = Field(default=None, description="현재 소유자 이름")
+    owner_registration_front: Optional[str] = Field(
+        default=None,
+        description="소유자 주민등록번호 앞 6자리 (예: 800101)",
+    )
     co_owner_name: Optional[str] = Field(
         default=None,
         description="공유 소유자 2명 이상일 때 두 번째 소유자 이름 (단독이면 null)",
@@ -143,6 +147,13 @@ class RegistryExtraction(BaseModel):
     ownership_type: Optional[str] = Field(
         default=None,
         description="소유 형태: '단독소유' 또는 '공유 1/2' 등",
+    )
+    special_note: Optional[str] = Field(
+        default=None,
+        description=(
+            "특이사항 한 줄 요약 (신탁등기 / 임의경매 / 가압류 등 종합). "
+            "해당 사항 없으면 null"
+        ),
     )
     mortgage_creditor: Optional[str] = Field(
         default=None,
