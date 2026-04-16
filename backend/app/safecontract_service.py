@@ -100,21 +100,31 @@ def _cite(law_name: str, article: str) -> ChecklistCitation:
         base.source_url = found["source_url"]
     return base
 
-EXTRACT_SYSTEM = """당신은 한국 부동산 등기부등본 분석 도우미입니다.
-사용자가 붙여넣은 등기부등본 텍스트(갑구/을구)를 읽고 다음 JSON 스키마로 추출하세요.
+EXTRACT_SYSTEM = """당신은 한국 부동산 등기사항전부증명서(등기부등본) 파싱 전문가입니다.
+주어진 등기부등본 텍스트(표제부·갑구·을구·주요 등기사항 요약)를 읽고 지정된 JSON 스키마로 추출하세요.
 
-{
-  "owner_change_within_2_years": int,     // 최근 2년 내 소유자 변동 횟수
-  "mortgage_total_krw": int,               // 근저당 전체 금액(원)
-  "mortgage_claim_amount_krw": int,        // 채권최고액 총합(원)
-  "seizure_count": int,                    // 가압류/압류 건수
-  "seizure_total_krw": int,                // 가압류 총액(원)
-  "trust_registration": bool,              // 신탁등기 존재 여부
-  "auction_in_progress": bool,             // 임의경매개시결정 존재 여부
-  "raw_notes": [str]                       // 기타 주목할 만한 사항 (1~5건)
-}
+**부동산 식별 정보 (사용자 표시용)**
+- property_id: "고유번호" 옆의 값 (예: 1102-2015-003456)
+- address: 표제부 "소재지번, 건물명칭 및 번호" 칸의 주소 전체 — 시·도·구·동·번지·건물명·호수를 한 줄로 연결
+- area_m2: 표제부 "건물 내역" 칸의 면적 숫자 (m² 제외)
+- owner_name: 갑구 최신 소유권 레코드 또는 "주요 등기사항 요약 - 소유지분현황" 의 등기명의인
+- ownership_type: "주요 등기사항 요약" 의 "최종지분" 칸 값 ("단독소유" / "공유 1/2" 등)
+- mortgage_creditor: 을구 근저당권자. 다건이면 ", " 로 연결. 없으면 null
 
-찾지 못한 값은 0 또는 false로. 본문에 없는 정보를 지어내지 말 것."""
+**위험 분석 수치**
+- owner_change_within_2_years: 갑구에서 최근 2년 내 "소유권이전" 건수
+- mortgage_total_krw: 근저당 실 부채 추정 = 채권최고액 × 0.83 (다건이면 합계)
+- mortgage_claim_amount_krw: 채권최고액 합계 (원)
+- seizure_count: 가압류·압류 레코드 개수
+- seizure_total_krw: 가압류 청구금액 합계
+- trust_registration: "신탁" 등기목적 존재 여부
+- auction_in_progress: "임의경매개시결정" 등기 존재 여부
+- raw_notes: 기타 특이사항 1~5건 (각 문장 완결)
+
+**규칙**
+- 찾지 못한 수치는 0, boolean 은 false, 문자열/숫자 필드는 null
+- 본문에 없는 정보는 절대 지어내지 말 것 (특히 주소·소유자 이름)
+- 금액은 정수(원 단위)로 변환: "3억" → 300000000, "1억 8천만" → 180000000"""
 
 EXPLAIN_SYSTEM = """당신은 부동산 등기부등본 해석 도우미입니다.
 추출된 수치와 주택임대차보호법 검색 결과를 바탕으로:
@@ -125,24 +135,64 @@ EXPLAIN_SYSTEM = """당신은 부동산 등기부등본 해석 도우미입니�
 
 
 def _extract_with_llm(text: str) -> RegistryExtraction:
+    """GPT-4o + Structured Output (json_schema strict 모드) 로 등기부 파싱.
+
+    스키마 100% 준수 보장 — 필드 누락/타입 오류 없이 RegistryExtraction 반환.
+    실패 시 rule-based regex 폴백.
+    """
     client = get_openai_client()
     if client is None:
         return _extract_rule_based(text)
     settings = get_settings()
-    resp = client.chat.completions.create(
-        model=settings.azure_openai_deployment_name,
-        temperature=0,
-        messages=[
-            {"role": "system", "content": EXTRACT_SYSTEM},
-            {"role": "user", "content": text},
-        ],
-        response_format={"type": "json_object"},
-    )
-    raw = resp.choices[0].message.content or "{}"
+
+    # json_schema strict 모드 — additionalProperties: false 필수
+    schema = RegistryExtraction.model_json_schema()
+    schema["additionalProperties"] = False
+    # 모든 필드를 required 로 (strict 모드 요구사항, Optional 은 null 허용)
+    if "properties" in schema:
+        schema["required"] = list(schema["properties"].keys())
+
     try:
+        resp = client.chat.completions.create(
+            model=settings.azure_openai_deployment_name,
+            temperature=0,
+            messages=[
+                {"role": "system", "content": EXTRACT_SYSTEM},
+                {"role": "user", "content": text},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "RegistryExtraction",
+                    "schema": schema,
+                    "strict": True,
+                },
+            },
+            timeout=20,
+        )
+        raw = resp.choices[0].message.content or "{}"
         return RegistryExtraction(**json.loads(raw))
-    except Exception:
-        return _extract_rule_based(text)
+    except Exception as exc:
+        import logging
+        logging.getLogger("movewise").warning(
+            f"_extract_with_llm (json_schema) 실패: {type(exc).__name__}: {exc} — json_object 모드로 재시도"
+        )
+        # json_schema 미지원 시 json_object 로 폴백
+        try:
+            resp = client.chat.completions.create(
+                model=settings.azure_openai_deployment_name,
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": EXTRACT_SYSTEM},
+                    {"role": "user", "content": text},
+                ],
+                response_format={"type": "json_object"},
+                timeout=20,
+            )
+            raw = resp.choices[0].message.content or "{}"
+            return RegistryExtraction(**json.loads(raw))
+        except Exception:
+            return _extract_rule_based(text)
 
 
 def _extract_rule_based(text: str) -> RegistryExtraction:

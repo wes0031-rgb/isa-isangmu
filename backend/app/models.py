@@ -121,6 +121,27 @@ class MarketEstimate(BaseModel):
 
 
 class RegistryExtraction(BaseModel):
+    # 부동산 식별·표시 정보 (사용자에게 보여주는 용도)
+    property_id: Optional[str] = Field(
+        default=None,
+        description="등기 고유번호 (예: 1102-2015-003456)",
+    )
+    address: Optional[str] = Field(
+        default=None,
+        description="건물 전체 주소 (시·구·동·번지·건물명·호수)",
+    )
+    area_m2: Optional[float] = Field(default=None, description="전용면적 (m²)")
+    owner_name: Optional[str] = Field(default=None, description="현재 소유자 이름")
+    ownership_type: Optional[str] = Field(
+        default=None,
+        description="소유 형태: '단독소유' 또는 '공유 1/2' 등",
+    )
+    mortgage_creditor: Optional[str] = Field(
+        default=None,
+        description="근저당 채권자 (다건이면 ', ' 연결, 없으면 null)",
+    )
+
+    # 위험 분석용 수치 (기존 필드, 변경 금지)
     owner_change_within_2_years: int = 0
     mortgage_total_krw: int = 0
     mortgage_claim_amount_krw: int = 0

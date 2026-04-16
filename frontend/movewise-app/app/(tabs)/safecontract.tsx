@@ -525,8 +525,60 @@ function ResultView({
       ? colors.warning
       : colors.success;
 
+  const ext = result.extraction as {
+    property_id?: string | null;
+    address?: string | null;
+    area_m2?: number | null;
+    owner_name?: string | null;
+    ownership_type?: string | null;
+    mortgage_creditor?: string | null;
+  };
+  const hasPropertyInfo =
+    !!ext.address || !!ext.owner_name || !!ext.area_m2 || !!ext.property_id;
+
   return (
     <View style={styles.resultSection}>
+      {/* 추출된 부동산 정보 카드 */}
+      {hasPropertyInfo && (
+        <View style={styles.propertyCard}>
+          <View style={styles.propertyHeaderRow}>
+            <Ionicons name="document-text" size={16} color={colors.primary} />
+            <Text style={styles.propertyHeader}>AI 추출 정보</Text>
+          </View>
+          {ext.address && (
+            <PropertyRow icon="location" label="주소" value={ext.address} />
+          )}
+          {ext.area_m2 && (
+            <PropertyRow
+              icon="resize"
+              label="면적"
+              value={`${ext.area_m2} m²`}
+            />
+          )}
+          {ext.owner_name && (
+            <PropertyRow
+              icon="person"
+              label="소유자"
+              value={`${ext.owner_name}${
+                ext.ownership_type ? ` · ${ext.ownership_type}` : ''
+              }`}
+            />
+          )}
+          {ext.mortgage_creditor && (
+            <PropertyRow
+              icon="cash"
+              label="근저당권자"
+              value={ext.mortgage_creditor}
+            />
+          )}
+          {ext.property_id && (
+            <Text style={styles.propertyIdLine}>
+              등기 고유번호: {ext.property_id}
+            </Text>
+          )}
+        </View>
+      )}
+
       {/* 전세가율 Hero */}
       <View style={[styles.ratioCard, { borderColor: color }]}>
         <Text style={styles.ratioLabel}>전세가율</Text>
@@ -610,6 +662,26 @@ function fmtKoreanAmount(krw: number): string {
   if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
   if (eok > 0) return `${eok}억원`;
   return `${man.toLocaleString()}만원`;
+}
+
+function PropertyRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.propertyRow}>
+      <Ionicons name={icon} size={14} color={colors.primaryLight} />
+      <Text style={styles.propertyRowLabel}>{label}</Text>
+      <Text style={styles.propertyRowValue} numberOfLines={2}>
+        {value}
+      </Text>
+    </View>
+  );
 }
 
 function MarketEstimateCard({ estimate }: { estimate: MarketEstimate }) {
@@ -1098,6 +1170,53 @@ const styles = StyleSheet.create({
 
   // Result
   resultSection: { marginTop: spacing.sm },
+  propertyCard: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    borderLeftWidth: 4,
+  },
+  propertyHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  propertyHeader: {
+    ...typography.captionBold,
+    color: colors.primary,
+    fontSize: 12,
+  },
+  propertyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    marginBottom: 4,
+  },
+  propertyRowLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSub,
+    minWidth: 50,
+  },
+  propertyRowValue: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    lineHeight: 18,
+  },
+  propertyIdLine: {
+    fontSize: 10,
+    color: colors.textMute,
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
   ratioCard: {
     backgroundColor: colors.cardBg,
     padding: spacing.lg + 4,
