@@ -254,30 +254,13 @@ def resolve_category(law_name: str, article: str, fallback: str) -> str:
     return fallback
 
 
-# ===== 과태료·기한 자동 추출 =====
-_PENALTY_PATTERNS = [
-    (re.compile(r"(\d+(?:,\d{3})*(?:만|억)?원?)\s*이하의?\s*과태료"), "과태료"),
-    (re.compile(r"과태료[^다]{0,15}?(\d+(?:,\d{3})*(?:만|억)?원?)"), "과태료"),
-    (re.compile(r"(\d+(?:,\d{3})*(?:만|억)?원?)\s*이하의?\s*벌금"), "벌금"),
-    (re.compile(r"벌금[^다]{0,15}?(\d+(?:,\d{3})*(?:만|억)?원?)"), "벌금"),
-    (re.compile(r"(\d+)년\s*이하의?\s*징역"), "징역"),
-]
+# ===== 기한 자동 추출 =====
 _DEADLINE_PATTERNS = [
     re.compile(r"(\d+)\s*일\s*이내"),
     re.compile(r"(\d+)\s*주\s*이내"),
     re.compile(r"(\d+)\s*개월\s*이내"),
     re.compile(r"(\d+)\s*년\s*이내"),
 ]
-
-
-def extract_penalties(text: str) -> list[str]:
-    """본문에서 과태료·벌금·징역 금액 자동 추출."""
-    found: set[str] = set()
-    for pat, label in _PENALTY_PATTERNS:
-        for m in pat.finditer(text):
-            amount = m.group(1) if m.groups() else ""
-            found.add(f"{label} {amount}".strip())
-    return sorted(found)
 
 
 def extract_deadlines(text: str) -> list[str]:
@@ -327,7 +310,6 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
             "content": content,
             "keywords": extract_keywords(content, a.get("title", "")),
             "category": [resolve_category(name, a["article"], note)],
-            "penalties": extract_penalties(content),
             "deadlines": extract_deadlines(content),
             "source_url": doc["source_url"],
             "last_updated": doc["fetched_at"],

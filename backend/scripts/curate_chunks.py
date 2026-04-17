@@ -76,7 +76,6 @@ def main() -> None:
         "kept_docs": len(kept_docs),
         "excluded_docs": sorted(excluded_doc_ids),
         "chunks_with_deadline": sum(1 for r in kept if r["deadlines"]),
-        "chunks_with_penalty": sum(1 for r in kept if r["penalties"]),
         "chunks_with_law": sum(1 for r in kept if r["related_laws"]),
         "category_distribution": dict(cats.most_common()),
     }

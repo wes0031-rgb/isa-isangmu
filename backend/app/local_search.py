@@ -55,7 +55,7 @@ def _scrub_record(rec: dict) -> dict:
             out[f] = clean_hanja(out[f])
     # List-of-string 필드
     for f in ("category", "applicable_to", "contract_type",
-              "deadlines", "penalties", "related_laws", "keywords"):
+              "deadlines", "related_laws", "keywords"):
         if f in out and isinstance(out[f], list):
             out[f] = [clean_hanja(x) if isinstance(x, str) else x for x in out[f]]
     return out

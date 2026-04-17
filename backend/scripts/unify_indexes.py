@@ -62,7 +62,6 @@ def _law_to_unified(d: dict) -> UnifiedChunk:
         applicable_to=["자취", "신혼", "가족"],
         contract_type=["전세", "월세", "자가"],
         region="전국",
-        penalties=d.get("penalties", []),
         deadlines=d.get("deadlines", []),
         # 크로스 링크: 원본 ID → 안전 ID 변환
         related_procedures=[make_safe_id("proc", p) for p in d.get("related_procedures", [])],
@@ -88,7 +87,6 @@ def _procedure_to_unified(d: dict) -> UnifiedChunk:
         applicable_to=d.get("applicable_to", []) or ["자취", "신혼", "가족"],
         contract_type=d.get("contract_type", []) or ["전세", "월세", "자가"],
         region=d.get("region", "전국") if isinstance(d.get("region"), str) else "전국",
-        penalties=d.get("penalties", []),
         deadlines=d.get("deadlines", []),
         related_laws=d.get("related_laws", []),
         parent_doc=d.get("parent_doc"),

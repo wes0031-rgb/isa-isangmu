@@ -6,7 +6,7 @@ Output: backend/data/indexes/index_b_chunks.jsonl       (JSONL, 1 chunk/line)
 
 Chunking strategy:
 - 문단 단위로 1차 분할 → 800자 넘으면 문장 단위 재분할 → 200자 이하면 인접과 병합
-- 청크마다 deadline/penalty/related_law/category 메타 추출
+- 청크마다 deadline/related_law/category 메타 추출
 """
 from __future__ import annotations
 
@@ -50,7 +50,6 @@ CATEGORY_RULES: list[tuple[re.Pattern[str], str]] = [
 ]
 
 DEADLINE_RE = re.compile(r"(\d+)\s*(일|개월|월|년)\s*이내")
-PENALTY_RE = re.compile(r"(\d+)\s*만원(?:\s*이하)?\s*(?:의\s*)?과태료")
 CITATION_RE = re.compile(
     r"「\s*([^」]+?법(?:\s*시행(?:령|규칙))?)\s*」"
     r"\s*제\s*(\d+)\s*조(?:의\s*(\d+))?"
@@ -69,10 +68,6 @@ def classify_category(breadcrumb: str, title: str, content: str) -> list[str]:
 
 def extract_deadlines(text: str) -> list[str]:
     return sorted({f"{n}{unit}" for n, unit in DEADLINE_RE.findall(text)})
-
-
-def extract_penalties(text: str) -> list[str]:
-    return sorted({f"{m}만원 이하 과태료" for m in PENALTY_RE.findall(text)})
 
 
 def extract_citations(text: str) -> list[str]:
@@ -160,7 +155,6 @@ def process_doc(doc: dict) -> list[dict]:
             "content": chunk_text,
             "content_length": len(chunk_text),
             "deadlines": extract_deadlines(chunk_text),
-            "penalties": extract_penalties(chunk_text),
             "related_laws": extract_citations(chunk_text),
             "applicable_to": ["자취", "신혼", "가족"],  # 기본값, LLM 분류로 개선 가능
             "contract_type": ["전세", "월세"],          # 기본값
@@ -199,7 +193,6 @@ def main() -> None:
             cat_counter[cat] += 1
 
     with_deadline = sum(1 for c in all_chunks if c["deadlines"])
-    with_penalty = sum(1 for c in all_chunks if c["penalties"])
     with_law = sum(1 for c in all_chunks if c["related_laws"])
     avg_len = sum(c["content_length"] for c in all_chunks) / len(all_chunks) if all_chunks else 0
 
@@ -209,7 +202,6 @@ def main() -> None:
         "total_chunks": len(all_chunks),
         "avg_chunk_length": round(avg_len, 1),
         "chunks_with_deadline": with_deadline,
-        "chunks_with_penalty": with_penalty,
         "chunks_with_law_citation": with_law,
         "category_distribution": dict(cat_counter.most_common()),
         "per_doc_chunk_count": per_doc_counts,
@@ -222,7 +214,6 @@ def main() -> None:
     print(f"✅ {len(all_chunks)} chunks saved → {out_jsonl}")
     print(f"   avg chunk size: {summary['avg_chunk_length']} chars")
     print(f"   with deadline : {with_deadline}")
-    print(f"   with penalty  : {with_penalty}")
     print(f"   with law cite : {with_law}")
     print()
     print("   category distribution:")

@@ -98,14 +98,6 @@
       "retrievable": true
     },
     {
-      "name": "penalties",
-      "type": "Collection(Edm.String)",
-      "searchable": true,
-      "filterable": true,
-      "facetable": true,
-      "retrievable": true
-    },
-    {
       "name": "deadlines",
       "type": "Collection(Edm.String)",
       "searchable": true,

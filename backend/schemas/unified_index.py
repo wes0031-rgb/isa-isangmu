@@ -69,7 +69,6 @@ class UnifiedChunk(BaseModel):
     region: str = "전국"
 
     # ===== 법적 메타 =====
-    penalties: list[str] = Field(default_factory=list)
     deadlines: list[str] = Field(default_factory=list)
 
     # ===== 크로스 인덱스 =====
@@ -123,7 +122,6 @@ def azure_index_schema(index_name: str = "moving-unified-index") -> dict:
             {"name": "contract_type", "type": "Collection(Edm.String)", "searchable": False, "filterable": True, "facetable": True, "retrievable": True},
             {"name": "region", "type": "Edm.String", "searchable": False, "filterable": True, "facetable": True, "retrievable": True},
             # 법적 메타
-            {"name": "penalties", "type": "Collection(Edm.String)", "searchable": True, "filterable": True, "facetable": True, "retrievable": True},
             {"name": "deadlines", "type": "Collection(Edm.String)", "searchable": True, "filterable": True, "facetable": True, "retrievable": True},
             # 크로스 인덱스
             {"name": "related_laws", "type": "Collection(Edm.String)", "searchable": True, "filterable": True, "retrievable": True},
