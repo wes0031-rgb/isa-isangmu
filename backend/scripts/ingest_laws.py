@@ -3,6 +3,15 @@
 Saves each law as JSON (articles list) under backend/data/laws/
 then chunks them into Azure AI Search index A format.
 
+Changes in v2 (2026-04-17):
+- English slug for filename & chunk ID (ASCII-safe for Azure Search)
+- Article ID normalization: '제3조의2' → 'art3_2'
+- Removed penalties field (team decision, commit bb59244)
+- Removed keywords field (hybrid search makes it redundant)
+- related_videos: hardcoded law-level mapping
+- related_procedures: empty list (Phase 2 will populate)
+- Unified 'fetched_at' field name (was 'last_updated' in chunks)
+
 Usage:
   1) .env 의 LAW_OC 를 채운다
   2) python3 ingest_laws.py
@@ -13,6 +22,7 @@ import json
 import re
 import sys
 import time
+from collections import Counter
 from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -26,41 +36,52 @@ INDEX_A_PATH = ROOT / "backend" / "data" / "indexes" / "index_a_chunks.jsonl"
 LAWS_DIR.mkdir(parents=True, exist_ok=True)
 INDEX_A_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-# 수집할 법률 (이름 → MST ID)
+# 수집할 법률 (한글명 → slug → MST → 카테고리)
 # MST는 law.go.kr DRF의 법령 마스터 키. 확인 방법:
 #   1) https://www.law.go.kr/법령/주택임대차보호법 접속
 #   2) 페이지 하단 "공유" → "open API" 버튼 URL에서 MST=xxxx 확인
+# slug는 영문 snake_case — 파일명/청크 ID에 사용 (ASCII only).
 # 아래 값은 2026-04 기준. 변경되면 재확인 필요.
-LAWS: list[tuple[str, int, str]] = [
-    ("주택임대차보호법", 276291, "임대차 대항력·확정일자·우선변제권"),
-    ("주택임대차보호법 시행령", 280995, "임대차 시행 기준"),
-    ("주민등록법", 268555, "전입신고 의무·과태료"),
-    ("주민등록법 시행령", 266731, "신고 기한 상세"),
-    ("동물보호법", 267325, "반려동물 주소변경 30일"),
-    ("부동산등기법", 265377, "갑구·을구 구조"),
-    ("민법", 284415, "임대차 조항(제618조~)"),
-    ("공동주택관리법", 280069, "관리비·장기수선충당금"),
+LAWS: list[tuple[str, str, int, str]] = [
+    # (한글명,                  slug,                           MST,     카테고리)
+    ("주택임대차보호법",          "housing_lease_protection",      276291, "임대차 대항력·확정일자·우선변제권"),
+    ("주택임대차보호법 시행령",   "housing_lease_enforcement",     280995, "임대차 시행 기준"),
+    ("주민등록법",               "resident_registration",         268555, "전입신고 의무·과태료"),
+    ("주민등록법 시행령",         "resident_registration_enf",     266731, "신고 기한 상세"),
+    ("동물보호법",               "animal_protection",             267325, "반려동물 주소변경 30일"),
+    ("부동산등기법",              "real_estate_registration",      265377, "갑구·을구 구조"),
+    ("민법",                    "civil_code",                    284415, "임대차 조항(제618조~)"),
+    ("공동주택관리법",            "apartment_management",          280069, "관리비·장기수선충당금"),
 ]
+
+
+# 법별 관련 영상 매핑 (수동 큐레이션)
+# 기존 데이터 분석 결과 복원 — 법 단위로 동일 영상 세트 적용.
+# 조문 단위 세분화 매핑은 Phase 2에서 vector similarity로 생성 예정.
+LAW_TO_VIDEOS: dict[str, list[str]] = {
+    "주택임대차보호법":         ["yt_4i-e1OmEGCQ_001", "yt_4i-e1OmEGCQ_003", "yt_4i-e1OmEGCQ_004"],
+    "주택임대차보호법 시행령":  ["yt_4i-e1OmEGCQ_001", "yt_4i-e1OmEGCQ_003", "yt_4i-e1OmEGCQ_004"],
+    "주민등록법":              ["yt_4i-e1OmEGCQ_001", "yt_4i-e1OmEGCQ_003", "yt_4i-e1OmEGCQ_004"],
+    "주민등록법 시행령":        ["yt_4i-e1OmEGCQ_001", "yt_4i-e1OmEGCQ_003", "yt_4i-e1OmEGCQ_004"],
+    "민법":                   ["yt_MIEObuovrSc_004", "yt_dFCz_ONk86o_000", "yt_dFCz_ONk86o_001"],
+    "부동산등기법":             ["yt_MIEObuovrSc_004", "yt_dFCz_ONk86o_000", "yt_dFCz_ONk86o_001"],
+    "공동주택관리법":           ["yt_4i-e1OmEGCQ_000", "yt_4i-e1OmEGCQ_001", "yt_4i-e1OmEGCQ_002"],
+    "동물보호법":              [],  # 반려동물 영상 없음
+}
 
 
 def load_env_oc() -> str:
     if not ENV_PATH.exists():
         raise RuntimeError(f".env not found: {ENV_PATH}")
-    for line in ENV_PATH.read_text().splitlines():
+    for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
         if line.startswith("LAW_OC="):
-            v = line.split("=", 1)[1].strip()
-            return v
+            return line.split("=", 1)[1].strip()
     return ""
 
 
 def fetch_law(oc: str, mst: int) -> ET.Element | None:
     url = "https://www.law.go.kr/DRF/lawService.do"
-    params = {
-        "OC": oc,
-        "target": "law",
-        "type": "XML",
-        "MST": mst,
-    }
+    params = {"OC": oc, "target": "law", "type": "XML", "MST": mst}
     r = requests.get(url, params=params, timeout=20)
     if r.status_code != 200:
         print(f"    HTTP {r.status_code}")
@@ -70,7 +91,6 @@ def fetch_law(oc: str, mst: int) -> ET.Element | None:
     except ET.ParseError as exc:
         print(f"    parse error: {exc}")
         return None
-    # 에러 응답 체크
     err = root.find(".//result")
     if err is not None and err.text and "실패" in err.text:
         print(f"    API err: {err.text}")
@@ -87,7 +107,6 @@ def parse_articles(root: ET.Element) -> list[dict]:
         article_title = (jo.findtext("조문제목") or "").strip()
         article_text = (jo.findtext("조문내용") or "").strip()
 
-        # 항 단위 추가
         hang_texts: list[str] = []
         for hang in jo.iter("항"):
             h_text = (hang.findtext("항내용") or "").strip()
@@ -111,99 +130,19 @@ def parse_articles(root: ET.Element) -> list[dict]:
     return articles
 
 
-# ===== 키워드 추출 =====
-# 법률 용어 사전 — 이사이상무 도메인에서 검색 빈도가 높은 핵심 용어
-# 조문 본문에 등장하면 키워드로 즉시 채택 (빈도 무관)
-LEGAL_TERMS = frozenset([
-    # 임대차 핵심
-    "대항력", "우선변제권", "확정일자", "임차권등기명령", "전입신고",
-    "보증금", "임대차", "임대인", "임차인", "전세금", "월세",
-    "임대차기간", "존속기간", "갱신요구권", "묵시적갱신", "해지통고",
-    # 물권·담보·경매
-    "근저당권", "저당권", "가압류", "임의경매", "경매개시결정",
-    "배당순위", "최우선변제", "소액임차인", "신탁등기",
-    # 계약·채권
-    "계약해지", "계약갱신", "채무불이행", "원상회복", "손해배상",
-    "중도해지", "동시이행", "유치권",
-    # 등기·주민등록
-    "등기부", "주민등록", "주민등록번호", "말소", "전출", "전입",
-    "관할", "시장", "군수", "구청장",
-    # 행정·벌칙
-    "과태료", "벌금", "시행", "위반", "공고",
-    # 건축·관리
-    "공동주택", "관리비", "장기수선충당금", "관리비예치금", "위반건축물",
-    # 동물·가족
-    "반려동물", "소유자", "동물등록", "변경신고",
-])
+def article_to_ascii(article: str) -> str:
+    """'제3조의2' → 'art3_2', '제10조' → 'art10'.
 
-
-def extract_keywords(text: str, title: str = "") -> list[str]:
-    """법률 조문용 키워드 추출 — 3단계 병합.
-
-    1. title 에서 ( ) 안의 괄호 주제어 추출 (예: "제3조(대항력 등)" → "대항력")
-    2. 본문에서 LEGAL_TERMS 사전 매칭 (빈도 무관, 있으면 바로 채택)
-    3. 2회 이상 등장한 한글 2자+ 단어
-    4. fallback: 3자 이상 한글 단어 1회 등장 (짧은 조문용)
-
-    Args:
-        text: 조문 본문
-        title: 조문 제목 (예: "대항력 등"). 선택.
-
-    Returns:
-        중복 제거된 키워드 최대 10개
+    ASCII-safe conversion for Azure Search document keys.
     """
-    from collections import Counter
-    result: list[str] = []
-    seen: set[str] = set()
-
-    def _add(word: str) -> None:
-        if word and word not in seen and len(result) < 10:
-            seen.add(word)
-            result.append(word)
-
-    # 1. title 파싱 — ( 안) 괄호 주제어 + 공백 분리 토큰
-    if title:
-        # 괄호 안 추출
-        for m in re.finditer(r"[(\(]([^)\)]+)[)\)]", title):
-            for w in re.findall(r"[가-힣]{2,}", m.group(1)):
-                _add(w)
-        # 괄호 밖 전체 토큰 (괄호 제거 후)
-        bare = re.sub(r"[(\(][^)\)]*[)\)]", " ", title)
-        for w in re.findall(r"[가-힣]{2,}", bare):
-            _add(w)
-
-    if not text:
-        return result
-
-    # 2. 법률 용어 사전 매칭
-    for term in LEGAL_TERMS:
-        if term in text:
-            _add(term)
-
-    # 3. 빈도 2회 이상
-    tokens = re.findall(r"[가-힣]{2,}", text)
-    counts = Counter(tokens)
-    for w, c in counts.most_common():
-        if c >= 2 and len(w) >= 2:
-            _add(w)
-        if len(result) >= 10:
-            break
-
-    # 4. fallback: 3자 이상 단어 1회 등장 (총 키워드 < 3 일 때만)
-    if len(result) < 3:
-        for w in tokens:
-            if len(w) >= 3:
-                _add(w)
-            if len(result) >= 5:
-                break
-
-    return result
+    m = re.match(r"제(\d+)조(?:의(\d+))?", article)
+    if not m:
+        return re.sub(r"[^a-zA-Z0-9_-]", "_", article) or "unknown"
+    main, sub = m.group(1), m.group(2)
+    return f"art{main}_{sub}" if sub else f"art{main}"
 
 
-# RAG 품질 필터 — 아래 유형은 Index A 에서 제외:
-#   1) 폐지된 조문 ("제5조 삭제 <1989.12.30>", "제36조의2 삭제 <2020.6.9>")
-#   2) 장·절·관·편 헤더 ("제1장 총칙", "제2절 동물의 보호 등")
-#   3) 40자 미만의 의미 없는 토막 (제목만 있는 stub)
+# RAG 품질 필터
 _DELETED_ARTICLE_RE = re.compile(r"^제\d+조(?:의\d+)?\s*삭제\s*<")
 _STRUCTURAL_HEADER_RE = re.compile(r"^제\d+\s*[편장절관]\s")
 _MIN_CONTENT_LEN = 40
@@ -223,17 +162,8 @@ def should_skip_article(content: str) -> bool:
     return False
 
 
-def is_deleted_article(content: str) -> bool:
-    """Deprecated — use should_skip_article. 호환성을 위해 유지."""
-    return bool(_DELETED_ARTICLE_RE.match((content or "").strip()))
-
-
 def minbeop_subcategory(article: str) -> str:
-    """민법 조문 번호 → 편별 서브카테고리 (한국 민법 구조).
-
-    §1-§184 총칙 / §185-§372 물권 / §373-§617 채권 총칙 /
-    §618-§654 임대차 / §655-§766 기타 전형계약 / §767-§996 친족 / §997-§1118 상속
-    """
+    """민법 조문 번호 → 편별 서브카테고리."""
     m = re.match(r"제(\d+)조", article)
     if not m:
         return "민법 기타"
@@ -248,20 +178,12 @@ def minbeop_subcategory(article: str) -> str:
 
 
 def resolve_category(law_name: str, article: str, fallback: str) -> str:
-    """법령별 카테고리 결정. 민법은 편별로 세분, 나머지는 ingest 설정의 fallback 사용."""
     if law_name == "민법":
         return minbeop_subcategory(article)
     return fallback
 
 
-# ===== 과태료·기한 자동 추출 =====
-_PENALTY_PATTERNS = [
-    (re.compile(r"(\d+(?:,\d{3})*(?:만|억)?원?)\s*이하의?\s*과태료"), "과태료"),
-    (re.compile(r"과태료[^다]{0,15}?(\d+(?:,\d{3})*(?:만|억)?원?)"), "과태료"),
-    (re.compile(r"(\d+(?:,\d{3})*(?:만|억)?원?)\s*이하의?\s*벌금"), "벌금"),
-    (re.compile(r"벌금[^다]{0,15}?(\d+(?:,\d{3})*(?:만|억)?원?)"), "벌금"),
-    (re.compile(r"(\d+)년\s*이하의?\s*징역"), "징역"),
-]
+# ===== 기한 자동 추출 =====
 _DEADLINE_PATTERNS = [
     re.compile(r"(\d+)\s*일\s*이내"),
     re.compile(r"(\d+)\s*주\s*이내"),
@@ -270,18 +192,7 @@ _DEADLINE_PATTERNS = [
 ]
 
 
-def extract_penalties(text: str) -> list[str]:
-    """본문에서 과태료·벌금·징역 금액 자동 추출."""
-    found: set[str] = set()
-    for pat, label in _PENALTY_PATTERNS:
-        for m in pat.finditer(text):
-            amount = m.group(1) if m.groups() else ""
-            found.add(f"{label} {amount}".strip())
-    return sorted(found)
-
-
 def extract_deadlines(text: str) -> list[str]:
-    """본문에서 '~일 이내', '~개월 이내' 같은 기한 표현 자동 추출."""
     found: set[str] = set()
     for pat in _DEADLINE_PATTERNS:
         for m in pat.finditer(text):
@@ -289,8 +200,8 @@ def extract_deadlines(text: str) -> list[str]:
     return sorted(found)
 
 
-def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
-    print(f"  ▶ {name} (MST={mst}) ...", end=" ")
+def process_law(name: str, slug: str, mst: int, note: str, oc: str) -> list[dict]:
+    print(f"  ▶ {name} [{slug}] (MST={mst}) ...", end=" ")
     root = fetch_law(oc, mst)
     if root is None:
         print("SKIP")
@@ -298,6 +209,7 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
     articles = parse_articles(root)
     doc = {
         "law_name": name,
+        "law_slug": slug,
         "mst": mst,
         "category_note": note,
         "source_url": f"https://www.law.go.kr/DRF/lawService.do?OC={oc}&target=law&type=XML&MST={mst}",
@@ -305,12 +217,13 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
         "article_count": len(articles),
         "articles": articles,
     }
-    out_file = LAWS_DIR / f"{name}.json"
+    # 파일명: 영문 slug 사용 (ASCII only)
+    out_file = LAWS_DIR / f"{slug}.json"
     out_file.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"OK {len(articles)} articles")
+    print(f"OK {len(articles)} articles → {out_file.name}")
 
-    # Index A chunks: one per article. RAG 품질 저해 청크 제외
-    # (폐지 조문 / 장·절 헤더 / 40자 미만 stub)
+    # Index A chunks
+    related_videos = LAW_TO_VIDEOS.get(name, [])
     chunks = []
     skipped = 0
     for a in articles:
@@ -318,19 +231,19 @@ def process_law(name: str, mst: int, note: str, oc: str) -> list[dict]:
         if should_skip_article(content):
             skipped += 1
             continue
-        chunk_id = f"{name}__{a['article']}".replace(" ", "")
+        chunk_id = f"law_{slug}_{article_to_ascii(a['article'])}"
         chunks.append({
             "id": chunk_id,
-            "law_name": name,
-            "article": a["article"],
+            "law_name": name,              # 한글 유지 (검색/표시용)
+            "article": a["article"],       # 한글 유지 (표시용)
             "title": a["title"] or a["article"],
             "content": content,
-            "keywords": extract_keywords(content, a.get("title", "")),
             "category": [resolve_category(name, a["article"], note)],
-            "penalties": extract_penalties(content),
             "deadlines": extract_deadlines(content),
+            "related_procedures": [],      # Phase 2: vector similarity로 채움
+            "related_videos": related_videos,  # 법별 하드코딩 매핑
             "source_url": doc["source_url"],
-            "last_updated": doc["fetched_at"],
+            "fetched_at": doc["fetched_at"],
         })
     if skipped:
         print(f"    (RAG 품질 필터 {skipped} 건 제외)")
@@ -353,20 +266,17 @@ def main() -> None:
     print()
 
     all_chunks: list[dict] = []
-    for name, mst, note in LAWS:
-        chunks = process_law(name, mst, note, oc)
+    for name, slug, mst, note in LAWS:
+        chunks = process_law(name, slug, mst, note, oc)
         all_chunks.extend(chunks)
         time.sleep(0.5)
 
-    # Write JSONL for Azure AI Search ingestion
     with INDEX_A_PATH.open("w", encoding="utf-8") as fp:
         for c in all_chunks:
             fp.write(json.dumps(c, ensure_ascii=False) + "\n")
 
     print()
     print(f"✅ 총 {len(all_chunks)} 청크 (Index A) → {INDEX_A_PATH}")
-    # per-law summary
-    from collections import Counter
     by_law = Counter(c["law_name"] for c in all_chunks)
     for law, cnt in by_law.most_common():
         print(f"  {law}: {cnt}")

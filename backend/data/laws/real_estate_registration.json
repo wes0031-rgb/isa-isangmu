@@ -1,9 +1,10 @@
 {
   "law_name": "부동산등기법",
+  "law_slug": "real_estate_registration",
   "mst": 265377,
   "category_note": "갑구·을구 구조",
-  "source_url": "https://www.law.go.kr/DRF/lawService.do?OC=msai09sa&target=law&type=XML&MST=265377",
-  "fetched_at": "2026-04-13",
+  "source_url": "https://www.law.go.kr/DRF/lawService.do?OC=ajourney&target=law&type=XML&MST=265377",
+  "fetched_at": "2026-04-19",
   "article_count": 140,
   "articles": [
     {
@@ -706,15 +707,5 @@
       "title": "대법원규칙에의 위임",
       "content": "제113조(대법원규칙에의 위임) 이 법 시행에 필요한 사항은 대법원규칙으로 정한다."
     }
-  ],
-  "_source_metadata": {
-    "category": "법률 원본",
-    "authority": "법제처",
-    "source_url": "https://www.law.go.kr/DRF/lawService.do",
-    "api_name": "국가법령정보 Open API (DRF)",
-    "license": "공공누리 제1유형 (출처 표시)",
-    "update_cycle": "시행일 기준 즉시 반영",
-    "how_collected": "backend/scripts/ingest_laws.py (LAW_OC 인증키)",
-    "last_annotated": "2026-04-14"
-  }
+  ]
 }

@@ -1,9 +1,10 @@
 {
   "law_name": "동물보호법",
+  "law_slug": "animal_protection",
   "mst": 267325,
   "category_note": "반려동물 주소변경 30일",
-  "source_url": "https://www.law.go.kr/DRF/lawService.do?OC=msai09sa&target=law&type=XML&MST=267325",
-  "fetched_at": "2026-04-13",
+  "source_url": "https://www.law.go.kr/DRF/lawService.do?OC=ajourney&target=law&type=XML&MST=267325",
+  "fetched_at": "2026-04-19",
   "article_count": 115,
   "articles": [
     {
@@ -581,15 +582,5 @@
       "title": "과태료",
       "content": "제101조(과태료)\n① 다음 각 호의 어느 하나에 해당하는 자에게는 500만원 이하의 과태료를 부과한다.\n② 다음 각 호의 어느 하나에 해당하는 자에게는 300만원 이하의 과태료를 부과한다.\n③ 다음 각 호의 어느 하나에 해당하는 자에게는 100만원 이하의 과태료를 부과한다.\n④ 다음 각 호의 어느 하나에 해당하는 자에게는 50만원 이하의 과태료를 부과한다.\n⑤ 제1항부터 제4항까지의 과태료는 대통령령으로 정하는 바에 따라 농림축산식품부장관, 시ㆍ도지사 또는 시장ㆍ군수ㆍ구청장이 부과ㆍ징수한다."
     }
-  ],
-  "_source_metadata": {
-    "category": "법률 원본",
-    "authority": "법제처",
-    "source_url": "https://www.law.go.kr/DRF/lawService.do",
-    "api_name": "국가법령정보 Open API (DRF)",
-    "license": "공공누리 제1유형 (출처 표시)",
-    "update_cycle": "시행일 기준 즉시 반영",
-    "how_collected": "backend/scripts/ingest_laws.py (LAW_OC 인증키)",
-    "last_annotated": "2026-04-14"
-  }
+  ]
 }

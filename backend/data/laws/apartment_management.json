@@ -1,9 +1,10 @@
 {
   "law_name": "공동주택관리법",
+  "law_slug": "apartment_management",
   "mst": 280069,
   "category_note": "관리비·장기수선충당금",
-  "source_url": "https://www.law.go.kr/DRF/lawService.do?OC=msai09sa&target=law&type=XML&MST=280069",
-  "fetched_at": "2026-04-13",
+  "source_url": "https://www.law.go.kr/DRF/lawService.do?OC=ajourney&target=law&type=XML&MST=280069",
+  "fetched_at": "2026-04-19",
   "article_count": 131,
   "articles": [
     {
@@ -661,15 +662,5 @@
       "title": "과태료",
       "content": "제102조(과태료)\n① 제38조제2항을 위반하여 하자보수보증금을 이 법에 따른 용도 외의 목적으로 사용한 자에게는 2천만원 이하의 과태료를 부과한다.\n② 다음 각 호의 어느 하나에 해당하는 자에게는 1천만원 이하의 과태료를 부과한다. <개정 2016.1.19>\n③ 다음 각 호의 어느 하나에 해당하는 자에게는 500만원 이하의 과태료를 부과한다. <개정 2015.12.29, 2016.1.19, 2017.4.18, 2018.3.13, 2019.4.23, 2020.6.9, 2020.12.8, 2021.8.10, 2022.6.10>\n④ 다음 각 호의 어느 하나에 해당하는 자에게는 300만원 이하의 과태료를 부과한다. <신설 2025.12.2>\n⑤ 제1항부터 제4항까지에 따른 과태료는 대통령령으로 정하는 바에 따라 국토교통부장관 또는 지방자치단체의 장이 부과한다. <개정 2025.12.2>"
     }
-  ],
-  "_source_metadata": {
-    "category": "법률 원본",
-    "authority": "법제처",
-    "source_url": "https://www.law.go.kr/DRF/lawService.do",
-    "api_name": "국가법령정보 Open API (DRF)",
-    "license": "공공누리 제1유형 (출처 표시)",
-    "update_cycle": "시행일 기준 즉시 반영",
-    "how_collected": "backend/scripts/ingest_laws.py (LAW_OC 인증키)",
-    "last_annotated": "2026-04-14"
-  }
+  ]
 }
