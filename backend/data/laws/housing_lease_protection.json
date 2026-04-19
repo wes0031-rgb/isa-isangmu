@@ -217,15 +217,5 @@
       "title": "벌칙 적용에서 공무원 의제",
       "content": "제31조(벌칙 적용에서 공무원 의제) 공무원이 아닌 주택임대차위원회의 위원 및 주택임대차분쟁조정위원회의 위원은 「형법」 제127조, 제129조부터 제132조까지의 규정을 적용할 때에는 공무원으로 본다."
     }
-  ],
-  "_source_metadata": {
-    "category": "법률 원본",
-    "authority": "법제처",
-    "source_url": "https://www.law.go.kr/DRF/lawService.do",
-    "api_name": "국가법령정보 Open API (DRF)",
-    "license": "공공누리 제1유형 (출처 표시)",
-    "update_cycle": "시행일 기준 즉시 반영",
-    "how_collected": "backend/scripts/ingest_laws.py (LAW_OC 인증키)",
-    "last_annotated": "2026-04-19"
-  }
+  ]
 }

@@ -7,10 +7,16 @@ Changes in v2 (2026-04-17):
 - English slug for filename & chunk ID (ASCII-safe for Azure Search)
 - Article ID normalization: '제3조의2' → 'art3_2'
 - Removed penalties field (team decision, commit bb59244)
-- Removed keywords field (hybrid search makes it redundant)
 - related_videos: hardcoded law-level mapping
 - related_procedures: empty list (Phase 2 will populate)
 - Unified 'fetched_at' field name (was 'last_updated' in chunks)
+
+Changes in v3 (2026-04-19):
+- Re-added `keywords` field per team meeting decision (검색 부스팅 효과)
+  · 규칙 기반 추출: 조문 제목 괄호 + 도메인 화이트리스트 + 법 이름
+  · 의존성 0 (konlpy 등 JVM NLP 미사용 → 팀원 Windows 온보딩 부담 ↓)
+  · 정밀도 우선: Azure Semantic Search keywords 필드는 부스팅 용도라
+    재현율보다 정밀도 중요 (noise 는 검색 품질 저하)
 
 Usage:
   1) .env 의 LAW_OC 를 채운다
@@ -142,7 +148,7 @@ def article_to_ascii(article: str) -> str:
     return f"art{main}_{sub}" if sub else f"art{main}"
 
 
-# RAG 품질 필터
+# ===== RAG 품질 필터 =====
 _DELETED_ARTICLE_RE = re.compile(r"^제\d+조(?:의\d+)?\s*삭제\s*<")
 _STRUCTURAL_HEADER_RE = re.compile(r"^제\d+\s*[편장절관]\s")
 _MIN_CONTENT_LEN = 40
@@ -162,6 +168,13 @@ def should_skip_article(content: str) -> bool:
     return False
 
 
+def is_deleted_article(content: str) -> bool:
+    """Deprecated — use should_skip_article. 하위 호환용."""
+    c = (content or "").strip()
+    return bool(_DELETED_ARTICLE_RE.match(c))
+
+
+# ===== 카테고리 =====
 def minbeop_subcategory(article: str) -> str:
     """민법 조문 번호 → 편별 서브카테고리."""
     m = re.match(r"제(\d+)조", article)
@@ -200,6 +213,111 @@ def extract_deadlines(text: str) -> list[str]:
     return sorted(found)
 
 
+# ===== 키워드 자동 추출 =====
+# 도메인 화이트리스트 — 법률·이사 도메인 핵심 용어.
+# 팀원이 직접 편집 가능. 새 법령 추가 시 해당 도메인 용어 여기에 반영.
+# 원칙: 정밀도 우선 (noise 가 검색 품질 더 해침).
+DOMAIN_KEYWORDS: frozenset[str] = frozenset({
+    # 임대차 권리 (주택임대차보호법 중심)
+    "대항력", "확정일자", "우선변제권", "최우선변제권",
+    "임차권등기", "임차권등기명령", "전세권", "주택임차권", "상가임차권",
+    # 계약
+    "임대차", "임차인", "임대인", "보증금", "전세", "월세", "차임",
+    "보증금반환", "계약갱신요구권", "묵시적갱신", "계약해지", "계약해제",
+    "중개보수", "부동산중개",
+    # 등기 · 담보권 (부동산등기법·민법 물권)
+    "근저당권", "저당권", "가압류", "가처분", "압류",
+    "소유권이전등기", "등기부등본", "신탁등기",
+    # 경매 · 매매
+    "경매", "공매", "매매", "낙찰",
+    # 행정 신고 (주민등록법·동물보호법)
+    "전입신고", "주민등록", "전출신고", "주소이전", "변동신고", "변경신고", "정정신고",
+    # 반려동물
+    "동물등록", "반려동물", "맹견",
+    # 공동주택 관리 (공동주택관리법)
+    "관리비", "장기수선충당금", "관리비예치금", "입주자대표회의",
+    # 벌칙 · 제재
+    "과태료", "벌금", "벌칙",
+    # 민법 기본 개념
+    "채권자", "채무자", "선의", "악의",
+})
+
+# 조문 제목 괄호 추출: "제3조(대항력 등)" → "대항력 등"
+# 전각/반각 괄호 모두 대응
+_BRACKET_RE = re.compile(r"[(（]([^)（）]+)[)）]")
+_KW_SPLIT_RE = re.compile(r"[\s·,/]+")
+_KW_STOPWORDS: frozenset[str] = frozenset({
+    "등", "기타", "및", "또는", "경우", "관한", "관하여", "대한",
+    "에", "의", "을", "를", "이", "가", "은", "는",
+})
+# 한국어 조사 후치 제거 (긴 조사부터 시도)
+_POSTPOSITIONS_LONG: tuple[str, ...] = ("으로", "에서", "부터", "까지", "에게", "에는", "에도")
+_POSTPOSITIONS_SHORT: tuple[str, ...] = ("의", "을", "를", "이", "가", "은", "는", "에", "과", "와", "도", "만", "로")
+_MAX_KEYWORDS = 12
+
+
+def _strip_postposition(word: str) -> str:
+    """한국어 조사 후치 제거. 결과가 2자 이상일 때만 제거.
+
+    예: '등록대상동물의' → '등록대상동물',  '보증금을' → '보증금',  '주택' → '주택' (변화 없음)
+    """
+    for pp in _POSTPOSITIONS_LONG:
+        if word.endswith(pp) and len(word) - len(pp) >= 2:
+            return word[:-len(pp)]
+    for pp in _POSTPOSITIONS_SHORT:
+        if word.endswith(pp) and len(word) - len(pp) >= 2:
+            return word[:-len(pp)]
+    return word
+
+
+def extract_keywords(title: str, content: str, law_name: str) -> list[str]:
+    """조문 제목 + 본문에서 검색 부스팅용 키워드 추출.
+
+    전략 (정밀도 우선):
+      1. 조문 제목 파싱
+         · 괄호 있으면 괄호 안 내용 + 밖 내용 둘 다 처리
+         · 괄호 없으면 제목 전체 토큰화 (DRF API 는 괄호 없이 반환)
+         · 공백/중점/쉼표로 split → 조사 후치 제거 → stopwords 필터
+      2. DOMAIN_KEYWORDS 화이트리스트와 본문 매칭
+         · 짧은 조문 (< 200자): 1회 등장으로 충분
+         · 긴 조문: 2회 이상 (우연 일치 필터)
+      3. 법 이름 (공백 제거) 1개 추가
+
+    Returns:
+        정렬된 키워드 리스트, 최대 _MAX_KEYWORDS 개.
+    """
+    keywords: set[str] = set()
+
+    # 1. 조문 제목 — 괄호 유무 무관하게 전체 파싱
+    title_str = title or ""
+    parts_to_split: list[str] = []
+    bracket_matches = _BRACKET_RE.findall(title_str)
+    if bracket_matches:
+        parts_to_split.extend(bracket_matches)
+    # 괄호 바깥 텍스트 (괄호 없으면 전체 = 제목 그대로)
+    outside = _BRACKET_RE.sub(" ", title_str)
+    parts_to_split.append(outside)
+
+    for chunk in parts_to_split:
+        for raw in _KW_SPLIT_RE.split(chunk):
+            p = _strip_postposition(raw.strip())
+            if len(p) >= 2 and p not in _KW_STOPWORDS:
+                keywords.add(p)
+
+    # 2. 도메인 사전 매칭
+    threshold = 1 if len(content) < 200 else 2
+    for term in DOMAIN_KEYWORDS:
+        if content.count(term) >= threshold:
+            keywords.add(term)
+
+    # 3. 법 이름 (공백 제거 — Azure ko.microsoft 분석기가 형태 처리)
+    keywords.add(law_name.replace(" ", ""))
+
+    # 4. 정렬 + 상한
+    return sorted(keywords)[:_MAX_KEYWORDS]
+
+
+# ===== 청크 생성 =====
 def process_law(name: str, slug: str, mst: int, note: str, oc: str) -> list[dict]:
     print(f"  ▶ {name} [{slug}] (MST={mst}) ...", end=" ")
     root = fetch_law(oc, mst)
@@ -239,6 +357,7 @@ def process_law(name: str, slug: str, mst: int, note: str, oc: str) -> list[dict
             "title": a["title"] or a["article"],
             "content": content,
             "category": [resolve_category(name, a["article"], note)],
+            "keywords": extract_keywords(a["title"], content, name),  # 4/19 팀 결정 반영
             "deadlines": extract_deadlines(content),
             "related_procedures": [],      # Phase 2: vector similarity로 채움
             "related_videos": related_videos,  # 법별 하드코딩 매핑
@@ -276,10 +395,17 @@ def main() -> None:
             fp.write(json.dumps(c, ensure_ascii=False) + "\n")
 
     print()
-    print(f"✅ 총 {len(all_chunks)} 청크 (Index A) → {INDEX_A_PATH}")
+    print(f"✅ 총 {len(all_chunks)} 청크 (Index A) → {INDEX_A_PATH.relative_to(ROOT)}")
     by_law = Counter(c["law_name"] for c in all_chunks)
     for law, cnt in by_law.most_common():
         print(f"  {law}: {cnt}")
+
+    # keywords 통계
+    kw_counts = [len(c["keywords"]) for c in all_chunks]
+    with_kw = sum(1 for n in kw_counts if n > 0)
+    avg_kw = sum(kw_counts) / len(kw_counts) if kw_counts else 0
+    print()
+    print(f"  keywords: 평균 {avg_kw:.1f}개/청크, {with_kw}/{len(all_chunks)} 청크에 키워드 있음")
 
 
 if __name__ == "__main__":

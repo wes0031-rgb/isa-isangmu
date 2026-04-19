@@ -5,18 +5,25 @@ Output: backend/data/indexes/index_b_chunks.jsonl       (JSONL, 1 chunk/line)
         backend/data/indexes/index_b_summary.json       (통계)
 
 Chunking strategy:
-- 문단 단위로 1차 분할 → 800자 넘으면 문장 단위 재분할 → 200자 이하면 인접과 병합
-- 청크마다 deadline/penalty/related_law/category 메타 추출
+- 문단 단위로 1차 분할 → MAX_SIZE 초과 시 문장 단위 재분할
+- MIN_SIZE 이하면 인접 문단과 병합
+- 청크마다 deadline / penalty / related_law / category 메타 추출
+
+변경사항 (2026-04-19):
+- Mac 하드코딩 경로 제거 → ROOT 기반 크로스플랫폼 (ingest_easylaw.py 와 동일 패턴)
+- Windows 호환 encoding="utf-8" 명시 유지
 """
 from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
-IN_DIR = Path("/Users/sa/Desktop/2차프로젝트/backend/data/procedures/easylaw")
-OUT_DIR = Path("/Users/sa/Desktop/2차프로젝트/backend/data/indexes")
+ROOT = Path(__file__).resolve().parent.parent.parent  # 2차프로젝트
+IN_DIR = ROOT / "backend" / "data" / "procedures" / "easylaw"
+OUT_DIR = ROOT / "backend" / "data" / "indexes"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 TARGET_SIZE = 700  # chars
@@ -140,10 +147,14 @@ def process_doc(doc: dict) -> list[dict]:
     paragraphs = split_paragraphs(doc["content"])
     chunks = pack_chunks(paragraphs)
     result = []
-    doc_categories = classify_category(doc.get("breadcrumb", ""), doc.get("title", ""), doc["content"])
+    doc_categories = classify_category(
+        doc.get("breadcrumb", ""), doc.get("title", ""), doc["content"]
+    )
 
     for idx, chunk_text in enumerate(chunks):
-        chunk_cats = classify_category(doc.get("breadcrumb", ""), doc.get("title", ""), chunk_text)
+        chunk_cats = classify_category(
+            doc.get("breadcrumb", ""), doc.get("title", ""), chunk_text
+        )
         # 청크가 자체 키워드 없으면 문서 전체 카테고리 사용
         if chunk_cats == ["일반"]:
             chunk_cats = doc_categories
@@ -162,7 +173,7 @@ def process_doc(doc: dict) -> list[dict]:
             "deadlines": extract_deadlines(chunk_text),
             "penalties": extract_penalties(chunk_text),
             "related_laws": extract_citations(chunk_text),
-            "applicable_to": ["자취", "신혼", "가족"],  # 기본값, LLM 분류로 개선 가능
+            "applicable_to": ["자취", "신혼", "가족"],  # 기본값, Phase 2 에서 LLM 분류
             "contract_type": ["전세", "월세"],          # 기본값
             "region": "전국",                              # 기본값
             "fetched_at": doc.get("fetched_at"),
@@ -175,7 +186,11 @@ def process_doc(doc: dict) -> list[dict]:
 
 def main() -> None:
     files = sorted(IN_DIR.glob("easylaw-*.json"))
-    print(f"loading {len(files)} docs ...")
+    print(f"loading {len(files)} docs from {IN_DIR.relative_to(ROOT)} ...")
+    if not files:
+        print(f"❌ {IN_DIR} 에 easylaw-*.json 파일이 없습니다. ingest_easylaw.py 먼저 실행하세요.")
+        return
+
     all_chunks: list[dict] = []
     per_doc_counts: dict[str, int] = {}
 
@@ -191,8 +206,6 @@ def main() -> None:
             fp.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     # stats
-    from collections import Counter
-
     cat_counter: Counter[str] = Counter()
     for c in all_chunks:
         for cat in c["category"]:
@@ -219,7 +232,7 @@ def main() -> None:
     )
 
     print()
-    print(f"✅ {len(all_chunks)} chunks saved → {out_jsonl}")
+    print(f"✅ {len(all_chunks)} chunks saved → {out_jsonl.relative_to(ROOT)}")
     print(f"   avg chunk size: {summary['avg_chunk_length']} chars")
     print(f"   with deadline : {with_deadline}")
     print(f"   with penalty  : {with_penalty}")
