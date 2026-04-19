@@ -1,139 +1,388 @@
 {
-  "total": 22,
-  "ok": 22,
+  "total": 53,
+  "ok": 53,
   "errors": 0,
+  "by_category": {
+    "666": {
+      "name": "이사",
+      "targets": 22
+    },
+    "629": {
+      "name": "주택임대차",
+      "targets": 31
+    }
+  },
   "results": [
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-1-1-1",
-      "length": 5283,
+      "length": 4937,
       "laws": 5
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-1-1-2",
-      "length": 4207,
+      "length": 3866,
       "laws": 10
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-1-1-3",
-      "length": 7249,
+      "length": 6898,
       "laws": 38
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-1-2-1",
-      "length": 1381,
+      "length": 1380,
       "laws": 1
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-1-3-1",
-      "length": 6054,
+      "length": 5689,
       "laws": 11
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-1-1",
-      "length": 5802,
+      "length": 5441,
       "laws": 23
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-1-2",
-      "length": 4356,
+      "length": 4010,
       "laws": 1
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-1-3",
-      "length": 3945,
+      "length": 3601,
       "laws": 18
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-2-1",
-      "length": 3618,
+      "length": 3267,
       "laws": 16
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-2-2",
-      "length": 4983,
+      "length": 4637,
       "laws": 5
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-2-3",
-      "length": 3708,
+      "length": 3367,
       "laws": 8
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-2-4",
-      "length": 6228,
+      "length": 5881,
       "laws": 28
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-2-5",
-      "length": 3888,
+      "length": 3564,
       "laws": 10
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-3-1",
-      "length": 4762,
+      "length": 4426,
       "laws": 11
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-2-3-2",
-      "length": 3498,
+      "length": 3162,
       "laws": 2
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-3-1-1",
-      "length": 1586,
+      "length": 1225,
       "laws": 0
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-3-2-1",
-      "length": 5129,
+      "length": 4778,
       "laws": 1
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-3-2-2",
-      "length": 7411,
+      "length": 7045,
       "laws": 8
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-3-3-1",
-      "length": 2451,
+      "length": 2105,
       "laws": 0
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-3-3-2",
-      "length": 1246,
+      "length": 895,
       "laws": 4
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-4-1-1",
-      "length": 6124,
+      "length": 5768,
       "laws": 12
     },
     {
       "status": "ok",
+      "csm_seq": 666,
       "id": "easylaw-666-4-2-1",
-      "length": 1970,
+      "length": 1608,
       "laws": 5
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-1-1-1",
+      "length": 1383,
+      "laws": 8
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-1-2-1",
+      "length": 3623,
+      "laws": 10
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-1-1",
+      "length": 5279,
+      "laws": 13
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-2-1",
+      "length": 3471,
+      "laws": 7
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-2-2",
+      "length": 4404,
+      "laws": 10
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-2-3",
+      "length": 4198,
+      "laws": 25
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-2-4",
+      "length": 540,
+      "laws": 1
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-2-5",
+      "length": 4377,
+      "laws": 0
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-3-1",
+      "length": 7303,
+      "laws": 11
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-2-3-2",
+      "length": 2252,
+      "laws": 8
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-3-1-1",
+      "length": 6628,
+      "laws": 6
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-3-2-1",
+      "length": 2132,
+      "laws": 9
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-1-1",
+      "length": 899,
+      "laws": 5
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-1-2",
+      "length": 3046,
+      "laws": 7
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-2-1",
+      "length": 2902,
+      "laws": 23
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-2-2",
+      "length": 2913,
+      "laws": 7
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-3-1",
+      "length": 2414,
+      "laws": 7
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-3-2",
+      "length": 4586,
+      "laws": 18
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-3-3",
+      "length": 1487,
+      "laws": 6
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-3-4",
+      "length": 1726,
+      "laws": 4
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-4-4-1",
+      "length": 6008,
+      "laws": 16
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-1-1",
+      "length": 4777,
+      "laws": 27
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-2-1",
+      "length": 4743,
+      "laws": 12
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-2-2",
+      "length": 2711,
+      "laws": 11
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-2-3",
+      "length": 9167,
+      "laws": 43
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-2-4",
+      "length": 6674,
+      "laws": 33
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-2-5",
+      "length": 4865,
+      "laws": 18
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-2-6",
+      "length": 1526,
+      "laws": 0
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-3-1",
+      "length": 1884,
+      "laws": 4
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-3-2",
+      "length": 1607,
+      "laws": 3
+    },
+    {
+      "status": "ok",
+      "csm_seq": 629,
+      "id": "easylaw-629-5-3-3",
+      "length": 700,
+      "laws": 3
     }
   ],
   "_source_metadata": {
@@ -143,6 +392,6 @@
     "license": "공공누리 제1유형",
     "update_cycle": "수동",
     "how_collected": "ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)",
-    "last_annotated": "2026-04-14"
+    "last_annotated": "2026-04-19"
   }
 }
