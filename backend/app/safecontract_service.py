@@ -28,13 +28,11 @@ class DocumentIntelligenceNotConfigured(RuntimeError):
 
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Azure Document Intelligence 의 `prebuilt-layout` 모델로 PDF → 텍스트 변환.
+    """Azure Document Intelligence 로 PDF → 텍스트 변환.
 
-    등기부등본은 갑구/을구가 표 구조라 layout 모델이 가장 적합.
-    테이블 셀도 content 에 순서대로 포함되므로 평문으로 반환.
-
-    Raises:
-        DocumentIntelligenceNotConfigured: Azure 키 미설정 시
+    모델 ID는 .env 의 AZURE_DOCINTEL_MODEL_ID 로 주입.
+    - prebuilt-layout: 범용 레이아웃 추출 (원래 기본값)
+    - 커스텀 추출 모델: Studio에서 학습한 등기부 전용 모델
     """
     client = get_docintel_client()
     if client is None:
@@ -42,12 +40,14 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
             "Azure Document Intelligence 가 설정되지 않았습니다. "
             ".env 의 AZURE_DOCINTEL_ENDPOINT 와 AZURE_DOCINTEL_API_KEY 를 입력하세요."
         )
-
+    
     # SDK v1.0 은 analyze_document 에 AnalyzeDocumentRequest(bytes_source=...) 전달
     from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 
+    settings = get_settings()
+
     poller = client.begin_analyze_document(
-        "prebuilt-layout",
+        settings.azure_docintel_model_id,
         AnalyzeDocumentRequest(bytes_source=file_bytes),
     )
     result = poller.result()

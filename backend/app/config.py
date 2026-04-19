@@ -12,30 +12,57 @@ ENV_PATH = ROOT / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=str(ENV_PATH), env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_PATH),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # ===== Azure OpenAI =====
     azure_openai_endpoint: str = Field(default="", alias="AZURE_OPENAI_ENDPOINT")
     azure_openai_api_key: str = Field(default="", alias="AZURE_OPENAI_API_KEY", repr=False)
     azure_openai_deployment_name: str = Field(default="gpt-4o", alias="AZURE_OPENAI_DEPLOYMENT_NAME")
     azure_openai_api_version: str = Field(default="2024-10-21", alias="AZURE_OPENAI_API_VERSION")
-    azure_openai_embed_deployment: str = Field(default="text-embedding-3-small", alias="AZURE_OPENAI_EMBED_DEPLOYMENT")
+    azure_openai_embed_deployment: str = Field(
+        default="text-embedding-3-small", alias="AZURE_OPENAI_EMBED_DEPLOYMENT"
+    )
 
-    # ===== Azure AI Search =====
+    # ===== Azure AI Search (3-index 체제) =====
     azure_search_endpoint: str = Field(default="", alias="AZURE_SEARCH_ENDPOINT")
     azure_search_api_key: str = Field(default="", alias="AZURE_SEARCH_API_KEY", repr=False)
-    # NOTE: 통합 인덱스 전환 (Option B, 2026-04-15) 이후 두 client 가 동일 인덱스를 가리킴.
-    # 레거시 이름(moving-law-index / moving-procedure-index)은 제거됨.
-    azure_search_law_index: str = Field(default="moving-unified-index", alias="AZURE_SEARCH_LAW_INDEX")
-    azure_search_procedure_index: str = Field(default="moving-unified-index", alias="AZURE_SEARCH_PROCEDURE_INDEX")
+
+    # 인덱스 이름
+    azure_search_law_index: str = Field(default="law-index", alias="AZURE_SEARCH_LAW_INDEX")
+    azure_search_guide_index: str = Field(default="guide-index", alias="AZURE_SEARCH_GUIDE_INDEX")
+    azure_search_video_index: str = Field(default="video-index", alias="AZURE_SEARCH_VIDEO_INDEX")
+
+    # 각 인덱스의 semantic config 이름
+    azure_search_law_semantic_config: str = Field(
+        default="law-semantic-config", alias="AZURE_SEARCH_LAW_SEMANTIC_CONFIG"
+    )
+    azure_search_guide_semantic_config: str = Field(
+        default="guide-semantic-config", alias="AZURE_SEARCH_GUIDE_SEMANTIC_CONFIG"
+    )
+    azure_search_video_semantic_config: str = Field(
+        default="video-semantic-config", alias="AZURE_SEARCH_VIDEO_SEMANTIC_CONFIG"
+    )
 
     # ===== Azure Document Intelligence =====
     azure_docintel_endpoint: str = Field(default="", alias="AZURE_DOCINTEL_ENDPOINT")
     azure_docintel_api_key: str = Field(default="", alias="AZURE_DOCINTEL_API_KEY", repr=False)
+    # 모델 ID: "prebuilt-layout" 기본, 커스텀 모델로 바꾸려면 Studio의 Model ID 입력
+    # 현재 safecontract_service 는 아직 이 필드를 참조하지 않음 (팀 회의 후 리팩토링 예정)
+    azure_docintel_model_id: str = Field(
+        default="prebuilt-layout", alias="AZURE_DOCINTEL_MODEL_ID"
+    )
 
     # ===== Azure Blob Storage =====
-    azure_blob_connection_string: str = Field(default="", alias="AZURE_BLOB_CONNECTION_STRING", repr=False)
-    azure_blob_container_name: str = Field(default="moving-guide-docs", alias="AZURE_BLOB_CONTAINER_NAME")
+    azure_blob_connection_string: str = Field(
+        default="", alias="AZURE_BLOB_CONNECTION_STRING", repr=False
+    )
+    azure_blob_container_name: str = Field(
+        default="iim-rag-source", alias="AZURE_BLOB_CONTAINER_NAME"
+    )
 
     # ===== External APIs =====
     data_go_kr_service_key: str = Field(default="", alias="DATA_GO_KR_SERVICE_KEY", repr=False)
