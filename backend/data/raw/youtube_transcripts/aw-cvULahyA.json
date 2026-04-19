@@ -1497,6 +1497,6 @@
     "license": "영상별 채널 저작권. 프로젝트 내부용 가공만 허용",
     "update_cycle": "수동",
     "how_collected": "ingest_youtube.py",
-    "last_annotated": "2026-04-14"
+    "last_annotated": "2026-04-19"
   }
 }

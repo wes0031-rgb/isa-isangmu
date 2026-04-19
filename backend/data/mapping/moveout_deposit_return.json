@@ -80,10 +80,10 @@
   "_source_metadata": {
     "category": "보증금 반환 분쟁 5단계 가이드",
     "authority": "법무부 · 주택임대차분쟁조정위원회 · 대한법률구조공단 참고",
-    "source_url": "https://www.myhome.go.kr/hws/portal/cont/selectHouseLsTrubl.do, https://www.klac.or.kr",
+    "source_url": "https://www.hldcc.or.kr, https://www.klac.or.kr",
     "license": "원본 법률은 공공누리, 편집본은 프로젝트 소유",
     "update_cycle": "수동",
     "how_collected": "ingest_moveout.py",
-    "last_annotated": "2026-04-14"
+    "last_annotated": "2026-04-19"
   }
 }

@@ -19,10 +19,10 @@
   "_source_metadata": {
     "category": "서울시 전월세 정보몽땅",
     "authority": "서울특별시",
-    "source_url": "https://housing.seoul.go.kr/",
+    "source_url": "https://rent.seoul.go.kr",
     "license": "공공누리 제1유형",
     "update_cycle": "수동",
     "how_collected": "ingest_services_v2.py",
-    "last_annotated": "2026-04-14"
+    "last_annotated": "2026-04-19"
   }
 }

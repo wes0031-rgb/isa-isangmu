@@ -64,10 +64,10 @@
   "_source_metadata": {
     "category": "전세피해지원센터",
     "authority": "국토교통부",
-    "source_url": "https://jeonse.kgeop.go.kr/",
+    "source_url": "https://jeonse119.molit.go.kr",
     "license": "공공누리 제1유형",
     "update_cycle": "수동",
     "how_collected": "ingest_services_v2.py",
-    "last_annotated": "2026-04-14"
+    "last_annotated": "2026-04-19"
   }
 }

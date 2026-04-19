@@ -6692,5 +6692,15 @@
       "title": "준용규정",
       "content": "제1118조(준용규정) 제1001조, 제1008조, 제1010조의 규정은 유류분에 이를 준용한다."
     }
-  ]
+  ],
+  "_source_metadata": {
+    "category": "법률 원본",
+    "authority": "법제처",
+    "source_url": "https://www.law.go.kr/DRF/lawService.do",
+    "api_name": "국가법령정보 Open API (DRF)",
+    "license": "공공누리 제1유형 (출처 표시)",
+    "update_cycle": "시행일 기준 즉시 반영",
+    "how_collected": "backend/scripts/ingest_laws.py (LAW_OC 인증키)",
+    "last_annotated": "2026-04-19"
+  }
 }
