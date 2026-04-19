@@ -12,6 +12,7 @@
 - Fork: `liminal-cipher/isa-isangmu`
 - Upstream: `wes0031-rgb/isa-isangmu`
 - 최신 커밋: `94a40a8 feat(ingest): add keywords extraction + chunk_easylaw cross-platform path`
+- **세션 4 변경사항은 미커밋 상태** (파일 rename + 스크립트 output 경로 수정)
 
 ### 브랜치 커밋 히스토리
 
@@ -44,7 +45,7 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
   - `주택임대차보호법시행령.json` (조세특례제한법 내용으로 오염됐었음)
   - `주민등록법시행령.json` (빈 파일이었음)
 - 파일명 한글 → 영문 slug 전환 (8개)
-- 1,635 청크 생성 → `index_a_chunks.jsonl`
+- 1,635 청크 생성 → `index_a_chunks.jsonl` (세션 4에서 `law_chunks.jsonl`로 rename)
 
 #### Easylaw 스크래퍼 개선 (커밋 33a31c8)
 
@@ -90,7 +91,7 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 - `from collections import Counter` 상단 import로 이동
 - 빈 입력 디렉토리 guard 추가
 - 필드 구조 19개 그대로 유지 (Guide 스키마 일치)
-- 재청킹 결과: **340 청크, 평균 580자** (`index_b_chunks.jsonl`)
+- 재청킹 결과: **340 청크, 평균 580자** (`index_b_chunks.jsonl`, 세션 4에서 `guide_chunks.jsonl`로 rename)
   - law citation 커버리지 230/340 (68%)
   - deadline 27건, penalty 10건 추출
 
@@ -117,11 +118,11 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 
 #### 재생성 결과
 
-- **Index A (Law)**: 1,635 청크 (회귀 0)
+- **Law chunks**: 1,635 청크 (회귀 0)
   - 민법 1,094 / 부동산등기법 118 / 공동주택관리법 104 / 동물보호법 102 / 주민등록법 시행령 86 / 주민등록법 55 / 주택임대차보호법 41 / 주택임대차보호법 시행령 35
   - keywords: **평균 3.9개/청크, 1,635/1,635 커버리지 100%**
   - 육안 샘플 검증 OK — "관하여", "관한" 등 상투어 0건
-- **Index B (Guide)**: 340 청크, 평균 580자
+- **Guide chunks**: 340 청크, 평균 580자
 
 #### 회귀 테스트
 
@@ -138,9 +139,117 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 
 ---
 
+### 2026-04-19 세션 4 (미커밋)
+
+**성과**: Azure AI Search에 3-index 파이프라인 구축 완료. 1,635 + 340 + 147 = **총 2,122 청크** 인덱싱 + 하이브리드 검색 검증.
+
+#### JSONL 파일명 일관화
+
+기존 네이밍(`index_a_`, `index_b_`, `index_c_youtube_`)이 비대칭적이고 내용 타입 표현 불명확 → 리소스·Blob 경로와 일치하는 내용 기반 이름으로 통일:
+
+- `index_a_chunks.jsonl` → `law_chunks.jsonl`
+- `index_b_chunks.jsonl` → `guide_chunks.jsonl`
+- `index_b_summary.json` → `guide_summary.json`
+- `index_c_youtube_chunks.jsonl` → `video_chunks.jsonl`
+
+스크립트 output 경로도 함께 수정:
+
+- `ingest_laws.py`: `INDEX_A_PATH` 상수 값 `law_chunks.jsonl`로
+- `chunk_easylaw.py`: output 파일명 2개 수정
+
+**미커밋 상태** — 다음 세션 시작 시 커밋 필요.
+
+#### Azure 리소스 프로비저닝 (Portal)
+
+**공용 리소스**:
+
+- Azure AI Search: `iim-ai-search` (기존)
+- Azure OpenAI: `iim-openai` (신규 생성, Foundry 방식, `cognitiveservices.azure.com` 엔드포인트)
+  - Embedding 배포: `text-embedding-3-small`, 1536 dim
+- Storage Account: `isaisangmustorage` (기존)
+- Blob Container: `iim-rag-source` (기존)
+
+**네이밍 결정**: Azure 리소스는 `iim-` prefix 유지, 인덱스 내부 리소스는 prefix 생략 (리소스 격리는 서비스 레벨에서 이미 담보됨, 중복 방지).
+
+#### 3-index 파이프라인 구성
+
+**Blob Storage 구조**:
+
+```
+iim-rag-source/
+├── law/law_chunks.jsonl       (1,635 청크)
+├── guide/guide_chunks.jsonl   (340 청크)
+└── video/video_chunks.jsonl   (147 청크)
+```
+
+**Azure AI Search 리소스** (Portal → Add (JSON) 방식으로 복붙 생성):
+
+| 리소스 유형     | Law                   | Guide                   | Video                   |
+| --------------- | --------------------- | ----------------------- | ----------------------- |
+| Index           | `law-index`           | `guide-index`           | `video-index`           |
+| Datasource      | `law-datasource`      | `guide-datasource`      | `video-datasource`      |
+| Skillset        | `law-skillset`        | `guide-skillset`        | `video-skillset`        |
+| Indexer         | `law-indexer`         | `guide-indexer`         | `video-indexer`         |
+| Semantic config | `law-semantic-config` | `guide-semantic-config` | `video-semantic-config` |
+| Vector profile  | `law-vector-profile`  | `guide-vector-profile`  | `video-vector-profile`  |
+
+**공통 설정**:
+
+- Vector: 1536 dim, HNSW, cosine
+- Analyzer: `ko.microsoft` (한국어 searchable 필드 전부)
+- Indexer parsing mode: `jsonLines`
+- Embedding: Azure OpenAI `text-embedding-3-small` skill
+- CORS: `allowedOrigins: ["*"]` (개발용)
+
+**Field Mappings**:
+
+- Guide: `doc_title` → `title`
+- Video: `video_title` → `title`
+- Law: identity mapping (소스명 = 타겟명)
+
+**Azure 업로드 필드 수** (소스 JSONL 필드 중 🟢 제외 + content_vector 파생):
+
+- Law: 12 소스 + content_vector = 13
+- Guide: 15 소스 (source/category_root/content_length/penalties 제외) + content_vector = 16
+- Video: 16 소스 (channel_url/source_type 제외) + content_vector = 17
+
+#### 인덱싱 결과
+
+- `law-index`: **1,635 docs** (maxFailedItems 사용 0)
+- `guide-index`: **340 docs** (maxFailedItems 사용 0)
+- `video-index`: **147 docs** (maxFailedItems 사용 0)
+
+데이터 손실 전혀 없음. 임베딩 생성 비용 ~$0.05 미만.
+
+#### 검증 쿼리 결과
+
+**Law 인덱스** — Search Explorer에서 3개 쿼리 실행:
+
+1. **단순 키워드** (`"전입신고"`): ✅ BM25 정상 작동. 주민등록법 전입신고 관련 조항 top 5 노출.
+2. **Semantic ranker** (`"전입신고 기한은 언제까지인가요"`): ✅ 주민등록법 제16조 (거주지의 이동, 14일 이내) top 1. `@search.answers` 추출 성공 (score 0.994, "14일 이내" 정확히 하이라이트).
+3. **하이브리드 벡터** (`"확정일자를 받으면 무슨 효력이 생기나요"`): ✅ 주택임대차보호법 제3조의6 (확정일자 부여) top 4에 포함. `keywords` 필드 retrieve 정상 (세션 3에서 추출한 용어 그대로 살아있음). 일부 relevance tuning 여지 있으나 LLM이 top 5 context로 답 생성할 수준은 충분.
+
+**Guide 인덱스** — 하이브리드 쿼리 (`"전입신고를 어떻게 하나요"`): ✅ "전입신고하기" 문서 청크 top 4 차지. `related_laws`에 `주민등록법 제16조·17조·40조·시행령 제23조` 정확 파싱됨. Guide↔Law 크로스 링크 재료 확보.
+
+**Video 인덱스** — 하이브리드 쿼리 (`"이사할 때 빼먹으면 안 되는 것"`): ✅ "[5분 순삭] 이사 6가지" 영상 top 1 (timecode 00:00). **`deep_link` 타임스탬프 URL 정상 작동** (`&t=187s` 등) — 발표 데모에서 "영상의 특정 구간 점프" 어필 포인트.
+
+#### 세션 4 주요 결정
+
+- **파일명 일관화**를 발표 전에 처리 (미루면 정리 비용 커짐)
+- **Azure 리소스 JSON은 repo에 저장하지 않고 Portal에서 직접 관리** — 발표 후 Phase 2에서 `backend/schemas/` 디렉토리에 정리본 커밋 예정
+- **Guide `related_laws` 파싱**: `chunk_easylaw.py`의 citation regex가 "주민등록법 제16조 제1항" 등 조·항 수준까지 정확 추출 확인 → Phase 2에서 law-index에 역링크 쿼리로 활용 가능
+- **Video `deep_link`**: 영상 타임스탬프 URL 자동 생성 확인, 챗봇 citation에 바로 사용 가능한 상태
+
+---
+
 ## 진행 중
 
-- 없음 (모든 작업 커밋됨)
+- **미커밋 변경사항 (세션 4)**:
+  - JSONL 파일 3개 rename (`law_chunks.jsonl`, `guide_chunks.jsonl`, `video_chunks.jsonl`)
+  - `guide_summary.json` rename
+  - `ingest_laws.py` INDEX_A_PATH 값 변경
+  - `chunk_easylaw.py` 출력 파일명 2개 변경
+  - 다음 세션 시작 시 1개 커밋으로 묶어서 푸시
 
 ---
 
@@ -148,46 +257,50 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 
 ### 필수
 
-1. **`curate_chunks.py` 정비 + 재큐레이션**
-   - Mac 하드코딩 경로 수정
-   - EXCLUDE_DOCS 재검토 (666/629 out-of-scope 목록)
-   - 출력: 새 `index_b_chunks_curated.jsonl`
+1. **세션 4 변경사항 커밋 + 푸시**
+   - 커밋 메시지 예시: `refactor: rename JSONL files for naming consistency (law/guide/video)`
+   - Fork main sync
 
-2. **`ingest_youtube.py` 확인**
-   - Mac 하드코딩 경로 체크
-   - 필드 구성 확인 (18 필드 전부 생성하는지)
-   - `index_c_youtube_chunks.jsonl` 현재 품질 검증
-
-3. **3-index 스키마 JSON 작성**
-   - `schemas/iim-law-index.json` — Azure 인덱스 스키마 (12 필드)
-   - `schemas/iim-guide-index.json` — Azure 인덱스 스키마 (15 필드)
-   - `schemas/iim-video-index.json` — Azure 인덱스 스키마 (16 필드)
-
-4. **Azure Indexer 파이프라인 구성** ⭐ 최대 블로커
-   - Blob Storage 컨테이너 생성 (JSONL 업로드)
-   - Datasource 3개 생성
-   - Skillset 3개 (embedding skill)
-   - Indexer 3개 + `fieldMappings`
-     - `doc_title` → `title` (guide)
-     - `video_title` → `title` (video)
-
-5. **백엔드 코드 3-index 쿼리로 전환**
-   - `chat_service.py`, `checklist_service.py` 등 기존 unified 인덱스 참조 교체
+2. **백엔드 코드 3-index 쿼리로 전환** ⭐ 최우선
+   - `chat_service.py`: 기존 unified 인덱스 호출 → `law-index`, `guide-index`, `video-index` 3곳 병렬 쿼리 후 병합
+   - `checklist_service.py`: 동일 패턴
    - `source_type` 필터 대신 인덱스 이름으로 분기
+   - 검증: `/health`, `/chat`, `/checklist` 엔드포인트 로컬 동작 확인
 
-6. **Azure App Service 배포**
-   - 퍼블릭 URL 확보
+3. **Azure App Service 배포**
+   - FastAPI 앱 배포 → 퍼블릭 URL 확보
    - Expo 앱에서 배포 URL 호출 확인
+   - MS AI School 평가 포인트 (클라우드 배포 역량)
 
-7. **검증 쿼리 + 발표 자료**
-   - Golden query 30건 실행
-   - 팀 unified vs 내 3-index 결과 비교
-   - 아키텍처 다이어그램, 성능 지표
+4. **골든 쿼리 30건 검증 + 비교**
+   - 팀 unified index vs 내 3-index 결과 비교
+   - nDCG@5, MRR 등 간단한 지표 기록
+   - 발표 자료의 "숫자" 확보
+
+5. **발표 자료 준비**
+   - 아키텍처 다이어그램 (Blob → Indexer → 3-index → FastAPI → Expo)
+   - 핵심 숫자 (2,122 청크, 커버리지, keywords 통계, query latency)
+   - 데모 시나리오 (챗봇 질문 → 3-index 하이브리드 → citation with video timestamp)
 
 ### 선택 (시간 되면)
 
-8. `ingest_services_v2.py` 상태 파악 (내용 확인 후 rename/삭제 결정)
-9. `.env` vs `backend/.env` 이원화 정리
+6. **`curate_chunks.py` 정비 + 재큐레이션**
+   - Mac 하드코딩 경로 수정
+   - EXCLUDE_DOCS 재검토 (666/629 out-of-scope 목록)
+   - 출력: `guide_chunks_curated.jsonl`
+   - Guide 인덱스 재인덱싱 여부는 품질 차이 측정 후 결정
+
+7. **`ingest_youtube.py` 확인**
+   - Mac 하드코딩 경로 체크
+   - 필드 구성 검증 (video-index 인덱싱 성공으로 1차 검증됨)
+
+8. **Azure 리소스 정의 JSON을 repo에 커밋**
+   - `backend/schemas/law-index.json`, `guide-index.json`, `video-index.json` 등
+   - 재현성 확보 (Portal 없이 스크립트로 재생성 가능하게)
+
+9. `ingest_services_v2.py` 상태 파악 (내용 확인 후 rename/삭제 결정)
+
+10. `.env` vs `backend/.env` 이원화 정리
 
 ### Phase 2 (발표 후)
 
@@ -197,6 +310,7 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 - SETUP.md의 `msai09sa` 노출 팀에 PR
 - keywords 추출 A/B 실험 (whitelist vs blacklist+auto-stopwords)
 - 통계 기반 불용어 사전 구축 (상위 200개 수동 검토)
+- Guide↔Law 크로스 링크 (`related_laws` → law-index lookup)
 
 ---
 
@@ -209,8 +323,15 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 
 ### 데이터
 
-- `raw/youtube_transcripts/` 12개 파일 품질 미검증
+- `raw/youtube_transcripts/` 12개 파일 품질 미검증 (video-index 인덱싱 성공으로 최소 스키마는 OK)
 - `mapping/` 30+ 파일은 인덱스에 안 올리지만, 스키마 정리 필요 여부 미확인
+- `curate_chunks.py` 아직 정비 안 됨 (현재 guide-index는 큐레이션 전 원본 340 청크 사용)
+
+### 문서 동기화
+
+- `SCHEMA_DECISION.md`의 필드 이름 `last_updated` → 실제 JSONL·Azure 스키마엔 `fetched_at`만 존재 (정정 필요)
+- Azure 인덱스 이름 `iim-law-index` (SCHEMA_DECISION 문서) vs 실제 `law-index` (Portal에서 생성한 이름) — 문서 업데이트 필요
+- `backend/schemas/` 디렉토리에 인덱스 정의 JSON 미커밋 (Portal에서만 존재)
 
 ### 팀 관계
 
@@ -221,14 +342,19 @@ a60332e docs: refresh _source_metadata via annotate_sources.py
 
 ## 환경 체크리스트
 
-### 현재 세션 종료 시점 (2026-04-19 세션 3)
+### 현재 세션 종료 시점 (2026-04-19 세션 4)
 
-- [x] 모든 작업 커밋됨 (94a40a8)
-- [x] origin/experiment/schema-refactor에 push 완료
-- [ ] Fork main에 merge (Project sync 위해) ← 다음 세션 시작 전
+- [x] 세션 3 작업 커밋됨 (94a40a8)
+- [x] origin/experiment/schema-refactor에 push 완료 (세션 3까지)
+- [x] Azure 3-index 파이프라인 구축 완료 (law-index, guide-index, video-index)
+- [x] 인덱싱 완료: 1,635 + 340 + 147 = 2,122 docs
+- [x] 하이브리드 검색 검증 (Law 3건, Guide 1건, Video 1건)
+- [ ] 세션 4 파일 rename + 스크립트 수정 미커밋 ← 다음 세션 시작 시
+- [ ] Fork main에 merge ← 다음 세션 시작 전
 
 ### 다음 세션 시작 시
 
 - [ ] `experiment/schema-refactor` 브랜치에서 시작
+- [ ] 세션 4 미커밋 변경사항 먼저 커밋
 - [ ] `git pull origin experiment/schema-refactor` (원격 최신 반영)
 - [ ] DEVLOG.md, SESSION_LOG.md 재확인

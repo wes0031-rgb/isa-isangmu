@@ -1,8 +1,8 @@
 """Split easylaw JSON docs into RAG-ready chunks with metadata.
 
 Input : backend/data/procedures/easylaw/easylaw-*.json  (53개)
-Output: backend/data/indexes/index_b_chunks.jsonl       (JSONL, 1 chunk/line)
-        backend/data/indexes/index_b_summary.json       (통계)
+Output: backend/data/indexes/guide_chunks.jsonl         (JSONL, 1 chunk/line)
+        backend/data/indexes/guide_summary.json         (통계)
 
 Chunking strategy:
 - 문단 단위로 1차 분할 → MAX_SIZE 초과 시 문장 단위 재분할
@@ -200,7 +200,7 @@ def main() -> None:
         per_doc_counts[doc["id"]] = len(chunks)
         all_chunks.extend(chunks)
 
-    out_jsonl = OUT_DIR / "index_b_chunks.jsonl"
+    out_jsonl = OUT_DIR / "guide_chunks.jsonl"
     with out_jsonl.open("w", encoding="utf-8") as fp:
         for rec in all_chunks:
             fp.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -227,7 +227,7 @@ def main() -> None:
         "category_distribution": dict(cat_counter.most_common()),
         "per_doc_chunk_count": per_doc_counts,
     }
-    (OUT_DIR / "index_b_summary.json").write_text(
+    (OUT_DIR / "guide_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 

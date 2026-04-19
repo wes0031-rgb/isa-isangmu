@@ -38,9 +38,9 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent.parent  # 2차프로젝트
 ENV_PATH = ROOT / ".env"
 LAWS_DIR = ROOT / "backend" / "data" / "laws"
-INDEX_A_PATH = ROOT / "backend" / "data" / "indexes" / "index_a_chunks.jsonl"
+LAW_CHUNKS_PATH = ROOT / "backend" / "data" / "indexes" / "law_chunks.jsonl"
 LAWS_DIR.mkdir(parents=True, exist_ok=True)
-INDEX_A_PATH.parent.mkdir(parents=True, exist_ok=True)
+LAW_CHUNKS_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # 수집할 법률 (한글명 → slug → MST → 카테고리)
 # MST는 law.go.kr DRF의 법령 마스터 키. 확인 방법:
@@ -390,12 +390,12 @@ def main() -> None:
         all_chunks.extend(chunks)
         time.sleep(0.5)
 
-    with INDEX_A_PATH.open("w", encoding="utf-8") as fp:
+    with LAW_CHUNKS_PATH.open("w", encoding="utf-8") as fp:
         for c in all_chunks:
             fp.write(json.dumps(c, ensure_ascii=False) + "\n")
 
     print()
-    print(f"✅ 총 {len(all_chunks)} 청크 (Index A) → {INDEX_A_PATH.relative_to(ROOT)}")
+    print(f"✅ 총 {len(all_chunks)} 청크 (Law) → {INDEX_A_PATH.relative_to(ROOT)}")
     by_law = Counter(c["law_name"] for c in all_chunks)
     for law, cnt in by_law.most_common():
         print(f"  {law}: {cnt}")
