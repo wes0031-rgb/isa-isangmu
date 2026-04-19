@@ -395,7 +395,7 @@ def main() -> None:
             fp.write(json.dumps(c, ensure_ascii=False) + "\n")
 
     print()
-    print(f"✅ 총 {len(all_chunks)} 청크 (Law) → {INDEX_A_PATH.relative_to(ROOT)}")
+    print(f"✅ 총 {len(all_chunks)} 청크 (Law) → {LAW_CHUNKS_PATH.relative_to(ROOT)}")
     by_law = Counter(c["law_name"] for c in all_chunks)
     for law, cnt in by_law.most_common():
         print(f"  {law}: {cnt}")
