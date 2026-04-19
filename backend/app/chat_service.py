@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .azure_clients import get_openai_client, get_search_client_procedure
+from .azure_clients import get_openai_client
 from .config import get_settings
 from .local_search import (
     clean_hanja,
@@ -21,6 +21,7 @@ from .local_search import (
     search_laws as search_laws_local,
     search_youtube as search_youtube_local,
 )
+from .search_service import parallel_search_3
 
 logger = logging.getLogger("movewise")
 
@@ -380,52 +381,12 @@ def _sanitize_answer(
 
 
 def _search_unified(query: str) -> tuple[list[dict], list[dict], list[dict]]:
-    """Azure AI Search 통합 인덱스 단일 호출 → source_type 별 split.
+    """3-index 병렬 하이브리드 검색 (law + guide + video).
 
-    Azure 미설정·SDK 미설치·호출 실패 시 ([], [], []) 반환 → 호출자가 로컬 폴백.
+    레거시 이름 유지 — call site 호환성. 내부적으로는 3개 인덱스 각각 호출.
+    반환 tuple 순서: (law_hits, guide_hits, video_hits) — 호출자 가정과 동일.
     """
-    try:
-        client = get_search_client_procedure()
-    except Exception as exc:
-        logger.warning(
-            f"chat search client init failed ({type(exc).__name__}): {exc} — local fallback"
-        )
-        return [], [], []
-    if client is None:
-        return [], [], []
-
-    try:
-        hits = list(
-            client.search(
-                search_text=query,
-                top=12,
-                query_type="semantic",
-                semantic_configuration_name="movewise-semantic",
-            )
-        )
-    except Exception as exc:
-        logger.warning(
-            f"chat unified search failed ({type(exc).__name__}): {exc} — local fallback"
-        )
-        return [], [], []
-
-    laws: list[dict] = []
-    procs: list[dict] = []
-    yts: list[dict] = []
-    for h in hits:
-        d = dict(h)
-        st = d.get("source_type")
-        if st == "law":
-            laws.append(d)
-        elif st == "procedure":
-            procs.append(d)
-        elif st == "video":
-            yts.append(d)
-    logger.info(
-        f"chat unified search: query={query!r} total={len(hits)} "
-        f"law={len(laws)} proc={len(procs)} video={len(yts)}"
-    )
-    return laws, procs, yts
+    return parallel_search_3(query)
 
 
 def generate_chat_reply(
