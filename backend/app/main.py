@@ -51,10 +51,20 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
+# 환경 분기 — prod 에선 API 문서 비활성 (엔드포인트·파라미터 정보 누출 방지)
+import os
+_IS_PROD = os.getenv("MOVEWISE_ENV", "dev").lower() == "prod"
+_DOCS_URL = None if _IS_PROD else "/docs"
+_REDOC_URL = None if _IS_PROD else "/redoc"
+_OPENAPI_URL = None if _IS_PROD else "/openapi.json"
+
 app = FastAPI(
     title="이사이상무 API",
     description="이사 여정 가이드 — 체크리스트 + SafeContract + 챗봇",
     version="0.2.0",
+    docs_url=_DOCS_URL,
+    redoc_url=_REDOC_URL,
+    openapi_url=_OPENAPI_URL,
 )
 
 # Rate limiter 인스턴스 — IP 기반. slowapi 미설치 시 no-op 데코레이터.
@@ -94,6 +104,50 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
     allow_credentials=False,
 )
+
+
+_MAX_JSON_BODY = 1 * 1024 * 1024  # 1MB — 체크리스트/챗봇 request 로 충분
+
+
+@app.middleware("http")
+async def body_size_middleware(request: Request, call_next):
+    """JSON / form body 크기 상한 — 메모리 고갈 공격 방어.
+
+    multipart/form-data (PDF upload) 는 post_safecontract_upload 의 20MB 체크
+    에 맡기고 여기선 우회. Content-Length 가 없는 chunked 요청은 skip.
+    """
+    ctype = (request.headers.get("content-type") or "").lower()
+    if "multipart/" not in ctype:
+        cl = request.headers.get("content-length")
+        if cl:
+            try:
+                if int(cl) > _MAX_JSON_BODY:
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": "요청 본문이 너무 큽니다 (1MB 이하)"},
+                    )
+            except ValueError:
+                pass
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """OWASP 권장 Security Headers 주입. XSS/clickjacking/MIME sniff 방어."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # HTTPS 연결에서만 HSTS 적용 (prod 배포 도메인)
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+    # Server 헤더 fingerprinting 제거 (uvicorn 버전 숨김)
+    response.headers.pop("server", None)
+    return response
 
 
 @app.middleware("http")
@@ -136,35 +190,46 @@ def api_info() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    """깊은 헬스체크 — 모든 의존성 상태 반환."""
+    """얕은 헬스체크 — 로드밸런서/모니터링 용. 내부 구조 노출 금지."""
     settings = get_settings()
-    checks = {
-        "index_a_law_chunks": len(load_laws()),
-        "index_b_procedure_chunks": len(load_chunks()),
-        "index_c_youtube_chunks": len(load_youtube()),
-    }
-    azure = {
-        "openai": bool(settings.azure_openai_api_key and settings.azure_openai_endpoint),
-        "search": bool(settings.azure_search_api_key and settings.azure_search_endpoint),
-        "docintel": bool(
-            settings.azure_docintel_api_key and settings.azure_docintel_endpoint
-        ),
-        "blob": bool(settings.azure_blob_connection_string),
-    }
-    external = {
-        "data_go_kr": bool(settings.data_go_kr_service_key),
-        "law_oc": bool(settings.law_oc),
-        "juso": bool(settings.juso_api_key),
-    }
-    all_indexes_loaded = all(checks.values())
+    indexes_ok = bool(load_laws()) and bool(load_chunks()) and bool(load_youtube())
     return {
-        "status": "ok" if all_indexes_loaded else "degraded",
+        "status": "ok" if (indexes_ok and settings.azure_ready) else "degraded",
+        "version": "0.2.0",
+    }
+
+
+@app.get("/health/deep")
+def health_deep(request: Request) -> dict:
+    """상세 헬스체크 — 개발·운영자용. prod 에선 404.
+
+    지수·Azure 키 설정 여부·외부 API 상태 등 내부 구조 노출 → /docs 와 동일 정책.
+    """
+    if _IS_PROD:
+        raise HTTPException(status_code=404)
+    settings = get_settings()
+    return {
+        "status": "ok",
         "version": "0.2.0",
         "mode": "azure" if settings.azure_ready else "fallback",
-        "indexes": checks,
-        "azure": azure,
-        "external_apis": external,
-        "azure_ready": settings.azure_ready,
+        "indexes": {
+            "index_a_law_chunks": len(load_laws()),
+            "index_b_procedure_chunks": len(load_chunks()),
+            "index_c_youtube_chunks": len(load_youtube()),
+        },
+        "azure": {
+            "openai": bool(settings.azure_openai_api_key and settings.azure_openai_endpoint),
+            "search": bool(settings.azure_search_api_key and settings.azure_search_endpoint),
+            "docintel": bool(
+                settings.azure_docintel_api_key and settings.azure_docintel_endpoint
+            ),
+            "blob": bool(settings.azure_blob_connection_string),
+        },
+        "external_apis": {
+            "data_go_kr": bool(settings.data_go_kr_service_key),
+            "law_oc": bool(settings.law_oc),
+            "juso": bool(settings.juso_api_key),
+        },
     }
 
 
@@ -284,10 +349,21 @@ async def post_safecontract_upload(
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="PDF 파일만 업로드 가능합니다")
 
+    # 스트리밍 읽기 — 대용량 파일이 전체 메모리에 올라가기 전에 조기 중단
+    # (전체 read() 는 파일 크기에 관계없이 메모리 한번에 적재)
     MAX_SIZE = 20 * 1024 * 1024  # 20MB
-    contents = await file.read()
-    if len(contents) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="파일 크기는 20MB 이하여야 합니다")
+    CHUNK = 1 * 1024 * 1024  # 1MB
+    buffer = bytearray()
+    while True:
+        chunk = await file.read(CHUNK)
+        if not chunk:
+            break
+        buffer.extend(chunk)
+        if len(buffer) > MAX_SIZE:
+            raise HTTPException(
+                status_code=413, detail="파일 크기는 20MB 이하여야 합니다"
+            )
+    contents = bytes(buffer)
     # 2) PDF 매직바이트 체크 — 실 PDF 첫 4바이트 "%PDF"
     if not contents.startswith(b"%PDF"):
         raise HTTPException(
@@ -295,9 +371,12 @@ async def post_safecontract_upload(
             detail="올바른 PDF 파일이 아닙니다 (파일 헤더 검증 실패)",
         )
 
-    # 3) 입력 범위 검증 — 비정상 값 차단
-    if deposit_krw < 0 or deposit_krw > 50_000_000_000:  # 500 억 상한
-        raise HTTPException(status_code=400, detail="보증금 값이 올바르지 않습니다")
+    # 3) 입력 범위 검증 — 비정상 값 차단 (하한 100만원, 상한 500억)
+    if deposit_krw < 1_000_000 or deposit_krw > 50_000_000_000:
+        raise HTTPException(
+            status_code=400,
+            detail="보증금 값이 올바르지 않습니다 (100만원~500억 범위). 단위는 '원' 입니다.",
+        )
     if expected_market_price_krw < 0 or expected_market_price_krw > 50_000_000_000:
         raise HTTPException(status_code=400, detail="예상 시세 값이 올바르지 않습니다")
 
@@ -347,10 +426,12 @@ if _WEB_DIST.is_dir():
 
     _RESERVED_API_PATHS = {
         "health",
+        "health/deep",
         "chat/presets",
         "realty/summary",
         "api/info",
     }
+    _WEB_DIST_RESOLVED = _WEB_DIST.resolve()
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
@@ -358,7 +439,18 @@ if _WEB_DIST.is_dir():
         if full_path in _RESERVED_API_PATHS:
             raise HTTPException(status_code=404)
 
-        candidate = _WEB_DIST / full_path
+        # Path traversal 방어 — `../../.env` 같은 경로 차단.
+        # resolve() 후 WEB_DIST 하위에 있는지 검증.
+        try:
+            candidate = (_WEB_DIST / full_path).resolve(strict=False)
+        except (OSError, RuntimeError):
+            raise HTTPException(status_code=400)
+        try:
+            candidate.relative_to(_WEB_DIST_RESOLVED)
+        except ValueError:
+            # WEB_DIST 경계 밖 → SPA fallback 으로 안전하게 돌림 (404 대신 index.html)
+            return FileResponse(_WEB_DIST / "index.html")
+
         if candidate.is_file():
             return FileResponse(candidate)
 

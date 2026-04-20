@@ -100,7 +100,14 @@ class SafeContractRequest(BaseModel):
         description="인터넷등기소에서 복사한 등기부등본 텍스트 (P0)",
     )
     # PDF 업로드는 multipart 엔드포인트로 별도 처리
-    deposit_krw: int = Field(gt=0, le=50_000_000_000, description="계약 보증금 (원)")
+    # 하한 1,000,000 원 = 100만원. 그 아래는 단위 실수 가능성 높음
+    # (예: 1억을 100_000_000 대신 100 입력).
+    # 사용자가 정말 보증금 100만원 미만인 경우는 거의 없으므로 sanity check.
+    deposit_krw: int = Field(
+        ge=1_000_000,
+        le=50_000_000_000,
+        description="계약 보증금 (원, 최소 100만원)",
+    )
     expected_market_price_krw: int = Field(
         ge=0,
         le=50_000_000_000,

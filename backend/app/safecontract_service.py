@@ -78,6 +78,11 @@ def _parse_region_from_address(address: Optional[str]) -> Optional[str]:
     """
     if not address:
         return None
+    # ReDoS 방어 — 과도한 길이 입력 시 regex 백트래킹 폭발 방지. PDF 전체 텍스트가
+    # 들어올 수 있으므로 앞 20KB 만 검사 (주소는 보통 상단 표제부에 있음).
+    MAX_SCAN = 20_000
+    if len(address) > MAX_SCAN:
+        address = address[:MAX_SCAN]
     text = re.sub(r"\s+", " ", address).strip()
     # 시/도 + 시/군/구 패턴 — 광역시·특별시·도, 자치도 포함
     m = re.search(
