@@ -28,7 +28,14 @@
       "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static",
+      "themeColor": "#003A75",
+      "backgroundColor": "#003A75",
+      "name": "이사이상무",
+      "shortName": "이사이상무",
+      "description": "이사 전입신고부터 등기부등본 해석까지, AI 가 안내하는 이사 여정 가이드"
     },
     "plugins": [
       "expo-router"

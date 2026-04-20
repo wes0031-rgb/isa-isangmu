@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import logging
 import time
+from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .chat_service import generate_chat_reply, get_preset_questions
 from .checklist_service import generate_checklist
@@ -66,8 +69,9 @@ async def perf_middleware(request: Request, call_next):
     return response
 
 
-@app.get("/")
-def root() -> dict:
+@app.get("/api/info")
+def api_info() -> dict:
+    """API 진단용 — 이전 `/` 핸들러. PWA 서빙과 충돌 방지 위해 /api/info 로 이동."""
     settings = get_settings()
     return {
         "service": "이사이상무",
@@ -222,3 +226,50 @@ async def post_safecontract_upload(
         raise HTTPException(
             status_code=500, detail=f"PDF 처리 실패: {exc}"
         )
+
+
+# ==================================================================
+# PWA 정적 서빙 (Expo web export → backend/app/main.py 기준 dist)
+# ==================================================================
+# frontend/movewise-app/dist 가 존재하면 FastAPI 에서 함께 서빙.
+# - /_expo /assets 하위는 StaticFiles 직접 매핑 (파일 해시 포함)
+# - 그 외 GET 경로는 SPA fallback → index.html (Expo Router client routing)
+# - API 경로 (POST · /health · /realty/summary · /chat/presets · /api/info)
+#   는 method/구체 path 우선 매칭으로 보존
+_WEB_DIST = (
+    Path(__file__).resolve().parent.parent.parent
+    / "frontend"
+    / "movewise-app"
+    / "dist"
+)
+
+if _WEB_DIST.is_dir():
+    for _sub in ("_expo", "assets", "static"):
+        _dir = _WEB_DIST / _sub
+        if _dir.is_dir():
+            app.mount(f"/{_sub}", StaticFiles(directory=_dir), name=f"pwa-{_sub}")
+
+    _RESERVED_API_PATHS = {
+        "health",
+        "chat/presets",
+        "realty/summary",
+        "api/info",
+    }
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        # 예약된 API 경로는 명시 핸들러가 위에서 처리. catch-all 진입 시 404.
+        if full_path in _RESERVED_API_PATHS:
+            raise HTTPException(status_code=404)
+
+        candidate = _WEB_DIST / full_path
+        if candidate.is_file():
+            return FileResponse(candidate)
+
+        # SPA routing: / · /chat · /checklist · /safecontract · /my 등
+        return FileResponse(_WEB_DIST / "index.html")
+else:
+    logger.warning(
+        f"PWA dist 디렉토리 없음 ({_WEB_DIST}) — API-only 모드로 동작. "
+        "웹 배포하려면 `npx expo export --platform web` 실행 후 재기동."
+    )

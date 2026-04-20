@@ -2,8 +2,13 @@
  * FastAPI backend client for 이사이상무.
  */
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-const DEFAULT_API_URL = 'https://movewise-jf1s.onrender.com';
+// 웹(PWA) 빌드는 same-origin 을 기본값으로 → FastAPI 와 같은 App Service 에서 서빙.
+// 네이티브(Expo Go/standalone) 는 기존 팀 Render URL 유지.
+// EXPO_PUBLIC_API_URL 환경변수로 빌드 시 오버라이드 가능.
+const DEFAULT_API_URL =
+  Platform.OS === 'web' ? '' : 'https://movewise-jf1s.onrender.com';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as { apiUrl?: string };
 
