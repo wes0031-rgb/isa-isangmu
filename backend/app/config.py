@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     azure_docintel_model_id: str = Field(
         default="prebuilt-layout", alias="AZURE_DOCINTEL_MODEL_ID"
     )
+    # Custom Neural 모델 — 등기부 구조화 추출. 공란이면 Custom 경로 비활성.
+    # layout+LLM 결과에 보조로 머지 (confidence>0.8 식별 필드 덮어쓰기 + 위험 플래그 OR 머지)
+    azure_docintel_custom_model_id: str = Field(
+        default="", alias="AZURE_DOCINTEL_CUSTOM_MODEL_ID"
+    )
 
     # ===== Azure Blob Storage =====
     azure_blob_connection_string: str = Field(

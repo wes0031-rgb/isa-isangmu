@@ -8,6 +8,7 @@ from typing import Optional
 from .azure_clients import get_docintel_client, get_openai_client, get_search_client_law
 from .config import get_settings
 from .local_search import clean_hanja, find_law_article
+from .search_service import embed_query, hybrid_search
 from .models import (
     ChecklistCitation,
     MarketEstimate,
@@ -107,6 +108,9 @@ def analyze_safecontract_pdf(
     if not text:
         raise ValueError("PDF 에서 텍스트를 추출하지 못했습니다. 스캔 품질을 확인하세요.")
 
+    # Custom Neural 보조 호출 — 실패 시 빈 dict 반환 → LLM-only 로 동작
+    custom_fields = _extract_custom_fields(file_bytes)
+
     # region 자동 유도: (1) 사용자 명시 > (2) 레이아웃 텍스트에서 직접 정규식 파싱
     # LLM 두 번 호출 피하려고 raw text 에서 먼저 시/도+시군구 패턴 찾음
     effective_region = region or _parse_region_from_address(text)
@@ -117,7 +121,7 @@ def analyze_safecontract_pdf(
         expected_market_price_krw=expected_market_price_krw,
         region=effective_region,
     )
-    return analyze_safecontract(req)
+    return analyze_safecontract(req, custom_fields=custom_fields)
 
 
 def _cite(law_name: str, article: str) -> ChecklistCitation:
@@ -196,6 +200,213 @@ EXPLAIN_SYSTEM = """당신은 부동산 등기부등본 해석 도우미입니�
 - 치명 상태가 없고 전세가율 < 0.8 + 근저당비율 < 0.5 일 때만 "🟢 안전 범위" 가능
 
 출력은 JSON: {"summary": "...", "risks": [{...}]}"""
+
+
+# ==================================================================
+# Custom Neural 등기부 파싱 (Azure DocIntel isa-jengbu-neural02)
+# ==================================================================
+# - layout+LLM 경로는 그대로 두고 (평문 → RegistryExtraction), Custom 은 "보강"
+# - 분기 규칙 (2026-04-17 팀 결정):
+#   · 식별/수치 필드: confidence > 0.8 이면 Custom 값으로 덮어씀
+#   · 위험 플래그 (신탁/임의경매/가처분/가등기/전세권): 값 존재 시 OR 머지
+#   · 추론 필드 (special_note, caution_notes): LLM 전용 (Custom 은 학습 안 됨)
+
+# Custom 필드명(Studio isa-jengbu-neural02 24-필드 스키마) → RegistryExtraction 필드명
+# Studio fields.json 기준 실 필드명으로 동기화 (2026-04-20 검증)
+_CUSTOM_TO_STR_FIELD: dict[str, str] = {
+    "고유번호": "property_id",
+    "건물주소": "address",
+    "용도": "building_use",
+    "소유자_이름": "owner_name",
+    "소유자_등록번호_앞": "owner_registration_front",
+    "근저당_채권자": "mortgage_creditor",
+}
+
+# 근저당 채권자 복수 — Custom 모델이 채권자2 까지 학습 → mortgage_creditor 에 append
+_CUSTOM_EXTRA_CREDITOR_KEYS = ("근저당_채권자2",)
+
+# 근저당 채권최고액 (금액 한글 표기 — "금 3억5천만원" 같은 raw string)
+_CUSTOM_MORTGAGE_AMOUNT_KEYS = ("근저당_채권최고액", "근저당_채권최고액2")
+
+# 가압류 — 값이 존재하면 seizure_text 채우고 seizure_count 최소 1 보장
+_CUSTOM_SEIZURE_KEY = "가압류"
+
+# Custom → float 변환 (숫자·단위 제거 후 float)
+_CUSTOM_TO_FLOAT_FIELD: dict[str, str] = {
+    "면적_m2": "area_m2",
+}
+
+# Custom 필드가 값 존재 시 True 로 설정하는 위험 플래그
+_CUSTOM_FLAG_MAP: dict[str, str] = {
+    "신탁": "trust_registration",
+    "임의경매개시결정": "auction_in_progress",
+    "가처분": "injunction_registered",
+    "가등기": "provisional_registration",
+    "전세권": "jeonse_right_registered",
+}
+
+# 공유자 이름 취합 (owner_name 제외한 나머지 → co_owners)
+# Studio 스키마상 본인=소유자_이름, 공유자=소유자_이름2~4
+_CUSTOM_COOWNER_KEYS = ("소유자_이름2", "소유자_이름3", "소유자_이름4")
+
+# 대지권 미등기 → raw_notes 에 누적 (RegistryExtraction 에 전용 필드 없음)
+_CUSTOM_LAND_RIGHTS_UNREGISTERED_KEY = "대지권 미등기"
+
+_CUSTOM_CONF_THRESHOLD_STR = 0.8  # 식별 필드: 높은 신뢰만 덮어쓰기
+_CUSTOM_CONF_THRESHOLD_FLAG = 0.5  # 위험 플래그: 값 자체의 존재가 중요 → threshold 완화
+
+
+def _extract_custom_fields(file_bytes: bytes) -> dict[str, tuple[str, float]]:
+    """Custom Neural 모델로 등기부 구조화 필드 추출.
+
+    반환: {field_name: (value, confidence)} — Custom 미설정·호출 실패 시 빈 dict.
+    실패해도 raise 하지 않음: 호출자는 LLM-only 경로로 graceful fallback.
+    """
+    settings = get_settings()
+    model_id = settings.azure_docintel_custom_model_id.strip()
+    if not model_id:
+        return {}
+    client = get_docintel_client()
+    if client is None:
+        return {}
+
+    import logging as _log
+    _logger = _log.getLogger("movewise")
+    try:
+        from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+        poller = client.begin_analyze_document(
+            model_id,
+            AnalyzeDocumentRequest(bytes_source=file_bytes),
+        )
+        result = poller.result()
+    except Exception as exc:
+        _logger.warning(
+            f"_extract_custom_fields ({model_id}) 실패 ({type(exc).__name__}): {exc} "
+            f"— layout+LLM 경로로 fallback"
+        )
+        return {}
+
+    fields: dict[str, tuple[str, float]] = {}
+    for doc in getattr(result, "documents", None) or []:
+        for name, field in (getattr(doc, "fields", None) or {}).items():
+            # SDK v1 DocumentField — value_string / content / value 중 채워진 것
+            value = (
+                getattr(field, "value_string", None)
+                or getattr(field, "content", None)
+                or getattr(field, "value", None)
+            )
+            if value is None:
+                continue
+            conf = getattr(field, "confidence", None)
+            fields[name] = (str(value).strip(), float(conf if conf is not None else 0.0))
+
+    _logger.info(
+        f"_extract_custom_fields: {len(fields)} fields extracted "
+        f"(model={model_id}, threshold_str={_CUSTOM_CONF_THRESHOLD_STR})"
+    )
+    return fields
+
+
+def _merge_custom_into_extraction(
+    extraction: RegistryExtraction,
+    custom: dict[str, tuple[str, float]],
+) -> RegistryExtraction:
+    """Custom Neural 결과를 LLM 기반 RegistryExtraction 에 덮어씀.
+
+    빈 custom dict 이면 extraction 그대로 반환. 부분적으로라도 custom 값이 있으면
+    신뢰도 게이트 후 식별 필드 덮어쓰기 + 위험 플래그 OR 머지.
+    """
+    if not custom:
+        return extraction
+
+    # 1) 문자열 식별 필드
+    # address 는 LLM 이 정제한 값이 Custom 의 raw OCR (띄어쓰기 혼잡) 보다 품질 좋을 때가 많음.
+    # → LLM 값이 이미 있으면 Custom 으로 덮지 않고 유지. None/빈 문자열일 때만 Custom 사용.
+    for ck, sk in _CUSTOM_TO_STR_FIELD.items():
+        if ck not in custom:
+            continue
+        value, conf = custom[ck]
+        if conf < _CUSTOM_CONF_THRESHOLD_STR or not value:
+            continue
+        if sk == "address" and getattr(extraction, sk, None):
+            continue
+        setattr(extraction, sk, value)
+
+    # 2) float 필드 (면적 등)
+    for ck, sk in _CUSTOM_TO_FLOAT_FIELD.items():
+        if ck not in custom:
+            continue
+        value, conf = custom[ck]
+        if conf < _CUSTOM_CONF_THRESHOLD_STR or not value:
+            continue
+        # "84.97 m²" / "84.97m²" → 84.97
+        clean = re.sub(r"[^\d.]", "", value)
+        try:
+            setattr(extraction, sk, float(clean))
+        except (ValueError, TypeError):
+            pass
+
+    # 3) 위험 플래그 — 값 존재 = True (OR 머지, 기존 True 는 그대로 유지)
+    for ck, sk in _CUSTOM_FLAG_MAP.items():
+        if ck not in custom:
+            continue
+        value, conf = custom[ck]
+        if conf < _CUSTOM_CONF_THRESHOLD_FLAG or not value:
+            continue
+        if not getattr(extraction, sk, False):
+            setattr(extraction, sk, True)
+
+    # 4) 공유자 이름 — owner_name 제외하고 co_owners 에 dedupe 추가
+    extra_owners: list[str] = []
+    for ck in _CUSTOM_COOWNER_KEYS:
+        if ck not in custom:
+            continue
+        value, conf = custom[ck]
+        if conf < _CUSTOM_CONF_THRESHOLD_STR or not value:
+            continue
+        if value == extraction.owner_name:
+            continue
+        if value in extraction.co_owners or value in extra_owners:
+            continue
+        extra_owners.append(value)
+    if extra_owners:
+        extraction.co_owners = [*extraction.co_owners, *extra_owners]
+        # 2명 이상이면 ownership_type 보정
+        if extraction.co_owners and extraction.ownership_type in (None, "", "단독소유"):
+            extraction.ownership_type = f"공유 {1 + len(extraction.co_owners)}명"
+
+    # 5) 근저당 채권자 추가 (2번째 채권자) — 기존 문자열에 없으면 append
+    for ck in _CUSTOM_EXTRA_CREDITOR_KEYS:
+        if ck not in custom:
+            continue
+        value, conf = custom[ck]
+        if conf < _CUSTOM_CONF_THRESHOLD_STR or not value:
+            continue
+        current = extraction.mortgage_creditor or ""
+        if value in current:
+            continue
+        extraction.mortgage_creditor = (
+            f"{current}, {value}" if current else value
+        )
+
+    # 6) 가압류 — 텍스트 존재 시 seizure_text 채우고 count 최소 1 보장 (OR 머지)
+    if _CUSTOM_SEIZURE_KEY in custom:
+        value, conf = custom[_CUSTOM_SEIZURE_KEY]
+        if conf >= _CUSTOM_CONF_THRESHOLD_FLAG and value:
+            if not extraction.seizure_text:
+                extraction.seizure_text = value
+            if extraction.seizure_count < 1:
+                extraction.seizure_count = 1
+
+    # 7) 대지권 미등기 → raw_notes 누적
+    if _CUSTOM_LAND_RIGHTS_UNREGISTERED_KEY in custom:
+        value, conf = custom[_CUSTOM_LAND_RIGHTS_UNREGISTERED_KEY]
+        if conf >= _CUSTOM_CONF_THRESHOLD_FLAG and value:
+            marker = f"대지권 미등기: {value}"
+            if marker not in extraction.raw_notes:
+                extraction.raw_notes = [*extraction.raw_notes, marker]
+
+    return extraction
 
 
 def _extract_with_llm(text: str) -> RegistryExtraction:
@@ -296,10 +507,16 @@ def _parse_korean_amount(s: str) -> int:
 
 
 def _search_law_context(extraction: RegistryExtraction) -> list[dict]:
+    """law-index 단독 하이브리드 검색 (semantic + vector).
+
+    등기부 특이사항에 매칭되는 조문을 불러와 LLM 설명 단계에 전달.
+    3-index 분리 체제라 source_type 필터 불필요 — 바로 law-index 에 쿼리.
+    """
     client = get_search_client_law()
     if client is None:
         return []
-    queries = []
+    settings = get_settings()
+    queries: list[str] = []
     if extraction.mortgage_total_krw > 0:
         queries.append("근저당 대항력 우선변제")
     if extraction.seizure_count > 0:
@@ -309,10 +526,24 @@ def _search_law_context(extraction: RegistryExtraction) -> list[dict]:
     if extraction.auction_in_progress:
         queries.append("임의경매 배당 순위")
 
-    hits = []
+    seen_ids: set[str] = set()
+    hits: list[dict] = []
     for q in queries:
-        for h in client.search(search_text=q, top=2):
-            hits.append(dict(h))
+        # 쿼리별 임베딩 (4건 이하이므로 비용 미미). embedding None 이면 semantic-only
+        embedding = embed_query(q)
+        for h in hybrid_search(
+            client,
+            q,
+            top=2,
+            semantic_config=settings.azure_search_law_semantic_config,
+            embedding=embedding,
+        ):
+            hid = h.get("id")
+            if hid and hid in seen_ids:
+                continue
+            if hid:
+                seen_ids.add(hid)
+            hits.append(h)
     return hits
 
 
@@ -689,11 +920,17 @@ def _fetch_market_estimate(region: Optional[str]) -> Optional[MarketEstimate]:
     )
 
 
-def analyze_safecontract(req: SafeContractRequest) -> SafeContractResponse:
+def analyze_safecontract(
+    req: SafeContractRequest,
+    custom_fields: Optional[dict[str, tuple[str, float]]] = None,
+) -> SafeContractResponse:
     if not req.text:
         raise ValueError("text is required (PDF 업로드는 /safecontract/upload 참고)")
 
     extraction = _extract_with_llm(req.text)
+    # Custom Neural 로 식별 필드·위험 플래그 보강 (PDF 경로에서만 custom_fields 전달)
+    if custom_fields:
+        extraction = _merge_custom_into_extraction(extraction, custom_fields)
 
     # region 우선순위: (1) 사용자 명시 (2) LLM 이 추출한 address 에서 파싱 (3) raw text 파싱
     # LLM 이 address 를 정제해서 주니까 정규식 매칭 훨씬 안정적
