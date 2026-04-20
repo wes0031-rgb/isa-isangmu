@@ -172,7 +172,7 @@ function wrapAbort(e: unknown): never {
   throw e;
 }
 
-async function post<TReq, TRes>(path: string, body: TReq, timeoutMs = 30000): Promise<TRes> {
+async function post<TReq, TRes>(path: string, body: TReq, timeoutMs = 45000): Promise<TRes> {
   const { signal, clear } = withTimeout(timeoutMs);
   try {
     const res = await fetch(`${getApiUrl()}${path}`, {

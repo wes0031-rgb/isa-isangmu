@@ -463,6 +463,25 @@ def generate_chat_reply(
             f"chat local fallback: law={len(law_hits)} proc={len(proc_hits)} video={len(yt_hits)}"
         )
 
+    # 유튜브 관련도 필터 — 질문과 거의 무관한 영상이 "참고 영상" 으로 붙는 현상 방어.
+    # semantic reranker score 는 0~4 범위. 1.5 이상만 유지 (관련 있음 판정 보수선).
+    # reranker 점수가 없는 케이스 (로컬 폴백 / vector-only) 는 통과 (하위호환).
+    _YT_RERANKER_MIN = 1.5
+
+    def _yt_relevant(h: dict) -> bool:
+        rerank = h.get("@search.reranker_score")
+        if rerank is None:
+            return True  # 점수 없으면 판단 불가 → 통과 (로컬 폴백 대응)
+        return float(rerank) >= _YT_RERANKER_MIN
+
+    yt_hits_before = len(yt_hits)
+    yt_hits = [h for h in yt_hits if _yt_relevant(h)]
+    if yt_hits_before and yt_hits_before != len(yt_hits):
+        logger.info(
+            f"chat: video hits filtered {yt_hits_before} → {len(yt_hits)} "
+            f"(reranker < {_YT_RERANKER_MIN})"
+        )
+
     citations = _build_citations(law_hits, proc_hits, yt_hits)
 
     client = get_openai_client()
@@ -520,7 +539,7 @@ def generate_chat_reply(
             model=settings.azure_openai_deployment_name,
             temperature=0.3,
             messages=llm_messages,
-            timeout=15,
+            timeout=25,
         )
         answer = (resp.choices[0].message.content or "").strip()
         if not answer:
