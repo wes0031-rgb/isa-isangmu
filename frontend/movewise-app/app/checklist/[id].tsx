@@ -3,7 +3,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Image,
   Linking,
@@ -66,6 +66,28 @@ export default function TaskDetail() {
   const [note, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(true);
 
+  // 언마운트 시 최신값으로 강제 저장하기 위한 refs — TextInput.onBlur 가
+  // 뒤로가기/탭전환으로 건너뛰어지는 경우의 유실 방지용.
+  const noteRef = useRef(note);
+  const noteSavedRef = useRef(noteSaved);
+  const itemRef = useRef<ChecklistItem | null>(null);
+  useEffect(() => {
+    noteRef.current = note;
+  }, [note]);
+  useEffect(() => {
+    noteSavedRef.current = noteSaved;
+  }, [noteSaved]);
+
+  // 언마운트 시 한 번만 실행되는 fallback: TextInput.onBlur 를 놓친 경우
+  // (뒤로가기·탭전환·딥링크 등) AsyncStorage 에 최신 메모 강제 저장.
+  useEffect(() => {
+    return () => {
+      if (!noteSavedRef.current && itemRef.current) {
+        setNote(itemKey(itemRef.current), noteRef.current).catch(() => {});
+      }
+    };
+  }, []);
+
   useEffect(() => {
     (async () => {
       const saved = await loadChecklist();
@@ -81,6 +103,7 @@ export default function TaskDetail() {
         return;
       }
       setItem(it);
+      itemRef.current = it;
       const c = await loadCompletions();
       setCompletions(c);
       const notes = await loadNotes();
