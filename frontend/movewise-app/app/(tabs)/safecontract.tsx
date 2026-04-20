@@ -425,7 +425,7 @@ export default function SafeContractScreen() {
                 )}
               </Pressable>
 
-              {error && (
+              {!!error && (
                 <View style={styles.errorBox}>
                   <Ionicons name="warning" size={16} color={colors.danger} />
                   <Text style={styles.errorText}>{error}</Text>
@@ -583,10 +583,10 @@ function ResultView({
             <Ionicons name="document-text" size={16} color={colors.primary} />
             <Text style={styles.propertyHeader}>AI 추출 정보</Text>
           </View>
-          {ext.address && (
+          {!!ext.address && (
             <PropertyRow icon="location" label="주소" value={ext.address} />
           )}
-          {(ext.area_m2 || ext.building_use) && (
+          {(!!ext.area_m2 || !!ext.building_use) && (
             <PropertyRow
               icon="resize"
               label="건물"
@@ -598,7 +598,7 @@ function ResultView({
                 .join(' · ')}
             />
           )}
-          {ext.owner_name && (
+          {!!ext.owner_name && (
             <PropertyRow
               icon="person"
               label={coOwnersList.length > 0 ? `소유자 ${1 + coOwnersList.length}명` : '소유자'}
@@ -609,7 +609,7 @@ function ResultView({
               }`}
             />
           )}
-          {(ext.mortgage_creditor || ext.mortgage_claim_amount_krw) && (
+          {(!!ext.mortgage_creditor || ext.mortgage_claim_amount_krw > 0) && (
             <PropertyRow
               icon="cash"
               label="근저당"
@@ -623,21 +623,21 @@ function ResultView({
                 .join(' · ')}
             />
           )}
-          {ext.seizure_text && (
+          {!!ext.seizure_text && (
             <PropertyRow
               icon="warning"
               label="가압류"
               value={ext.seizure_text}
             />
           )}
-          {ext.special_note && (
+          {!!ext.special_note && (
             <PropertyRow
               icon="alert-circle"
               label="특이사항"
               value={ext.special_note}
             />
           )}
-          {ext.property_id && (
+          {!!ext.property_id && (
             <Text style={styles.propertyIdLine}>
               등기 고유번호: {ext.property_id}
             </Text>
@@ -1081,7 +1081,7 @@ function RiskAccordion({ risk }: { risk: RiskItem }) {
                       {c.article_title ? ` — ${c.article_title}` : ''}
                     </Text>
                   </View>
-                  {c.article_text && (
+                  {!!c.article_text && (
                     <Text style={styles.riskLawText}>{c.article_text}</Text>
                   )}
                 </View>
