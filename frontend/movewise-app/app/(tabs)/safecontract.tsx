@@ -1,6 +1,6 @@
 /**
  * 계약 전 체크 (SafeContract) — 등기부등본 해석기.
- * 기획서 3.5 참조: 텍스트/PDF/사진 3가지 입력, 아코디언 결과, 체크리스트 연결.
+ * 기획서 3.5 참조: 텍스트/PDF 2가지 입력, 아코디언 결과, 체크리스트 연결.
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -42,7 +42,7 @@ const SAFECONTRACT_LOADING_STEPS = [
   '🔍 위험 요소 추출 중...',
 ] as const;
 
-type InputMode = 'text' | 'pdf' | 'photo';
+type InputMode = 'text' | 'pdf';
 
 interface PickedFile {
   uri: string;
@@ -173,13 +173,6 @@ export default function SafeContractScreen() {
     }
   }
 
-  function handlePhotoDisabled() {
-    alertAsync(
-      '사진 촬영 — 곧 출시',
-      '카메라 연동은 현재 준비 중입니다. 우선 PDF 업로드 또는 텍스트 붙여넣기를 이용해주세요.',
-    );
-  }
-
   function goToChecklist() {
     router.push('/(tabs)/checklist');
   }
@@ -221,14 +214,6 @@ export default function SafeContractScreen() {
                   badge="Azure"
                   active={mode === 'pdf'}
                   onPress={() => setMode('pdf')}
-                />
-                <ModeButton
-                  icon="camera"
-                  label="사진"
-                  badge="준비중"
-                  active={false}
-                  disabled
-                  onPress={handlePhotoDisabled}
                 />
               </View>
 
