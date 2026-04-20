@@ -35,21 +35,6 @@ function itemKey(it: ChecklistItem): string {
   return `${it.category}::${it.title}`;
 }
 
-/** 오늘 → start_date 까지의 일수 기반 D-day 문자열 (YYYY-MM-DD, 로컬 기준). */
-function computeDDayLabel(startDate: string | null | undefined): string {
-  if (!startDate) return '';
-  const parts = startDate.split('-').map(Number);
-  if (parts.length !== 3 || parts.some(Number.isNaN)) return '';
-  const [y, m, d] = parts;
-  const start = new Date(y, m - 1, d);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const days = Math.round((start.getTime() - now.getTime()) / 86400000);
-  if (days === 0) return 'D-DAY';
-  if (days > 0) return `D-${days}`;
-  return `D+${-days}`;
-}
-
 /** 이사일 기준 오프셋 → 사용자 친화적 라벨 ("이사 14일 전" / "이사 당일" / "이사 3일 후"). */
 function formatMoveOffsetLabel(offset: number): string {
   if (offset === 0) return '이사 당일';
@@ -155,10 +140,10 @@ export default function TaskDetail() {
 
   async function handleShare() {
     if (!item) return;
-    const dday = computeDDayLabel(item.start_date);
+    const dday = formatMoveOffsetLabel(item.d_day_offset);
     const startLine = item.start_date
-      ? `시작일: ${item.start_date}${dday ? ` (${dday})` : ''}`
-      : '';
+      ? `시작일: ${item.start_date} (${dday})`
+      : `(${dday})`;
     const lines = [
       `[${item.title}]`,
       `카테고리: ${item.category}`,
@@ -199,27 +184,25 @@ export default function TaskDetail() {
     <SafeAreaView style={styles.root}>
       <Stack.Screen options={{ title: '항목 상세' }} />
       <ScrollView contentContainerStyle={styles.container}>
-        {/* D-day 배지 (오늘 → start_date 기준) */}
+        {/* D-day 배지 — 이사일 기준 offset 으로 통일 (체크리스트 전체와 동일) */}
         <View style={styles.badgeRow}>
-          {computeDDayLabel(item.start_date) ? (
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: item.has_legal_deadline
-                    ? colors.warning
-                    : colors.primaryLight,
-                },
-              ]}
-            >
-              <Text style={styles.badgeText}>
-                {computeDDayLabel(item.start_date)}
-              </Text>
-            </View>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: item.has_legal_deadline
+                  ? colors.warning
+                  : colors.primaryLight,
+              },
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {formatMoveOffsetLabel(item.d_day_offset)}
+            </Text>
+          </View>
+          {item.start_date ? (
+            <Text style={styles.offsetLabel}>시작일: {item.start_date}</Text>
           ) : null}
-          <Text style={styles.offsetLabel}>
-            {formatMoveOffsetLabel(item.d_day_offset)}
-          </Text>
         </View>
 
         <Text style={styles.title}>{item.title}</Text>
