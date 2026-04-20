@@ -67,14 +67,14 @@ Azure 인덱스 스키마에서 해당 필드를 **선언하지 않으면** Inde
 
 ## Index A — Law (법령 조문)
 
-**Azure 인덱스명**: `iim-law-index`  
-**소스 필드 수**: 13개  
-**Azure 업로드 필드 수**: 12개 (last_updated 제외)  
+**Azure 인덱스명**: `law-index`  
+**소스 필드 수**: 12개  
+**Azure 업로드 필드 수**: 12개 (`fetched_at` 으로 통일, `last_updated` 는 미사용)  
 **청크 수**: 1,635 (2026-04-19 기준)  
 **입력 파일**: `backend/data/laws/*.json` (8개 법령)  
-**청크 파일**: `backend/data/indexes/index_a_chunks.jsonl`
+**청크 파일**: `backend/data/indexes/law_chunks.jsonl`
 
-### 팀 회의 확정 필드 (13개)
+### 팀 회의 확정 필드 (12개)
 
 | 필드                 | 분류          | 역할                            | 근거                                 |
 | -------------------- | ------------- | ------------------------------- | ------------------------------------ |
@@ -89,13 +89,13 @@ Azure 인덱스 스키마에서 해당 필드를 **선언하지 않으면** Inde
 | `deadlines`          | 🟡 유지       | "14일 이내"                     | D-day 계산 근거                      |
 | `related_procedures` | 🟡 유지       | 법 ↔ 절차 크로스 링크           | Phase 2 vector similarity            |
 | `related_videos`     | 🟡 유지       | 법 ↔ 영상 크로스 링크           | 법 단위 하드코딩 큐레이션            |
-| `last_updated`       | 🟢 Azure 제외 | Azure에선 `fetched_at`으로 통일 | 로컬 중복이지만 소스엔 유지          |
+| `fetched_at`         | 🟡 유지       | 수집 일자 · 신선도              | `last_updated` 는 제거·미사용        |
 | `penalties`          | ⚪ 이미 삭제  | 활용도 0.9%                     | 커밋 bb59244                         |
 
-**⚠️ 스크립트 수정 필요 (다음 세션)**:
+**스크립트 현황 (2026-04-20)**:
 
-- 현재 `ingest_laws.py`가 `keywords` 필드 생성 안 함 → 자동 추출 로직 추가 필요
-- 현재 스크립트는 `fetched_at`만 생성, `last_updated`는 원래 없음 → 소스 JSONL엔 없는 상태
+- `ingest_laws.py` 는 `keywords` 자동 추출 완료 (세션 3, DOMAIN_KEYWORDS ~60개 whitelist)
+- `fetched_at` 만 생성 (`last_updated` 는 제거됨)
 
 ### 청크 ID 형식
 
@@ -139,7 +139,7 @@ law_{slug}_art{N}[_{sub}]
 
 ## Index B — Guide (생활법령 해설)
 
-**Azure 인덱스명**: `iim-guide-index`  
+**Azure 인덱스명**: `guide-index`  
 **소스 필드 수**: 19개  
 **Azure 업로드 필드 수**: 15개 (🟢 3개 제외 + doc_title→title 매핑)  
 **청크 수**: 200 (큐레이션 후, 재청킹 필요)  
@@ -225,7 +225,7 @@ law_{slug}_art{N}[_{sub}]
 
 ## Index C — Video (유튜브 자막)
 
-**Azure 인덱스명**: `iim-video-index`  
+**Azure 인덱스명**: `video-index`  
 **소스 필드 수**: 18개  
 **Azure 업로드 필드 수**: 16개 (🟢 2개 제외 + video_title→title 매핑)  
 **청크 수**: 147 (재검증 필요)  
