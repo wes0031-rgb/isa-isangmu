@@ -97,7 +97,7 @@ f022400 docs: update SESSION_LOG with session 3
 - `from collections import Counter` 상단 import로 이동
 - 빈 입력 디렉토리 guard 추가
 - 필드 구조 19개 그대로 유지 (Guide 스키마 일치)
-- 재청킹 결과: **340 청크, 평균 580자** (`index_b_chunks.jsonl`, 세션 4에서 `guide_chunks.jsonl`로 rename)
+- 재청킹 결과: **340 청크, 평균 580자** (`index_b_chunks.jsonl`, 세션 4에서 `easylaw_chunks.jsonl`로 rename)
   - law citation 커버리지 230/340 (68%)
   - deadline 27건, penalty 10건 추출
 
@@ -154,8 +154,8 @@ f022400 docs: update SESSION_LOG with session 3
 기존 네이밍(`index_a_`, `index_b_`, `index_c_youtube_`)이 비대칭적이고 내용 타입 표현 불명확 → 리소스·Blob 경로와 일치하는 내용 기반 이름으로 통일:
 
 - `index_a_chunks.jsonl` → `law_chunks.jsonl`
-- `index_b_chunks.jsonl` → `guide_chunks.jsonl`
-- `index_b_summary.json` → `guide_summary.json`
+- `index_b_chunks.jsonl` → `easylaw_chunks.jsonl`
+- `index_b_summary.json` → `easylaw_summary.json`
 - `index_c_youtube_chunks.jsonl` → `video_chunks.jsonl`
 
 스크립트 output 경로도 함께 수정:
@@ -183,7 +183,7 @@ f022400 docs: update SESSION_LOG with session 3
 ```
 iim-rag-source/
 ├── law/law_chunks.jsonl       (1,635 청크)
-├── guide/guide_chunks.jsonl   (340 청크)
+├── guide/easylaw_chunks.jsonl   (340 청크)
 └── video/video_chunks.jsonl   (147 청크)
 ```
 
@@ -504,7 +504,7 @@ https://www.law.go.kr/DRF/lawService.do?OC=msai09sa&...
 
 8. **`curate_chunks.py` 정비 + 재큐레이션**
    - Mac 하드코딩 경로 수정
-   - 출력: `guide_chunks_curated.jsonl`
+   - 출력: `easylaw_chunks_curated.jsonl`
    - Guide 인덱스 재인덱싱 여부는 품질 차이 측정 후 결정
 
 9. **`ingest_youtube.py` Mac 경로 확인** (video-index 인덱싱 성공으로 1차 검증됨)
