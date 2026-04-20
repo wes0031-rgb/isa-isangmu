@@ -76,6 +76,33 @@ def embed_query(text: str) -> Optional[list[float]]:
         return None
 
 
+def embed_queries_batch(texts: list[str]) -> list[Optional[list[float]]]:
+    """여러 쿼리를 한 번의 API 호출로 batch 임베딩.
+
+    체크리스트처럼 한 request 에서 쿼리 5~10개를 쏠 때 N번 호출 → 1번으로 절감.
+    실패 시 [None]*len(texts) 반환 → 호출자는 semantic-only 로 fallback.
+    """
+    if not texts:
+        return []
+    client = get_openai_client()
+    if client is None:
+        return [None] * len(texts)
+    settings = get_settings()
+    try:
+        resp = client.embeddings.create(
+            model=settings.azure_openai_embed_deployment,
+            input=texts,
+        )
+        # Azure 는 순서 보장. resp.data[i].embedding == texts[i] 의 벡터
+        return [d.embedding for d in resp.data]
+    except Exception as exc:
+        logger.warning(
+            f"embed_queries_batch (n={len(texts)}) failed ({type(exc).__name__}): {exc} "
+            f"— semantic-only fallback for all queries"
+        )
+        return [None] * len(texts)
+
+
 # ============================================================
 # 2. 단일 인덱스 하이브리드 쿼리
 # ============================================================
@@ -232,11 +259,15 @@ def parallel_search_law_guide(
     query: str,
     top_law: int = DEFAULT_TOP_LAW_CHECKLIST,
     top_guide: int = DEFAULT_TOP_GUIDE_CHECKLIST,
+    embedding: Optional[list[float]] = None,
 ) -> tuple[list[dict], list[dict]]:
     """체크리스트용 — law + guide 2개 인덱스 병렬 하이브리드 쿼리.
 
     체크리스트 citation 이 법정 기한·과태료 조문을 정확히 인용하려면
     guide 뿐 아니라 law 조문 본문이 검색 결과에 반드시 포함돼야 함.
+
+    embedding: 미리 계산된 벡터. 여러 쿼리를 batch 로 받은 경우 호출자가 주입하여
+    임베딩 중복 호출을 피함 (checklist multi-query 최적화).
 
     반환: (law_hits, guide_hits)
     """
@@ -253,5 +284,11 @@ def parallel_search_law_guide(
             settings.azure_search_guide_semantic_config,
         ),
     }
-    results = parallel_search(query, targets)
+    # embedding 이 제공되면 내부에서 embed_query 재호출 안 함
+    results = parallel_search(
+        query,
+        targets,
+        embedding=embedding,
+        embed_if_missing=embedding is None,
+    )
     return results["law"], results["guide"]

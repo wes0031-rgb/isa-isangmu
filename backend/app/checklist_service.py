@@ -12,6 +12,7 @@ from .local_search import search as local_search
 from .search_service import (
     DEFAULT_TOP_GUIDE_CHECKLIST,
     DEFAULT_TOP_LAW_CHECKLIST,
+    embed_queries_batch,
     parallel_search_law_guide,
 )
 from .models import (
@@ -138,37 +139,68 @@ def build_queries_llm(req: ChecklistRequest) -> list[str]:
 
 
 def search_procedures(queries: list[str], req: ChecklistRequest) -> list[dict]:
-    """3-index 하이브리드 검색 (law + guide 병렬).
+    """3-index 하이브리드 검색 (law + guide 병렬) — 최적화 버전.
 
-    쿼리 루프 안에서 쿼리당 law/guide 두 인덱스 병렬 하이브리드 호출.
-    id 기반 dedupe 해서 LLM context 에 넣는다. 각 hit 에 `_source_type`
-    ("law" | "guide") 태그를 주입해 structure_checklist_llm 의 context
-    포맷 분기에서 사용한다.
+    최적화 2종:
+    1. 임베딩 batch — N 쿼리를 한 번의 OpenAI embeddings API 호출로 (N→1)
+    2. 쿼리 병렬 — ThreadPoolExecutor 로 모든 쿼리를 동시에 Azure Search 에 쏨
+
+    결과는 id dedupe 해서 합치고, `_source_type` 태그(law/guide) 를
+    structure_checklist_llm 의 context 포맷 분기에 활용.
 
     law 결과 없이 guide 만으로는 LLM 이 자동차관리법 제11조 같은 가짜 조항을
     환각하는 현상이 세션 5 에 실증됨 → law 병렬 필수.
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     import logging as _log
     _logger = _log.getLogger("movewise")
 
-    seen_ids: set[str] = set()
-    merged: list[dict] = []
-    law_count = 0
-    guide_count = 0
+    if not queries:
+        return []
 
-    for q in queries:
+    # 1) 임베딩 batch — 실패 시 [None]*N 반환. 각 쿼리는 semantic-only 로 fallback.
+    embeddings = embed_queries_batch(queries)
+
+    # 2) 쿼리 병렬 실행 — 각 쿼리에 embedding 주입하여 재계산 방지.
+    def _run_one(q: str, emb) -> tuple[str, list[dict], list[dict]]:
         try:
             law_hits, guide_hits = parallel_search_law_guide(
                 q,
                 top_law=DEFAULT_TOP_LAW_CHECKLIST,
                 top_guide=DEFAULT_TOP_GUIDE_CHECKLIST,
+                embedding=emb,
             )
+            return (q, law_hits, guide_hits)
         except Exception as exc:
             _logger.warning(
                 f"search_procedures: query '{q}' failed ({type(exc).__name__}: {exc})"
             )
-            continue
+            return (q, [], [])
 
+    results_per_query: list[tuple[str, list[dict], list[dict]]] = []
+    # Azure Search Semantic Ranker 는 동시 호출 수에 민감 (8개 동시 던지면
+    # CapacityOverloaded → Partial Content 반환). 4개로 제한하면 체감 속도는
+    # 여전히 빠르고 (순차 대비 3-4배 개선), quota 초과 위험 회피.
+    max_workers = min(len(queries), 4)
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_to_query = {
+            pool.submit(_run_one, q, emb): q
+            for q, emb in zip(queries, embeddings)
+        }
+        for future in as_completed(future_to_query):
+            results_per_query.append(future.result())
+
+    # 3) 원래 쿼리 순서대로 다시 정렬 (as_completed 는 완료 순 반환 → dedup 순서 유지)
+    query_order = {q: i for i, q in enumerate(queries)}
+    results_per_query.sort(key=lambda t: query_order.get(t[0], 99))
+
+    # 4) id dedupe + _source_type 태그 주입
+    seen_ids: set[str] = set()
+    merged: list[dict] = []
+    law_count = 0
+    guide_count = 0
+
+    for _q, law_hits, guide_hits in results_per_query:
         for hit in law_hits:
             hit_id = hit.get("id")
             if not hit_id or hit_id in seen_ids:
@@ -187,8 +219,9 @@ def search_procedures(queries: list[str], req: ChecklistRequest) -> list[dict]:
             guide_count += 1
 
     _logger.info(
-        f"search_procedures: queries={len(queries)} "
-        f"merged={len(merged)} (law={law_count} guide={guide_count})"
+        f"search_procedures: queries={len(queries)} workers={max_workers} "
+        f"merged={len(merged)} (law={law_count} guide={guide_count}) "
+        f"embeddings={'batch' if any(e is not None for e in embeddings) else 'none'}"
     )
     if not merged:
         _logger.warning(

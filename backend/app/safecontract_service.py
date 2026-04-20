@@ -104,12 +104,18 @@ def analyze_safecontract_pdf(
 
     region 이 None 이면 추출된 주소에서 자동 파싱 (사용자가 시세 몰라도 자동 조회).
     """
-    text = extract_text_from_pdf(file_bytes)
+    # layout (평문 추출) 과 Custom Neural (구조화 필드) 은 독립 호출이라 병렬.
+    # DocIntel 2번 분량 → 순차 15s 에서 병렬 8~10s 로 단축.
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        text_future = pool.submit(extract_text_from_pdf, file_bytes)
+        custom_future = pool.submit(_extract_custom_fields, file_bytes)
+        text = text_future.result()
+        custom_fields = custom_future.result()
+
     if not text:
         raise ValueError("PDF 에서 텍스트를 추출하지 못했습니다. 스캔 품질을 확인하세요.")
-
-    # Custom Neural 보조 호출 — 실패 시 빈 dict 반환 → LLM-only 로 동작
-    custom_fields = _extract_custom_fields(file_bytes)
 
     # region 자동 유도: (1) 사용자 명시 > (2) 레이아웃 텍스트에서 직접 정규식 파싱
     # LLM 두 번 호출 피하려고 raw text 에서 먼저 시/도+시군구 패턴 찾음
