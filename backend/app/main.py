@@ -10,6 +10,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+# Rate limiting — slowapi 미설치 시 no-op 데코레이터로 graceful degrade.
+# (팀원 로컬에 아직 pip install 전이어도 import 에러 없이 동작하도록)
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler  # type: ignore
+    from slowapi.errors import RateLimitExceeded  # type: ignore
+    from slowapi.util import get_remote_address  # type: ignore
+
+    _RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    _RATE_LIMIT_AVAILABLE = False
+
+    def _noop_decorator(*_a, **_kw):
+        def wrap(fn):
+            return fn
+        return wrap
+
 from .chat_service import generate_chat_reply, get_preset_questions
 from .checklist_service import generate_checklist
 from .config import get_settings
@@ -41,11 +57,42 @@ app = FastAPI(
     version="0.2.0",
 )
 
+# Rate limiter 인스턴스 — IP 기반. slowapi 미설치 시 no-op 데코레이터.
+if _RATE_LIMIT_AVAILABLE:
+    limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    _limit = limiter.limit
+else:
+    _limit = _noop_decorator  # type: ignore[assignment]
+    logger = logging.getLogger("movewise")
+    logger.warning(
+        "slowapi 미설치 — rate limiting 비활성화. `pip install slowapi` 권장."
+    )
+
+# CORS 화이트리스트 — 배포 도메인 + 개발 환경만 허용.
+# Expo 번들 호스트는 random 이라 정규식으로 매칭.
+_ALLOWED_ORIGINS = [
+    "https://movewise-jf1s.onrender.com",       # 팀 Render 배포
+    "https://iim-isaisangmu.azurewebsites.net", # Azure App Service (배포 후)
+    "http://localhost:8081",                     # Metro 기본
+    "http://localhost:8082",                     # 이사이상무 Metro
+    "http://127.0.0.1:8765",                     # 로컬 uvicorn 직접 호출 테스트
+]
+_ALLOWED_ORIGIN_REGEX = (
+    r"https?://"
+    r"(localhost:\d+|127\.0\.0\.1:\d+|192\.168\.\d+\.\d+:\d+|"
+    r"[a-z0-9-]+\.exp\.direct|"              # Expo tunnel
+    r"[a-z0-9-]+\.azurewebsites\.net|"       # Azure App Service
+    r"[a-z0-9-]+\.onrender\.com)"            # Render
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=_ALLOWED_ORIGIN_REGEX,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    allow_credentials=False,
 )
 
 
@@ -122,30 +169,50 @@ def health() -> dict:
 
 
 @app.post("/checklist", response_model=ChecklistResponse)
-def post_checklist(req: ChecklistRequest) -> ChecklistResponse:
-    return generate_checklist(req)
+@_limit("20/minute")
+def post_checklist(request: Request, req: ChecklistRequest) -> ChecklistResponse:
+    try:
+        return generate_checklist(req)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        logger.exception("/checklist 처리 중 내부 오류")
+        raise HTTPException(
+            status_code=500,
+            detail="체크리스트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        )
 
 
 @app.post("/chat", response_model=ChatResponse)
-def post_chat(req: ChatRequest) -> ChatResponse:
+@_limit("30/minute")
+def post_chat(request: Request, req: ChatRequest) -> ChatResponse:
     """챗봇 — 이사·전월세 질문에 대한 RAG 답변 (Azure 있으면 LLM, 없으면 키워드 검색)."""
-    history = [{"role": m.role, "content": m.content} for m in req.history]
-    reply = generate_chat_reply(req.question, history=history)
-    return ChatResponse(
-        answer=reply.answer,
-        mode=reply.mode,
-        citations=[
-            {
-                "source_type": c.source_type,
-                "title": c.title,
-                "content_snippet": c.content_snippet,
-                "url": c.url,
-                "meta": c.meta,
-            }
-            for c in reply.citations
-        ],
-        used_queries=reply.used_queries,
-    )
+    try:
+        history = [{"role": m.role, "content": m.content} for m in req.history]
+        reply = generate_chat_reply(req.question, history=history)
+        return ChatResponse(
+            answer=reply.answer,
+            mode=reply.mode,
+            citations=[
+                {
+                    "source_type": c.source_type,
+                    "title": c.title,
+                    "content_snippet": c.content_snippet,
+                    "url": c.url,
+                    "meta": c.meta,
+                }
+                for c in reply.citations
+            ],
+            used_queries=reply.used_queries,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        logger.exception("/chat 처리 중 내부 오류")
+        raise HTTPException(
+            status_code=500,
+            detail="답변 생성에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        )
 
 
 @app.get("/chat/presets")
@@ -182,15 +249,25 @@ def get_realty_summary(region: str) -> dict:
 
 
 @app.post("/safecontract", response_model=SafeContractResponse)
-def post_safecontract(req: SafeContractRequest) -> SafeContractResponse:
+@_limit("10/minute")
+def post_safecontract(request: Request, req: SafeContractRequest) -> SafeContractResponse:
     try:
         return analyze_safecontract(req)
     except ValueError as exc:
+        # ValueError 는 사용자 입력 문제 → 메시지 전달 OK
         raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        # 내부 예외 상세는 서버 로그로만, 클라이언트엔 일반 메시지
+        logger.exception("/safecontract 처리 중 내부 오류")
+        raise HTTPException(
+            status_code=500, detail="분석에 실패했습니다. 잠시 후 다시 시도해주세요."
+        )
 
 
 @app.post("/safecontract/upload", response_model=SafeContractResponse)
+@_limit("5/minute")
 async def post_safecontract_upload(
+    request: Request,
     file: UploadFile = File(..., description="등기부등본 PDF"),
     deposit_krw: int = Form(..., description="보증금 (원)"),
     expected_market_price_krw: int = Form(0, description="예상 시세 (원, 0 = 자동 조회)"),
@@ -203,13 +280,26 @@ async def post_safecontract_upload(
     expected_market_price_krw = 0 이고 region 이 비어있으면 PDF 에서 주소 파싱 후
     국토부 실거래가 API 로 시세 자동 조회.
     """
-    if not file.filename or not file.filename.lower().endswith((".pdf",)):
+    # 1) 확장자 + 매직 바이트 검증 — 확장자 위조 방어
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="PDF 파일만 업로드 가능합니다")
 
     MAX_SIZE = 20 * 1024 * 1024  # 20MB
     contents = await file.read()
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="파일 크기는 20MB 이하여야 합니다")
+    # 2) PDF 매직바이트 체크 — 실 PDF 첫 4바이트 "%PDF"
+    if not contents.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=400,
+            detail="올바른 PDF 파일이 아닙니다 (파일 헤더 검증 실패)",
+        )
+
+    # 3) 입력 범위 검증 — 비정상 값 차단
+    if deposit_krw < 0 or deposit_krw > 50_000_000_000:  # 500 억 상한
+        raise HTTPException(status_code=400, detail="보증금 값이 올바르지 않습니다")
+    if expected_market_price_krw < 0 or expected_market_price_krw > 50_000_000_000:
+        raise HTTPException(status_code=400, detail="예상 시세 값이 올바르지 않습니다")
 
     try:
         return analyze_safecontract_pdf(
@@ -219,12 +309,18 @@ async def post_safecontract_upload(
             region=region or None,
         )
     except DocumentIntelligenceNotConfigured as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+        # 환경 설정 문제는 503 + 사용자용 안내 메시지
+        raise HTTPException(
+            status_code=503,
+            detail="문서 분석 서비스가 준비되지 않았습니다. 관리자에게 문의해주세요.",
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    except Exception as exc:
+    except Exception:
+        logger.exception("/safecontract/upload PDF 처리 중 내부 오류")
         raise HTTPException(
-            status_code=500, detail=f"PDF 처리 실패: {exc}"
+            status_code=500,
+            detail="PDF 분석에 실패했습니다. 스캔 품질을 확인하거나 잠시 후 다시 시도해주세요.",
         )
 
 

@@ -21,7 +21,11 @@ class ChecklistRequest(BaseModel):
         default_factory=list,
         description="계약 유형 복수 선택 (없으면 contract 단일값으로 사용)",
     )
-    region: str = Field(description="시/도 시/군/구 (예: '경기도 성남시 분당구')")
+    region: str = Field(
+        description="시/도 시/군/구 (예: '경기도 성남시 분당구')",
+        min_length=1,
+        max_length=100,
+    )
     move_date: date = Field(description="이사 예정일 (YYYY-MM-DD)")
     has_pet: bool = False
     has_car: bool = False
@@ -46,9 +50,10 @@ class ChecklistRequest(BaseModel):
         default=False,
         description="주민등록증 재발급 필요 여부 — 10년 경과·분실·사진 변경 등",
     )
-    deposit_krw: Optional[int] = None
-    monthly_rent_krw: Optional[int] = None
-    special_concerns: list[str] = Field(default_factory=list)
+    # 범위 validation — 음수/비정상값 차단 (abuse 방지)
+    deposit_krw: Optional[int] = Field(default=None, ge=0, le=50_000_000_000)
+    monthly_rent_krw: Optional[int] = Field(default=None, ge=0, le=100_000_000)
+    special_concerns: list[str] = Field(default_factory=list, max_length=20)
 
 
 class ChecklistCitation(BaseModel):
@@ -95,9 +100,10 @@ class SafeContractRequest(BaseModel):
         description="인터넷등기소에서 복사한 등기부등본 텍스트 (P0)",
     )
     # PDF 업로드는 multipart 엔드포인트로 별도 처리
-    deposit_krw: int = Field(gt=0, description="계약 보증금 (원)")
+    deposit_krw: int = Field(gt=0, le=50_000_000_000, description="계약 보증금 (원)")
     expected_market_price_krw: int = Field(
         ge=0,
+        le=50_000_000_000,
         description="해당 주택 예상 시세 (원). 0이면 region 으로 자동 조회 시도.",
     )
     region: Optional[str] = Field(
