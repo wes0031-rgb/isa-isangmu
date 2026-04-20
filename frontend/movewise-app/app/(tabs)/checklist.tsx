@@ -279,8 +279,8 @@ export default function ChecklistScreen() {
       ...result.items.map((it, idx) => {
         const done = completions[itemKey(it)] ? '[✔]' : '[ ]';
         const dl = it.deadline_date ? ` ⚠ 마감 ${it.deadline_date}` : '';
-        const dday = computeDDayLabel(it.start_date);
-        return `${done} ${idx + 1}. ${it.title}${dday ? ` (${dday})` : ''}${dl}`;
+        const dday = formatMoveOffsetLabel(it.d_day_offset);
+        return `${done} ${idx + 1}. ${it.title} (${dday})${dl}`;
       }),
       '',
       `생성: ${result.generated_at}`,
@@ -988,7 +988,9 @@ function ChecklistCard({
   onRemove?: () => void;
 }) {
   const legal = item.has_legal_deadline;
-  const dDay = computeDDayLabel(item.start_date);
+  // D-day 배지는 "이사일 기준" offset 으로 통일 (각 카드마다 고정 값)
+  // 예: d_day_offset=-7 → "이사 7일 전", 0 → "이사 당일", +1 → "이사 1일 후"
+  const dDay = formatMoveOffsetLabel(item.d_day_offset);
   return (
     <View
       style={[
@@ -1024,7 +1026,7 @@ function ChecklistCard({
         </View>
         {item.start_date ? (
           <Text style={styles.itemSubDate}>
-            {formatMoveOffsetLabel(item.d_day_offset)} · {item.start_date}
+            시작일: {item.start_date}
           </Text>
         ) : null}
         {item.deadline_date && (
