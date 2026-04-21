@@ -100,13 +100,23 @@ export default function Home() {
   const progress =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  // 오늘 시작해야 하는 일 (start_date 가 오늘, 미완료)
+  // "지금 해야 할 일" — 시작일이 오늘 또는 이미 지났고 아직 완료 안 된 항목.
+  // 이전: start_date === 오늘 만 → 하루 놓치면 위젯에서 사라져 누락 위험.
+  // 개선: daysUntil(start_date) <= 0 → 밀린 항목까지 포함해 리마인드.
+  // 정렬 우선순위: deadline 가까운 것 > start_date 더 오래 밀린 것.
   const todayTasks = saved
     ? saved.response.items
         .filter((it) => {
           if (!it.start_date) return false;
           if (completions[itemKey(it.category, it.title)]) return false;
-          return daysUntil(it.start_date) === 0;
+          return daysUntil(it.start_date) <= 0;
+        })
+        .sort((a, b) => {
+          const aDead = a.deadline_date ? daysUntil(a.deadline_date) : 9999;
+          const bDead = b.deadline_date ? daysUntil(b.deadline_date) : 9999;
+          if (aDead !== bDead) return aDead - bDead;
+          // start_date 가 더 오래 지난 것(음수 더 작은 쪽) 먼저
+          return daysUntil(a.start_date!) - daysUntil(b.start_date!);
         })
         .slice(0, 5)
     : [];
@@ -203,43 +213,72 @@ export default function Home() {
           </View>
         )}
 
-        {/* Today tasks — 오늘 시작할 일 */}
+        {/* 지금 처리할 일 — 시작일이 오늘 또는 이미 지났고 미완료인 항목.
+            밀린 것(overdue)까지 포함해 리마인드. 배지로 "오늘 시작 / N일 지남" 구분. */}
         {todayTasks.length > 0 && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionTitleRow}>
               <Ionicons name="today" size={18} color={colors.accent} />
-              <Text style={styles.sectionTitle}>오늘 할 일 · {todayTasks.length}건</Text>
+              <Text style={styles.sectionTitle}>
+                지금 할 일 · {todayTasks.length}건
+              </Text>
             </View>
-            {todayTasks.map((it, idx) => (
-              <Pressable
-                key={idx}
-                style={styles.todayCard}
-                onPress={() =>
-                  router.push({
-                    pathname: '/checklist/[id]',
-                    params: {
-                      id: itemKey(it.category, it.title),
-                    },
-                  })
-                }
-              >
-                <View style={styles.todayBadge}>
-                  <Ionicons name="flash" size={16} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.todayTitle}>{it.title}</Text>
-                  <Text style={styles.todayMeta}>
-                    {it.category}
-                    {it.deadline_date ? ` · ${it.deadline_date} 까지` : ''}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={colors.textMute}
-                />
-              </Pressable>
-            ))}
+            {todayTasks.map((it, idx) => {
+              const startDiff = daysUntil(it.start_date!);
+              // 0 = 오늘, 음수 = 지남. 시각적으로 지남/오늘/곧 구분.
+              const overdue = startDiff < 0;
+              const badgeLabel = overdue
+                ? `${Math.abs(startDiff)}일 지남`
+                : '오늘 시작';
+              return (
+                <Pressable
+                  key={idx}
+                  style={styles.todayCard}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/checklist/[id]',
+                      params: {
+                        id: itemKey(it.category, it.title),
+                      },
+                    })
+                  }
+                >
+                  <View
+                    style={[
+                      styles.todayBadge,
+                      overdue && { backgroundColor: colors.danger },
+                    ]}
+                  >
+                    <Ionicons
+                      name={overdue ? 'alert' : 'flash'}
+                      size={16}
+                      color="#fff"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.todayTitle}>{it.title}</Text>
+                    <Text style={styles.todayMeta}>
+                      <Text
+                        style={{
+                          color: overdue ? colors.danger : colors.accent,
+                          fontWeight: '700',
+                        }}
+                      >
+                        {badgeLabel}
+                      </Text>
+                      {' · '}
+                      {it.category}
+                      {it.deadline_date ? ` · ${it.deadline_date} 까지` : ''}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={colors.textMute}
+                  />
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
