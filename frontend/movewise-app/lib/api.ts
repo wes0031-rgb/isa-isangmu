@@ -308,10 +308,13 @@ export const api = {
       process.env.EXPO_PUBLIC_STT_BACKEND_URL ||
       'https://bobby-roberts-exam-content.trycloudflare.com';
     const form = new FormData();
+    // iOS 는 LPCM 으로 RIFF WAV 저장, Android 는 MPEG_4/AAC 로 .m4a 저장.
+    // 백엔드 /api/stt 가 RIFF 아니면 ffmpeg 로 WAV PCM 변환 처리.
+    const isAndroid = Platform.OS === 'android';
     form.append('audio', {
       uri: audioUri,
-      name: 'recording.wav',
-      type: 'audio/wav',
+      name: isAndroid ? 'recording.m4a' : 'recording.wav',
+      type: isAndroid ? 'audio/m4a' : 'audio/wav',
     } as any);
     const { signal, clear } = withTimeout(20000);
     try {

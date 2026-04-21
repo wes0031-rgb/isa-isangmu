@@ -141,19 +141,19 @@ export default function ChatScreen() {
         playsInSilentModeIOS: true,
       });
       // Azure STT 가 가장 잘 받는 포맷: WAV 16kHz mono PCM.
-      // 중요: extension '.wav' 만으로는 iOS 가 CAF (Core Audio Format) 로 저장 가능.
-      // `outputFormat: IOSOutputFormat.LINEARPCM ('lpcm')` 을 명시해야 실제 RIFF WAV 로 저장됨.
-      // Android 도 THREE_GPP default 로 빠지면 mp4 컨테이너가 되므로 명시적 PCM 설정 유지.
+      // iOS: IOSOutputFormat.LINEARPCM 명시해야 실제 RIFF WAV 로 저장됨.
+      // Android: MediaRecorder 가 PCM WAV 를 네이티브 지원 안 함 → MPEG_4/AAC 로 .m4a
+      //          저장 후 backend 에서 ffmpeg 로 WAV 변환 (/api/stt 내부 처리).
       const rec = new Audio.Recording();
       await rec.prepareToRecordAsync({
         isMeteringEnabled: false,
         android: {
-          extension: '.wav',
-          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
           sampleRate: 16000,
           numberOfChannels: 1,
-          bitRate: 256000,
+          bitRate: 64000,
         },
         ios: {
           extension: '.wav',

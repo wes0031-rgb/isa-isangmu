@@ -10,3 +10,4 @@ azure-ai-documentintelligence==1.0.0
 azure-storage-blob==12.24.0
 python-multipart==0.0.12
 slowapi==0.1.9
+pydub==0.25.1

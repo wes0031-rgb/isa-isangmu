@@ -417,6 +417,25 @@ async def post_stt(request: Request, audio: UploadFile = File(...)) -> dict:
     if not data:
         raise HTTPException(status_code=400, detail="빈 음성 파일")
 
+    # Android expo-av 는 DEFAULT/MPEG_4 설정 시 3gp/m4a 컨테이너를 생성 → Azure STT REST
+    # (audio/wav PCM 전용) 가 해석 못 함. RIFF 헤더 없는 입력은 ffmpeg 로 WAV PCM 16kHz
+    # mono 로 변환 (iOS LPCM 은 이미 RIFF → 그대로 통과).
+    if not data.startswith(b"RIFF"):
+        try:
+            from pydub import AudioSegment
+            import io as _io
+            seg = AudioSegment.from_file(_io.BytesIO(data))
+            seg = seg.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+            out = _io.BytesIO()
+            seg.export(out, format="wav")
+            data = out.getvalue()
+            logger.info(f"[stt] converted non-WAV input → WAV PCM 16kHz mono ({len(data)}B)")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"음성 파일 형식 변환 실패: {type(exc).__name__} — WAV/M4A/3GP 만 지원",
+            )
+
     import requests as _rq
     region = settings.azure_speech_region
     lang = settings.azure_speech_language

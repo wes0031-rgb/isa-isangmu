@@ -9,9 +9,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # System deps
+# ffmpeg: Android 녹음 파일(m4a/3gp/aac)을 Azure STT 가 받는 WAV PCM 으로 변환
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
+        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Python deps
