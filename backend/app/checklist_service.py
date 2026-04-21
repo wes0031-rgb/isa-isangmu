@@ -1550,8 +1550,24 @@ def _ensure_conditional_items(
 # ===== 결정론화 캐시 =====
 # 같은 입력(요청 필드 전체) → 같은 출력 보장. LLM seed=42 + temperature=0 이 best-effort 라
 # 100% 보장 안 되므로 추가 안전장치로 메모리 캐시. 발표 시연 시 매번 같은 결과 노출.
-# process 재시작 시 사라지는 in-memory dict — 발표용으로 충분.
-_GENERATE_CACHE: dict[str, "ChecklistResponse"] = {}
+# process 재시작 시 사라지는 in-memory LRU — 발표·운영 모두 안전.
+from collections import OrderedDict as _OrdDict
+_GENERATE_CACHE_MAX = 512  # 메모리 폭주 방어. 응답 1건당 ~30-50KB JSON → 상한 ~25MB.
+_GENERATE_CACHE: "_OrdDict[str, ChecklistResponse]" = _OrdDict()
+
+
+def _cache_get(key: str):
+    val = _GENERATE_CACHE.get(key)
+    if val is not None:
+        _GENERATE_CACHE.move_to_end(key)  # LRU: 재접근 시 뒤로
+    return val
+
+
+def _cache_put(key: str, value) -> None:
+    _GENERATE_CACHE[key] = value
+    _GENERATE_CACHE.move_to_end(key)
+    while len(_GENERATE_CACHE) > _GENERATE_CACHE_MAX:
+        _GENERATE_CACHE.popitem(last=False)  # 가장 오래된 것 제거
 
 
 def _request_cache_key(req: ChecklistRequest) -> str:
@@ -1582,7 +1598,7 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
 
     # 1) 캐시 hit → 즉시 반환 (LLM 호출 0회)
     cache_key = _request_cache_key(req)
-    cached = _GENERATE_CACHE.get(cache_key)
+    cached = _cache_get(cache_key)
     if cached is not None:
         _logger.info(f"[checklist] cache HIT key={cache_key}")
         return cached
@@ -1615,10 +1631,14 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     # 결정론적 정렬: d_day_offset → category → title (tie-break 안정화)
     items.sort(key=lambda x: (x.d_day_offset, x.category or "", x.title or ""))
 
+    # warning 규칙 (정적 전환 후):
+    # - fallback_used=True  : LLM 경로 호출 실패 (free_text 있었지만 Azure 다운) → 사용자 안내
+    # - azure_ready=False + has_free_text: 자유 텍스트 분석 불가 안내
+    # - 그 외: 정상 (static 이 primary path 이므로 warning 없음)
     if fallback_used:
-        warning = "AI 서버가 일시적으로 불안정하여 기본 체크리스트를 제공합니다. 나중에 다시 생성하면 맞춤 결과를 받을 수 있어요."
-    elif not get_settings().azure_ready:
-        warning = "Azure 자격 증명이 설정되지 않아 rule-based fallback 결과입니다."
+        warning = "AI 자유 텍스트 분석이 일시적으로 불안정하여 기본 체크리스트를 제공합니다. 나중에 다시 생성하면 맞춤 결과를 받을 수 있어요."
+    elif has_free_text and not get_settings().azure_ready:
+        warning = "Azure 자격 증명이 없어 자유 텍스트 분석을 건너뛰었습니다. 기본 체크리스트는 정상 생성되었어요."
     else:
         warning = None
 
@@ -1632,5 +1652,5 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     )
     # 2) fallback 이 아닐 때만 캐시 저장 (Azure 일시 장애 시 결과는 캐시 안 함)
     if not fallback_used:
-        _GENERATE_CACHE[cache_key] = response
+        _cache_put(cache_key, response)
     return response

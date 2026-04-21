@@ -303,7 +303,10 @@ export const api = {
    *  Render 백엔드에 STT 미배포 상태라 로컬 backend cloudflared tunnel 로 직송 (발표 임시).
    */
   async stt(audioUri: string): Promise<{ text: string; status: string }> {
-    const STT_BACKEND_URL = 'https://bobby-roberts-exam-content.trycloudflare.com';
+    // env 우선, 없으면 현재 cloudflared tunnel 로 fallback (발표 임시). tunnel 바뀌면 .env 갱신.
+    const STT_BACKEND_URL =
+      process.env.EXPO_PUBLIC_STT_BACKEND_URL ||
+      'https://bobby-roberts-exam-content.trycloudflare.com';
     const form = new FormData();
     form.append('audio', {
       uri: audioUri,
