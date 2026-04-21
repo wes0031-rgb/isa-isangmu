@@ -8,6 +8,8 @@ import { Audio } from 'expo-av';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -118,6 +120,8 @@ export default function ChatScreen() {
   const [sttLoading, setSttLoading] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const recordingStartRef = useRef<number | null>(null);
+  // prepareToRecordAsync 진행 중 다시 탭하면 두 Recording 이 동시 진행되는 race 방지.
+  const startingRef = useRef(false);
   // Azure STT REST 는 최소 ~0.5s 유효 오디오 필요. 짧은 탭은 로컬에서 조기 차단.
   const MIN_RECORDING_MS = 500;
 
@@ -128,7 +132,31 @@ export default function ChatScreen() {
       .catch(() => setPresets([]));
   }, []);
 
+  // 앱이 백그라운드로 가면 진행 중 녹음을 정리 (orphaned recording 방지).
+  // iOS 는 백그라운드에서 Recording 이 제한되고, Android 는 포커스 잃으면 끊김 → 공통 정리.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'active') return;
+      if (!recordingRef.current) return;
+      (async () => {
+        try {
+          await recordingRef.current?.stopAndUnloadAsync();
+        } catch {
+          // 이미 unload 되었을 수 있음 — 무시.
+        }
+        await Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+        recordingRef.current = null;
+        recordingStartRef.current = null;
+        setRecording(null);
+        setSttLoading(false);
+      })();
+    });
+    return () => sub.remove();
+  }, []);
+
   async function startRecording() {
+    if (startingRef.current || recordingRef.current) return;
+    startingRef.current = true;
     try {
       // 권한 요청 (마이크)
       const perm = await Audio.requestPermissionsAsync();
@@ -183,6 +211,8 @@ export default function ChatScreen() {
         ...prev,
         { role: 'bot', text: `녹음 시작 실패: ${e.message}` },
       ]);
+    } finally {
+      startingRef.current = false;
     }
   }
 

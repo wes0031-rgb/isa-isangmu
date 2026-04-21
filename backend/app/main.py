@@ -470,15 +470,40 @@ async def post_stt(request: Request, audio: UploadFile = File(...)) -> dict:
         "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000",
         "Accept": "application/json",
     }
-    # 비동기 httpx 사용 — sync requests.post 는 async 이벤트 루프 block.
+    # 비동기 httpx + 5xx/타임아웃 재시도 (최대 3회, 지수 백오프 0.5→1.0s).
+    # Azure Speech 는 간헐적으로 502/503 반환 — 즉시 재시도하면 대부분 회복.
     import httpx as _hx
-    try:
-        async with _hx.AsyncClient(timeout=_hx.Timeout(20.0, connect=5.0)) as client:
-            resp = await client.post(url, headers=headers, content=data)
-    except _hx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Azure Speech 타임아웃 — 잠시 후 다시 시도")
-    except _hx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Azure Speech 호출 실패: {exc}")
+    import asyncio as _aio
+    resp = None
+    last_exc: Exception | None = None
+    for attempt in range(3):
+        try:
+            async with _hx.AsyncClient(timeout=_hx.Timeout(20.0, connect=5.0)) as client:
+                resp = await client.post(url, headers=headers, content=data)
+            if resp.status_code < 500:
+                break  # 2xx/4xx 는 즉시 반환 (클라이언트 에러는 재시도 무의미)
+            logger.warning(
+                f"[stt] azure retry {attempt + 1}/3 — status={resp.status_code}"
+            )
+            last_exc = HTTPException(
+                status_code=502,
+                detail=f"Azure Speech {resp.status_code}: {resp.text[:200]}",
+            )
+        except _hx.TimeoutException as exc:
+            logger.warning(f"[stt] azure retry {attempt + 1}/3 — timeout")
+            last_exc = HTTPException(status_code=504, detail="Azure Speech 타임아웃 — 잠시 후 다시 시도")
+            resp = None
+        except _hx.HTTPError as exc:
+            logger.warning(f"[stt] azure retry {attempt + 1}/3 — {type(exc).__name__}: {exc}")
+            last_exc = HTTPException(status_code=502, detail=f"Azure Speech 호출 실패: {exc}")
+            resp = None
+        if attempt < 2:
+            await _aio.sleep(0.5 * (attempt + 1))
+    if resp is None or resp.status_code >= 500:
+        # 3회 모두 실패
+        if last_exc is not None:
+            raise last_exc
+        raise HTTPException(status_code=502, detail="Azure Speech 재시도 후에도 실패")
     if resp.status_code != 200:
         logger.error(f"[stt] azure {resp.status_code}: {resp.text[:300]}")
         raise HTTPException(
