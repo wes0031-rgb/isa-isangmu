@@ -197,7 +197,7 @@ export default function ChatScreen() {
       if (text.trim()) {
         setInput((prev) => (prev ? prev + ' ' + text : text));
       } else {
-        // 인식 실패 케이스별 친절한 안내
+        // 인식 실패 케이스별 친절한 안내. status 가 Success 여도 text 가 비면 무음/짧음으로 처리.
         const reason =
           status === 'NoMatch'
             ? '말씀하신 내용을 인식 못 했어요. 더 또렷하게 다시 말해주세요.'
@@ -205,7 +205,7 @@ export default function ChatScreen() {
             ? '소리가 없었어요. 마이크 권한·마이크 가까이 다시 시도해주세요.'
             : status === 'BabbleTimeout'
             ? '주변 소음이 너무 커요. 조용한 곳에서 다시 시도해주세요.'
-            : `음성 인식 실패 (${status}). 다시 시도해주세요.`;
+            : '음성이 인식되지 않았어요. 너무 짧거나 무음일 수 있어요. 다시 시도해주세요.';
         setMessages((prev) => [...prev, { role: 'bot', text: reason }]);
       }
     } catch (e: any) {
