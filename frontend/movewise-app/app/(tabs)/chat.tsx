@@ -117,6 +117,9 @@ export default function ChatScreen() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [sttLoading, setSttLoading] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingStartRef = useRef<number | null>(null);
+  // Azure STT REST 는 최소 ~0.5s 유효 오디오 필요. 짧은 탭은 로컬에서 조기 차단.
+  const MIN_RECORDING_MS = 500;
 
   useEffect(() => {
     api
@@ -173,6 +176,7 @@ export default function ChatScreen() {
       });
       await rec.startAsync();
       recordingRef.current = rec;
+      recordingStartRef.current = Date.now();
       setRecording(rec);
     } catch (e: any) {
       setMessages((prev) => [
@@ -185,13 +189,27 @@ export default function ChatScreen() {
   async function stopRecording() {
     const rec = recordingRef.current;
     if (!rec) return;
+    const startedAt = recordingStartRef.current;
     setRecording(null);
     setSttLoading(true);
     try {
       await rec.stopAndUnloadAsync();
+      // iOS 오디오 세션 복원 — 녹음 모드 유지 시 이후 TTS/알림음 경로가 뒤틀릴 수 있음.
+      // Android 는 해당 key 무시 (no-op).
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
       const uri = rec.getURI();
       recordingRef.current = null;
+      recordingStartRef.current = null;
       if (!uri) throw new Error('녹음 파일 경로 없음');
+      // 최소 녹음 시간 가드 — 짧은 탭은 서버 호출 전 조기 차단 (비용·레이시 절감).
+      const elapsed = startedAt ? Date.now() - startedAt : 0;
+      if (elapsed > 0 && elapsed < MIN_RECORDING_MS) {
+        setMessages((prev) => [
+          ...prev,
+          { role: 'bot', text: '녹음이 너무 짧아요. 마이크 버튼을 꾹 유지하고 말씀해주세요.' },
+        ]);
+        return;
+      }
       // backend /api/stt 로 multipart 전송
       const { text, status } = await api.stt(uri);
       if (text.trim()) {
@@ -209,10 +227,19 @@ export default function ChatScreen() {
         setMessages((prev) => [...prev, { role: 'bot', text: reason }]);
       }
     } catch (e: any) {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'bot', text: `음성 인식 실패: ${e.message}` },
-      ]);
+      // 에러 카테고리 구분 — 네트워크 / 타임아웃 / 서버 / 기타
+      const msg = (e?.message || '').toString();
+      let text: string;
+      if (msg.includes('서버 응답 시간 초과')) {
+        text = '서버 응답이 늦어요. 잠시 후 다시 시도해주세요.';
+      } else if (/Network request failed|TypeError.*fetch/i.test(msg)) {
+        text = '네트워크 오류로 음성 인식에 실패했어요. 연결 확인 후 다시 시도해주세요.';
+      } else if (/^STT\s+\d{3}/.test(msg) || /API\s+\d{3}/.test(msg)) {
+        text = `서버 오류로 음성 인식에 실패했어요 (${msg.slice(0, 60)}).`;
+      } else {
+        text = `음성 인식 실패: ${msg.slice(0, 80)}`;
+      }
+      setMessages((prev) => [...prev, { role: 'bot', text }]);
     } finally {
       setSttLoading(false);
     }

@@ -411,32 +411,54 @@ async def post_stt(request: Request, audio: UploadFile = File(...)) -> dict:
         raise HTTPException(status_code=503, detail="Azure Speech 키 미설정 — .env 의 AZURE_SPEECH_KEY 확인")
 
     MAX = 5 * 1024 * 1024  # 5MB (~30초 16kHz 16bit)
+    MIN = 1024  # 1KB 미만은 거의 확실히 무음/스펙오류 — Azure 호출 생략으로 비용·레이시 절감.
     data = await audio.read()
+    received_mime = (audio.content_type or "").lower()
+    received_name = audio.filename or ""
+    logger.info(
+        f"[stt] received bytes={len(data)} mime={received_mime!r} name={received_name!r}"
+    )
     if len(data) > MAX:
         raise HTTPException(status_code=413, detail="음성 파일이 너무 큽니다 (최대 5MB)")
     if not data:
         raise HTTPException(status_code=400, detail="빈 음성 파일")
+    if len(data) < MIN:
+        # 너무 짧음 → NoMatch 응답으로 사용자 메시지 유도 (Azure 호출 절약).
+        logger.warning(f"[stt] input too small ({len(data)}B) — returning NoMatch early")
+        return {"text": "", "status": "NoMatch"}
 
-    # Android expo-av 는 DEFAULT/MPEG_4 설정 시 3gp/m4a 컨테이너를 생성 → Azure STT REST
-    # (audio/wav PCM 전용) 가 해석 못 함. RIFF 헤더 없는 입력은 ffmpeg 로 WAV PCM 16kHz
-    # mono 로 변환 (iOS LPCM 은 이미 RIFF → 그대로 통과).
+    # Android expo-av 는 MPEG_4/AAC 설정으로 m4a 컨테이너 생성 → Azure STT REST (audio/wav
+    # PCM 전용) 가 해석 못 함. RIFF 헤더 없는 입력은 pydub+ffmpeg 로 WAV PCM 16kHz mono
+    # 변환 (iOS LPCM 은 이미 RIFF → 그대로 통과).
     if not data.startswith(b"RIFF"):
+        magic = data[:8].hex()
         try:
             from pydub import AudioSegment
             import io as _io
             seg = AudioSegment.from_file(_io.BytesIO(data))
+            duration_ms = len(seg)
             seg = seg.set_frame_rate(16000).set_channels(1).set_sample_width(2)
             out = _io.BytesIO()
             seg.export(out, format="wav")
             data = out.getvalue()
-            logger.info(f"[stt] converted non-WAV input → WAV PCM 16kHz mono ({len(data)}B)")
+            logger.info(
+                f"[stt] converted non-WAV → WAV PCM 16kHz mono "
+                f"(magic={magic}, duration={duration_ms}ms, out={len(data)}B)"
+            )
+        except FileNotFoundError as exc:
+            # ffmpeg 바이너리 없음 — Dockerfile 에 미설치 시 발생.
+            logger.error(f"[stt] ffmpeg not found: {exc}")
+            raise HTTPException(
+                status_code=500,
+                detail="서버 오디오 변환 도구 미설치 — 관리자에게 문의하세요 (ffmpeg).",
+            )
         except Exception as exc:
+            logger.error(f"[stt] pydub convert failed magic={magic}: {exc}")
             raise HTTPException(
                 status_code=422,
-                detail=f"음성 파일 형식 변환 실패: {type(exc).__name__} — WAV/M4A/3GP 만 지원",
+                detail=f"음성 파일 형식 변환 실패: {type(exc).__name__}",
             )
 
-    import requests as _rq
     region = settings.azure_speech_region
     lang = settings.azure_speech_language
     url = (
@@ -448,21 +470,29 @@ async def post_stt(request: Request, audio: UploadFile = File(...)) -> dict:
         "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000",
         "Accept": "application/json",
     }
+    # 비동기 httpx 사용 — sync requests.post 는 async 이벤트 루프 block.
+    import httpx as _hx
     try:
-        resp = _rq.post(url, headers=headers, data=data, timeout=15)
-    except _rq.RequestException as exc:
+        async with _hx.AsyncClient(timeout=_hx.Timeout(20.0, connect=5.0)) as client:
+            resp = await client.post(url, headers=headers, content=data)
+    except _hx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Azure Speech 타임아웃 — 잠시 후 다시 시도")
+    except _hx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Azure Speech 호출 실패: {exc}")
     if resp.status_code != 200:
+        logger.error(f"[stt] azure {resp.status_code}: {resp.text[:300]}")
         raise HTTPException(
             status_code=502,
             detail=f"Azure Speech {resp.status_code}: {resp.text[:200]}",
         )
     body = resp.json()
-    status = body.get("RecognitionStatus", "Unknown")
-    if status != "Success":
-        # InitialSilenceTimeout / NoMatch / BabbleTimeout 등 — 사용자 메시지로 변환
-        return {"text": "", "status": status}
-    return {"text": body.get("DisplayText", ""), "status": "Success"}
+    recog_status = body.get("RecognitionStatus", "Unknown")
+    display = body.get("DisplayText", "") or ""
+    logger.info(f"[stt] azure status={recog_status} text_len={len(display)}")
+    if recog_status != "Success":
+        # InitialSilenceTimeout / NoMatch / BabbleTimeout 등 — 프론트가 케이스별 메시지 변환.
+        return {"text": "", "status": recog_status}
+    return {"text": display, "status": "Success"}
 
 
 # ==================================================================

@@ -316,7 +316,8 @@ export const api = {
       name: isAndroid ? 'recording.m4a' : 'recording.wav',
       type: isAndroid ? 'audio/m4a' : 'audio/wav',
     } as any);
-    const { signal, clear } = withTimeout(20000);
+    // STT 타임아웃 45s — Render cold start (30-60s) 최소 커버. 실기기 네트워크 감안.
+    const { signal, clear } = withTimeout(45000);
     try {
       const res = await fetch(`${STT_BACKEND_URL}/api/stt`, {
         method: 'POST',
@@ -324,14 +325,23 @@ export const api = {
         signal,
       });
       if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`STT ${res.status} ${txt.slice(0, 80)}`);
+        // FastAPI HTTPException 은 {"detail": "..."} 로 오고, 기타 5xx 는 text.
+        let msg = '';
+        try {
+          const body = await res.json();
+          msg = body?.detail || JSON.stringify(body);
+        } catch {
+          msg = await res.text().catch(() => '');
+        }
+        throw new Error(`STT ${res.status} ${msg.toString().slice(0, 120)}`);
       }
       const d = await res.json();
       return {
         text: (d.text || '').toString(),
         status: (d.status || 'Unknown').toString(),
       };
+    } catch (e) {
+      return wrapAbort(e);
     } finally {
       clear();
     }
