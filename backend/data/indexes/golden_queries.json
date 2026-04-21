@@ -114,7 +114,7 @@
       "query_id": "Q003",
       "scenario": "30대 신혼부부, 전세, 서울 마포구, 자동차 보유",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "서울특별시 마포구",
         "move_date": "2026-06-01",
@@ -363,7 +363,7 @@
       "query_id": "Q008",
       "scenario": "신혼부부, 월세, 인천 서구, 반려견+자동차",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "월세",
         "region": "인천광역시 서구",
         "move_date": "2026-05-05",
@@ -713,13 +713,14 @@
       "query_id": "Q016",
       "scenario": "37세 부부, 전세, 춘천, 갱신 요구권 사용 상황",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "강원특별자치도 춘천시",
         "move_date": "2026-09-01",
         "special_concerns": [
           "갱신요구권 행사"
-        ]
+        ],
+        "has_children": false
       },
       "expected_items": [
         {
@@ -859,12 +860,13 @@
       "query_id": "Q020",
       "scenario": "26세 커플 동거 시작, 월세, 서울 성북구, 반려견",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "월세",
         "region": "서울특별시 성북구",
         "move_date": "2026-05-18",
         "has_pet": true,
-        "has_car": false
+        "has_car": false,
+        "has_children": false
       },
       "expected_items": [
         {
@@ -1158,7 +1160,7 @@
       "query_id": "Q026",
       "scenario": "신혼 전세, 인천 연수, 갱신요구권 고민",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "인천광역시 연수구",
         "move_date": "2026-06-18",
@@ -1432,10 +1434,11 @@
       "query_id": "Q032",
       "scenario": "퇴거 — 전세 사전 점검",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "경기도 성남시 분당구",
-        "move_date": "2026-07-10"
+        "move_date": "2026-07-10",
+        "has_children": false
       },
       "expected_items": [
         {
@@ -1588,14 +1591,15 @@
       "query_id": "Q037",
       "scenario": "퇴거 — 원상회복 분쟁 대비 (하자)",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "월세",
         "region": "서울특별시 서초구",
         "move_date": "2026-08-10",
         "special_concerns": [
           "하자",
           "수선"
-        ]
+        ],
+        "has_children": false
       },
       "expected_items": [
         {
@@ -1681,13 +1685,14 @@
       "query_id": "Q040",
       "scenario": "퇴거 — 계약 갱신 거절 후 이사",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "대전광역시 유성구",
         "move_date": "2026-09-01",
         "special_concerns": [
           "갱신요구권"
-        ]
+        ],
+        "has_children": false
       },
       "expected_items": [
         {
@@ -1843,7 +1848,7 @@
       "query_id": "Q044",
       "scenario": "신혼부부, 전세, 인천 송도, 반려묘 2마리",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "인천광역시 연수구",
         "move_date": "2026-05-20",
@@ -2039,7 +2044,7 @@
       "query_id": "Q048",
       "scenario": "대전 둔산동 신혼 전세, 자동차",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "대전광역시 서구",
         "move_date": "2026-05-20",
@@ -2233,7 +2238,7 @@
       "query_id": "Q052",
       "scenario": "충북 청주 신혼 자가",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "자가",
         "region": "충청북도 청주시",
         "move_date": "2026-05-20",
@@ -2326,7 +2331,7 @@
       "query_id": "Q054",
       "scenario": "경남 창원 신혼 월세, 반려묘",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "월세",
         "region": "경상남도 창원시",
         "move_date": "2026-05-20",
@@ -2461,7 +2466,7 @@
       "query_id": "Q057",
       "scenario": "충남 천안 직장인 신혼 전세",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "충청남도 천안시",
         "move_date": "2026-05-20",
@@ -2554,7 +2559,7 @@
       "query_id": "Q059",
       "scenario": "서울 송파구 신혼 전세, 반려견",
       "user_input": {
-        "household": "신혼",
+        "household": "가족",
         "contract": "전세",
         "region": "서울특별시 송파구",
         "move_date": "2026-05-20",

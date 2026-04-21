@@ -18,7 +18,10 @@ from .models import (
     SafeContractResponse,
     ServiceReferral,
 )
-from .realty_price import get_region_price_summary
+from .realty_price import (
+    RealtyApiNotAuthorized,
+    get_region_price_summary,
+)
 
 
 # ---------- PDF / 이미지 → 텍스트 (Azure Document Intelligence) ----------
@@ -420,16 +423,29 @@ def _merge_custom_into_extraction(
     return extraction
 
 
+_EXTRACT_INPUT_CHAR_CAP = 15_000  # ~5-7K tokens. 20 페이지 등기부도 표제부·갑구·을구는 앞 15K 안에 다 있음.
+
+
 def _extract_with_llm(text: str) -> RegistryExtraction:
     """GPT-4o + Structured Output (json_schema strict 모드) 로 등기부 파싱.
 
     스키마 100% 준수 보장 — 필드 누락/타입 오류 없이 RegistryExtraction 반환.
     실패 시 rule-based regex 폴백.
+
+    입력 cap: DocIntel PDF 텍스트는 20페이지 60K chars 까지 가능. 앞 15K 만 LLM 에
+    보내 응답 지연·토큰 비용을 제어. 등기부 핵심은 표제부·갑구·을구로 상단 집중.
     """
     client = get_openai_client()
     if client is None:
         return _extract_rule_based(text)
     settings = get_settings()
+
+    if len(text) > _EXTRACT_INPUT_CHAR_CAP:
+        import logging as _log
+        _log.getLogger("movewise").info(
+            f"_extract_with_llm: text {len(text)}→{_EXTRACT_INPUT_CHAR_CAP} chars (truncated)"
+        )
+        text = text[:_EXTRACT_INPUT_CHAR_CAP]
 
     # json_schema strict 모드 — additionalProperties: false 필수
     schema = RegistryExtraction.model_json_schema()
@@ -442,6 +458,7 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
         resp = client.chat.completions.create(
             model=settings.azure_openai_deployment_name,
             temperature=0,
+            seed=42,
             messages=[
                 {"role": "system", "content": EXTRACT_SYSTEM},
                 {"role": "user", "content": text},
@@ -454,6 +471,7 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
                     "strict": True,
                 },
             },
+            max_tokens=1500,  # 추출 필드 한정 — 출력 cap
             timeout=20,
         )
         raw = resp.choices[0].message.content or "{}"
@@ -468,11 +486,13 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
             resp = client.chat.completions.create(
                 model=settings.azure_openai_deployment_name,
                 temperature=0,
+                seed=42,
                 messages=[
                     {"role": "system", "content": EXTRACT_SYSTEM},
                     {"role": "user", "content": text},
                 ],
                 response_format={"type": "json_object"},
+                max_tokens=1500,
                 timeout=20,
             )
             raw = resp.choices[0].message.content or "{}"
@@ -616,9 +636,10 @@ def _explain_with_llm(
         return _explain_rule_based(extraction, jeontse_ratio, mortgage_ratio)
 
     settings = get_settings()
+    # law_hits cap: 상위 6건 × 400 chars → 최대 2400 chars. 쿼리별 의미 다양성 보존하며 상한 명시.
     context = "\n---\n".join(
         f"[{h.get('law_name')} {h.get('article')}] {h.get('content','')[:400]}"
-        for h in law_hits
+        for h in law_hits[:6]
     )
     payload = {
         "extraction": extraction.model_dump(),
@@ -629,11 +650,14 @@ def _explain_with_llm(
     resp = client.chat.completions.create(
         model=settings.azure_openai_deployment_name,
         temperature=0,
+        seed=42,
         messages=[
             {"role": "system", "content": EXPLAIN_SYSTEM},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ],
         response_format={"type": "json_object"},
+        max_tokens=2000,  # 위험 요약 + 5~8 risk items 충분
+        timeout=20,
     )
     raw = resp.choices[0].message.content or "{}"
     try:
@@ -895,11 +919,22 @@ def _build_referrals() -> list[ServiceReferral]:
 
 
 def _fetch_market_estimate(region: Optional[str]) -> Optional[MarketEstimate]:
-    """사용자 지역으로 실거래가 API 자동 조회."""
+    """region(시도+시군구) 으로 국토부 아파트 실거래가 자동 조회.
+
+    시세 미입력 시 analyze_safecontract 가 호출. 아파트 전용 API 라 비아파트는
+    error 필드로 표시되고, 전세가율 계산은 여전히 생략(effective=0).
+    """
     if not region:
         return None
     try:
         s = get_region_price_summary(region)
+    except RealtyApiNotAuthorized as exc:
+        return MarketEstimate(
+            source="국토교통부 아파트 매매 실거래가 API",
+            region=region,
+            query_ym="",
+            error=f"API 승인 대기: {exc}",
+        )
     except Exception as exc:
         return MarketEstimate(
             source="국토교통부 아파트 매매 실거래가 API",
@@ -943,35 +978,24 @@ def analyze_safecontract(
     if custom_fields:
         extraction = _merge_custom_into_extraction(extraction, custom_fields)
 
-    # region 우선순위: (1) 사용자 명시 (2) LLM 이 추출한 address 에서 파싱 (3) raw text 파싱
-    # LLM 이 address 를 정제해서 주니까 정규식 매칭 훨씬 안정적
-    effective_region = (
-        req.region
-        or _parse_region_from_address(extraction.address)
+    # 등기부 주소에서 시도+시군구 자동 추출 → 체크리스트 프리필 + 시세 자동 조회용
+    inferred_region = (
+        _parse_region_from_address(extraction.address)
         or _parse_region_from_address(req.text)
     )
-    market = _fetch_market_estimate(effective_region)
+    import logging as _l
+    _l.getLogger("movewise").warning(
+        f"[safecontract] address={extraction.address!r} → inferred_region={inferred_region!r}"
+    )
+
+    # 시세 자동 조회: 사용자 입력 0 이면 inferred_region 으로 국토부 API fetch
+    market = None
     effective_market_price = req.expected_market_price_krw
-    if effective_market_price <= 0 and market and market.median_price_krw:
-        # 건물 용도별 시세 보정 — 국토부 API 는 아파트 기준
-        # 다세대·빌라·단독주택은 같은 지역 아파트보다 저렴하므로 보정계수 적용
-        # (실거래 통계 기반 경험치, 발표 후 연립·다세대 API 직접 호출로 개선 예정)
-        use = (extraction.building_use or "").lower()
-        if any(k in use for k in ("다세대", "빌라", "연립")):
-            correction = 0.5  # 아파트 대비 50% 수준
-        elif any(k in use for k in ("단독", "다가구")):
-            correction = 0.6
-        elif "오피스텔" in use:
-            correction = 0.7
-        else:  # 아파트 or 미상
-            correction = 1.0
-        effective_market_price = int(market.median_price_krw * correction)
-        # market_estimate 에 보정 사실 기록 (프론트 표시용)
-        if correction < 1.0 and market:
-            market.error = (
-                f"⚠ {extraction.building_use} 는 아파트 실거래가보다 저렴함. "
-                f"보정계수 {correction:.0%} 적용. 실제 시세 확인 권장."
-            )
+    if effective_market_price <= 0:
+        auto_region = req.region or inferred_region
+        market = _fetch_market_estimate(auto_region)
+        if market and market.median_price_krw:
+            effective_market_price = market.median_price_krw
 
     jeontse_ratio, mortgage_ratio, risk_level = _compute_ratios(
         extraction, req.deposit_krw, effective_market_price
@@ -992,4 +1016,5 @@ def analyze_safecontract(
             "정확한 판단을 위해 전문가 상담을 권합니다."
         ),
         market_estimate=market,
+        inferred_region=inferred_region,
     )

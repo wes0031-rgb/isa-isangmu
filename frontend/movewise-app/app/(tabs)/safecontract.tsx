@@ -5,7 +5,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -22,17 +22,14 @@ import {
 import { AppPressable } from '../../components/AppPressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RegionPickerModal } from '../../components/RegionPickerModal';
 import {
   api,
-  MarketEstimate,
   RiskItem,
   SafeContractResponse,
 } from '../../lib/api';
 import { Text } from '../../lib/AppText';
-import { alertAsync } from '../../lib/confirm';
 import { REGISTRY_SAMPLES, RegistrySample } from '../../lib/sampleRegistry';
-import { loadChecklist } from '../../lib/storage';
+import { loadChecklist, savePendingRegion } from '../../lib/storage';
 import { useRotatingText } from '../../lib/useRotatingText';
 import { colors, radius, spacing, typography } from '../../theme/colors';
 
@@ -52,6 +49,17 @@ interface PickedFile {
 }
 
 /** 1,234,567 형식으로 포맷팅 */
+/** 주소 문자열에서 '시/도 + 시/군/구' 추출 — backend 의 _parse_region_from_address 와 동기화.
+ *  Render(옛 코드)가 inferred_region 응답 안 할 때 frontend fallback. */
+function parseRegionFromAddress(address?: string | null): string | null {
+  if (!address) return null;
+  const text = address.replace(/\s+/g, ' ').trim();
+  const re =
+    /(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원특별자치도|강원도|충청북도|충청남도|전북특별자치도|전라북도|전라남도|경상북도|경상남도|제주특별자치도)\s+([가-힣]+시\s+[가-힣]+구|[가-힣]+구|[가-힣]+시|[가-힣]+군)/;
+  const m = text.match(re);
+  return m ? `${m[1]} ${m[2]}` : null;
+}
+
 function formatNumber(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (!digits) return '';
@@ -72,29 +80,28 @@ function formatKoreanAmount(value: string): string {
 
 export default function SafeContractScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<InputMode>('text');
+  const [mode, setMode] = useState<InputMode>('pdf');
   const [text, setText] = useState('');
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
   const [deposit, setDeposit] = useState('100000000');
   const [market, setMarket] = useState('0');
-  const [region, setRegion] = useState<string>('');
-  const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SafeContractResponse | null>(null);
+  const [isSelfOwnedUser, setIsSelfOwnedUser] = useState(false);
   const loadingMessage = useRotatingText(SAFECONTRACT_LOADING_STEPS, loading, 2500);
 
-  // 체크리스트에 저장된 region 을 기본값으로 자동 불러옴
+  // 이미 자가로 저장된 체크리스트가 있으면 안내 배너 표시
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        if (region) return;
         const saved = await loadChecklist();
-        if (saved?.request.region) {
-          setRegion(saved.request.region);
-        }
+        const contracts = saved?.request.contracts ?? [];
+        const hasSelf =
+          contracts.includes('자가') || saved?.request.contract === '자가';
+        setIsSelfOwnedUser(hasSelf);
       })();
-    }, [region]),
+    }, []),
   );
 
   async function submit() {
@@ -114,8 +121,13 @@ export default function SafeContractScreen() {
           text,
           deposit_krw: depositN,
           expected_market_price_krw: marketN,
-          region: region || undefined,
+          region: undefined,
         });
+        // 시세 미입력 상태로 분석했는데 백엔드가 국토부 API 로 자동 조회해줬으면
+        // 입력창에 중위값 채워서 유저가 "어떤 시세로 계산됐는지" 확인 가능
+        if (marketN <= 0 && res.market_estimate?.median_price_krw) {
+          setMarket(String(res.market_estimate.median_price_krw));
+        }
         setResult(res);
       } catch (e: any) {
         setError(e.message);
@@ -130,15 +142,18 @@ export default function SafeContractScreen() {
       setLoading(true);
       setResult(null);
       try {
-        // PDF 모드는 region·market 전부 서버가 주소/실거래가로 자동 유도 → 빈 값으로 전달
+        // 시세 미입력 시 백엔드가 PDF 주소 → 국토부 실거래가 API 자동 조회
         const res = await api.safecontractUpload({
           uri: pickedFile.uri,
           name: pickedFile.name,
           mimeType: pickedFile.mimeType,
           deposit_krw: depositN,
-          expected_market_price_krw: 0,
+          expected_market_price_krw: marketN,
           region: undefined,
         });
+        if (marketN <= 0 && res.market_estimate?.median_price_krw) {
+          setMarket(String(res.market_estimate.median_price_krw));
+        }
         setResult(res);
       } catch (e: any) {
         setError(e.message);
@@ -173,7 +188,15 @@ export default function SafeContractScreen() {
     }
   }
 
-  function goToChecklist() {
+  async function goToChecklist() {
+    // 등기부 주소에서 자동 추출한 지역을 체크리스트 폼에 프리필.
+    // 우선순위: backend inferred_region → frontend fallback (extraction.address 파싱)
+    const ext = result?.extraction as { address?: string | null } | undefined;
+    const region =
+      result?.inferred_region || parseRegionFromAddress(ext?.address);
+    if (region) {
+      await savePendingRegion(region).catch(() => {});
+    }
     router.push('/(tabs)/checklist');
   }
 
@@ -196,24 +219,34 @@ export default function SafeContractScreen() {
             등기부등본을 쉬운 말로 해석해드립니다
           </Text>
 
+          {isSelfOwnedUser && !result && (
+            <View style={styles.selfOwnedBanner}>
+              <Ionicons name="home" size={16} color={colors.primary} />
+              <Text style={styles.selfOwnedBannerText}>
+                본인 소유(자가) 체크리스트가 감지됐어요. 자가는 등기부 확인이 불필요합니다.
+                월세·전세 계약 전에만 이용하세요.
+              </Text>
+            </View>
+          )}
+
           {!result ? (
             <>
               {/* 입력 방식 선택 */}
               <Text style={styles.sectionLabel}>입력 방식</Text>
               <View style={styles.modeRow}>
                 <ModeButton
-                  icon="document-text"
-                  label="텍스트"
-                  badge="즉시"
-                  active={mode === 'text'}
-                  onPress={() => setMode('text')}
-                />
-                <ModeButton
                   icon="cloud-upload"
                   label="PDF"
                   badge="Azure"
                   active={mode === 'pdf'}
                   onPress={() => setMode('pdf')}
+                />
+                <ModeButton
+                  icon="document-text"
+                  label="텍스트"
+                  badge="즉시"
+                  active={mode === 'text'}
+                  onPress={() => setMode('text')}
                 />
               </View>
 
@@ -225,8 +258,8 @@ export default function SafeContractScreen() {
                     <>
                       <Text style={{ fontWeight: '700' }}>인터넷등기소</Text>
                       <Text> → 열람발급 → 본인이 받은 등기부등본에서{' '}</Text>
-                      <Text style={{ fontWeight: '700' }}>갑구·을구 영역 전체를 복사</Text>
-                      <Text>해서 아래에 붙여넣으세요.</Text>
+                      <Text style={{ fontWeight: '700' }}>표제부·갑구·을구 전체를 복사</Text>
+                      <Text>해서 아래에 붙여넣으세요. 표제부 주소가 있어야 지역이 자동 인식돼요.</Text>
                     </>
                   ) : (
                     <>
@@ -246,7 +279,7 @@ export default function SafeContractScreen() {
                   <TextInput
                     value={text}
                     onChangeText={setText}
-                    placeholder="[갑구] 1. 2021-05-12 소유권이전 홍길동&#10;[을구] 1. 근저당권설정 채권최고액 금 2억4천만원 국민은행"
+                    placeholder="[표제부] 서울특별시 강남구 역삼동 123-45 전용면적 84.56㎡&#10;[갑구] 1. 2021-05-12 소유권이전 홍길동&#10;[을구] 1. 근저당권설정 채권최고액 금 2억4천만원 국민은행"
                     placeholderTextColor={colors.textMute}
                     multiline
                     style={styles.textarea}
@@ -265,7 +298,6 @@ export default function SafeContractScreen() {
                             setText(s.text);
                             setDeposit(s.deposit);
                             setMarket(s.market);
-                            setRegion(s.region);
                           }}
                         >
                           <Text style={styles.sampleBtnLabel}>{s.label}</Text>
@@ -310,36 +342,13 @@ export default function SafeContractScreen() {
                   </Pressable>
                 </>
               )}
-              {/* 지역 — 텍스트 모드일 때만 표시 (PDF 는 주소에서 자동 파싱) */}
-              {mode === 'text' && (
-                <>
-                  <Text style={styles.sectionLabel}>지역 (자동 시세 조회)</Text>
-                  <Pressable
-                    style={styles.regionSelector}
-                    onPress={() => setRegionPickerOpen(true)}
-                  >
-                    <Ionicons name="location-outline" size={18} color={colors.primary} />
-                    <Text
-                      style={[
-                        styles.regionText,
-                        !region && { color: colors.textMute },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {region || '지역을 선택하면 국토부 실거래가 자동 조회'}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={16} color={colors.textMute} />
-                  </Pressable>
-                </>
-              )}
-
-              {/* PDF 모드는 자동 안내 카드 */}
+              {/* PDF 모드 안내 카드 */}
               {mode === 'pdf' && (
                 <View style={styles.autoInfoCard}>
                   <Ionicons name="sparkles" size={16} color={colors.primary} />
                   <Text style={styles.autoInfoText}>
-                    주소·면적·소유자·시세 전부 PDF 에서 자동 추출해요.{'\n'}
-                    <Text style={{ fontWeight: '800' }}>보증금만 입력</Text>하시면 돼요.
+                    주소·면적·소유자·근저당·지역 등은 PDF 에서 자동 추출해요.{'\n'}
+                    <Text style={{ fontWeight: '800' }}>보증금과 시세</Text>만 입력하시면 돼요.
                   </Text>
                 </View>
               )}
@@ -359,26 +368,21 @@ export default function SafeContractScreen() {
                     {formatKoreanAmount(deposit) || '금액 입력'}
                   </Text>
                 </View>
-                {/* 텍스트 모드만 직접 시세 입력, PDF 는 자동 */}
-                {mode === 'text' && (
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.sectionLabel}>시세 (모르면 비워두세요)</Text>
-                    <TextInput
-                      value={formatNumber(market)}
-                      onChangeText={(v) => setMarket(v.replace(/\D/g, ''))}
-                      keyboardType="numeric"
-                      style={styles.input}
-                      placeholder="자동 조회"
-                    />
-                    <Text style={styles.amountHint}>
-                      {parseInt(market, 10) > 0
-                        ? formatKoreanAmount(market)
-                        : region
-                        ? '📍 국토부 실거래가 자동 조회'
-                        : '지역 선택하면 자동 조회'}
-                    </Text>
-                  </View>
-                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionLabel}>시세 (선택)</Text>
+                  <TextInput
+                    value={formatNumber(market)}
+                    onChangeText={(v) => setMarket(v.replace(/\D/g, ''))}
+                    keyboardType="numeric"
+                    style={styles.input}
+                    placeholder="비워두면 자동 조회"
+                  />
+                  <Text style={styles.amountHint}>
+                    {parseInt(market, 10) > 0
+                      ? formatKoreanAmount(market)
+                      : '미입력 시 주소로 국토부 실거래가 자동 조회'}
+                  </Text>
+                </View>
               </View>
 
               <Pressable
@@ -438,13 +442,6 @@ export default function SafeContractScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <RegionPickerModal
-        visible={regionPickerOpen}
-        value={region}
-        onClose={() => setRegionPickerOpen(false)}
-        onSelect={setRegion}
-      />
     </SafeAreaView>
   );
 }
@@ -510,6 +507,130 @@ function ModeButton({
   );
 }
 
+// ===== Result View Helpers =====
+
+type TopReason = { title: string; sub: string };
+type ActionSeverity = 'red' | 'yellow' | 'green';
+type ActionCheck = { icon: 'block' | 'warn' | 'check'; label: string; value: string; severity: ActionSeverity };
+
+/**
+ * 위험 요소를 가중치로 정렬 → 상위 3개를 hero 카드 "핵심 사유" 영역에 노출.
+ * 가중치는 보증금 회수 곤란도 기준 (경매>신탁>가압류>가처분>비주거>근저당>전세가율>기타).
+ */
+function calcTopReasons(result: SafeContractResponse): TopReason[] {
+  const ext = result.extraction as Record<string, unknown>;
+  const list: { title: string; sub: string; weight: number }[] = [];
+  const num = (k: string): number => (typeof ext[k] === 'number' ? (ext[k] as number) : 0);
+  const bool = (k: string): boolean => !!ext[k];
+  const str = (k: string): string => (typeof ext[k] === 'string' ? (ext[k] as string) : '');
+
+  if (bool('auction_in_progress'))
+    list.push({ title: '임의경매 진행 중', sub: '이미 법원 경매 절차 진입 — 보증금 회수 거의 불가', weight: 100 });
+  if (bool('trust_registration'))
+    list.push({ title: '신탁 등기', sub: '실소유권이 신탁회사 — 신탁사 동의 없으면 대항력 무효', weight: 95 });
+  const sCnt = num('seizure_count');
+  if (sCnt > 0)
+    list.push({ title: `가압류 ${sCnt}건`, sub: str('seizure_text') || '집주인 채무 신호 — 경매 가능성', weight: 80 });
+  if (bool('injunction_registered'))
+    list.push({ title: '가처분 등기', sub: '소유권 분쟁 — 계약 후 변동 가능', weight: 75 });
+  if (bool('non_residential_use'))
+    list.push({ title: '비주거용 건물', sub: '전입신고 거절 가능 → 대항력 확보 어려움', weight: 70 });
+
+  const mortRatio = result.mortgage_ratio ?? 0;
+  if (mortRatio > 0) {
+    const pct = Math.round(mortRatio * 100);
+    const creditor = str('mortgage_creditor');
+    list.push({
+      title: `근저당 ${pct}%`,
+      sub: creditor ? `시세 대비 선순위 · 채권자 ${creditor}` : '시세 대비 선순위 채권자',
+      weight: 50 + Math.min(pct, 100) * 0.3,
+    });
+  }
+  if (result.jeontse_ratio >= 0.8) {
+    const pct = Math.round(result.jeontse_ratio * 100);
+    list.push({ title: `전세가율 ${pct}%`, sub: '깡통전세 가능성 — 시세 하락 시 회수 어려움', weight: 60 });
+  }
+  if (bool('provisional_registration'))
+    list.push({ title: '가등기 존재', sub: '본등기 시 소유권 이전 — 해제 여부 확인', weight: 40 });
+  if (bool('jeonse_right_registered'))
+    list.push({ title: '선순위 전세권', sub: '경매 시 배당 순위 뒤로 밀림', weight: 35 });
+  const ownerChg = num('owner_change_within_2_years');
+  if (ownerChg >= 2)
+    list.push({ title: `소유권 이전 ${ownerChg}회`, sub: '갭투자·명의신탁 가능성 — 실소유권 확인', weight: 30 });
+  const co = ext['co_owners'] as string[] | undefined;
+  if (co && co.length > 0)
+    list.push({ title: `공동명의 ${1 + co.length}인`, sub: '공유자 전원 동의·인감 필수', weight: 25 });
+
+  list.sort((a, b) => b.weight - a.weight);
+  return list.slice(0, 3).map(({ title, sub }) => ({ title, sub }));
+}
+
+/**
+ * risk_level 별 큰 헤드라인·결론 단어. hero 카드 상단/중단 표기.
+ * 옵션 2 (결론 단어) — "23/100" 같은 추상 점수 제거하고 명확한 결론 단어로.
+ */
+function buildHeadline(result: SafeContractResponse): {
+  tag: string;
+  headline: string;
+  conclusion: string;
+} {
+  if (result.risk_level === 'red') {
+    return {
+      tag: '🔴 위험 · 계약 비권장',
+      headline: '보증금 돌려받기 어려워요',
+      conclusion: '계약하지 마세요',
+    };
+  }
+  if (result.risk_level === 'yellow') {
+    return {
+      tag: '🟡 주의 · 추가 확인 필수',
+      headline: '확인할 게 있어요',
+      conclusion: '추가 확인 후 진행',
+    };
+  }
+  return {
+    tag: '🟢 안전 · 정상 매물',
+    headline: '안전한 계약이에요',
+    conclusion: '대항력 확보만 하세요',
+  };
+}
+
+/**
+ * "다음 액션" 체크 3개. risk_level + 위험 요소 조합으로 결정.
+ * 옵션 3 — 추상 점수 대신 유저가 실제 뭘 못/해야 하는지 명시.
+ */
+function buildActionChecks(result: SafeContractResponse): ActionCheck[] {
+  const ext = result.extraction as Record<string, unknown>;
+  const bool = (k: string): boolean => !!ext[k];
+  const num = (k: string): number => (typeof ext[k] === 'number' ? (ext[k] as number) : 0);
+  const hardHazard =
+    bool('auction_in_progress') ||
+    bool('trust_registration') ||
+    num('seizure_count') > 0 ||
+    bool('injunction_registered') ||
+    bool('non_residential_use');
+
+  if (result.risk_level === 'red' || hardHazard) {
+    return [
+      { icon: 'block', label: 'HUG 보증보험 가입', value: '거절 가능성 높음', severity: 'red' },
+      { icon: 'block', label: '전세대출 승인', value: '매우 어려움', severity: 'red' },
+      { icon: 'warn', label: '전세피해지원센터 1533-8119', value: '강력 권장', severity: 'yellow' },
+    ];
+  }
+  if (result.risk_level === 'yellow') {
+    return [
+      { icon: 'warn', label: 'HUG 보증보험 가입', value: '필수', severity: 'yellow' },
+      { icon: 'warn', label: '전세대출 승인', value: '심사 까다로움', severity: 'yellow' },
+      { icon: 'check', label: '대항력 (전입+확정일자)', value: '잔금일 즉시', severity: 'green' },
+    ];
+  }
+  return [
+    { icon: 'check', label: 'HUG 보증보험 가입', value: '권장', severity: 'green' },
+    { icon: 'check', label: '대항력 (전입+확정일자)', value: '잔금일 즉시', severity: 'green' },
+    { icon: 'check', label: '임대차 신고', value: '계약 후 30일 내', severity: 'green' },
+  ];
+}
+
 // ===== Result View =====
 
 function ResultView({
@@ -543,7 +664,10 @@ function ResultView({
     mortgage_creditor?: string | null;
     mortgage_claim_amount_krw?: number | null;
     seizure_text?: string | null;
+    seizure_count?: number;
     special_note?: string | null;
+    auction_in_progress?: boolean;
+    trust_registration?: boolean;
     injunction_registered?: boolean;
     provisional_registration?: boolean;
     jeonse_right_registered?: boolean;
@@ -559,26 +683,234 @@ function ResultView({
   const hasPropertyInfo =
     !!ext.address || !!ext.owner_name || !!ext.area_m2 || !!ext.property_id;
 
+  // ===== 새 디자인 헬퍼 (useMemo — result 안 바뀌면 재계산 안 함) =====
+  const topReasons = useMemo(() => calcTopReasons(result), [result]);
+  const headline = useMemo(() => buildHeadline(result), [result]);
+  const actionChecks = useMemo(() => buildActionChecks(result), [result]);
+  const heroBgStyle =
+    result.risk_level === 'red'
+      ? styles.heroBgRed
+      : result.risk_level === 'yellow'
+      ? styles.heroBgYellow
+      : styles.heroBgGreen;
+  const propOneLine = useMemo(
+    () =>
+      [ext.address, ext.area_m2 ? `${ext.area_m2}㎡` : null, ext.owner_name ? `${ext.owner_name}님` : null]
+        .filter(Boolean)
+        .join(' · '),
+    [ext.address, ext.area_m2, ext.owner_name],
+  );
+
+  // 위험·주의 통합 (hard hazards + cautions) — useMemo 로 result 변경 시만 재계산
+  const { hardHazards, cautions, riskCount } = useMemo(() => {
+    const hh: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [];
+    if (ext.auction_in_progress)
+      hh.push({ icon: 'hammer', title: '임의경매 진행 중', sub: '이미 경매 개시 — 보증금 회수 매우 어려움' });
+    if (ext.trust_registration)
+      hh.push({ icon: 'document-text', title: '신탁 등기', sub: '실소유권이 신탁회사 — 신탁사 동의 없으면 대항력 무효' });
+    if ((ext.seizure_count ?? 0) > 0)
+      hh.push({ icon: 'alert-circle', title: `가압류 ${ext.seizure_count}건`, sub: '집주인 채무 신호 — 경매 가능성' });
+    if (result.mortgage_ratio > 0)
+      hh.push({ icon: 'cash', title: `근저당 ${mortgagePct}% (시세 대비)`, sub: '선순위 채권자 — 경매 시 보증금보다 먼저 변제' });
+
+    const cs: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [];
+    if (coOwnersList.length > 0)
+      cs.push({ icon: 'people', title: `공동명의 ${1 + coOwnersList.length}인`, sub: '공유자 전원 동의·인감 필수 (민법 265조)' });
+    if (ext.provisional_registration)
+      cs.push({ icon: 'lock-closed', title: '가등기 존재', sub: '본등기 시 소유권 이전 — 해제 여부 확인' });
+    if (ext.jeonse_right_registered)
+      cs.push({ icon: 'key', title: '선순위 전세권', sub: '경매 시 배당 순위 뒤로 밀림' });
+    if ((ext.owner_change_within_2_years ?? 0) >= 2)
+      cs.push({
+        icon: 'swap-horizontal',
+        title: `소유권 이전 ${ext.owner_change_within_2_years}회 (최근 2년)`,
+        sub: '갭투자·명의신탁 가능성 — 실소유권 확인',
+      });
+    if (ext.building_use && /다세대|빌라|오피스텔|연립/.test(ext.building_use))
+      cs.push({
+        icon: 'home',
+        title: `${ext.building_use} 시세 주의`,
+        sub: '아파트 실거래가보다 낮음 — 직접 확인 권장',
+      });
+    return { hardHazards: hh, cautions: cs, riskCount: hh.length + cs.length };
+  }, [result, ext, mortgagePct, coOwnersList]);
+
+  // 스크린리더용 통합 라벨 (Hero 카드 한 번에 읽힘)
+  const heroA11yLabel = `${headline.tag}. ${headline.headline}.${
+    propOneLine ? ' ' + propOneLine + '.' : ''
+  } 결론: ${headline.conclusion}.`;
+
   return (
     <View style={styles.resultSection}>
-      {/* 추출된 부동산 정보 카드 */}
-      {hasPropertyInfo && (
-        <View style={styles.propertyCard}>
-          <View style={styles.propertyHeaderRow}>
-            <Ionicons name="document-text" size={16} color={colors.primary} />
-            <Text style={styles.propertyHeader}>AI 추출 정보</Text>
+      {/* ====== HERO: verdict 카드 (결론 먼저) ====== */}
+      <View
+        style={[styles.verdictHero, heroBgStyle]}
+        accessible
+        accessibilityRole="summary"
+        accessibilityLabel={heroA11yLabel}
+      >
+        <View style={styles.verdictTagRow}>
+          <Text style={[styles.verdictTag, { color }]}>{headline.tag}</Text>
+        </View>
+        <Text style={styles.verdictHeadline}>{headline.headline}</Text>
+        {!!propOneLine && <Text style={styles.verdictProp}>{propOneLine}</Text>}
+
+        {/* 핵심 사유 Top 3 */}
+        {topReasons.length > 0 && (
+          <View style={styles.reasonsBox}>
+            <Text style={styles.reasonsTitle}>🔍 핵심 사유 (Top {topReasons.length})</Text>
+            {topReasons.map((r, i) => (
+              <View key={i} style={styles.reasonLine}>
+                <Text style={[styles.reasonDot, { color }]}>•</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.reasonTitleText}>{r.title}</Text>
+                  <Text style={styles.reasonSubText}>{r.sub}</Text>
+                </View>
+              </View>
+            ))}
           </View>
-          {!!ext.address && (
-            <PropertyRow icon="location" label="주소" value={ext.address} />
+        )}
+
+        {/* 결론 단어 */}
+        <View style={styles.conclusionBox}>
+          <Text style={styles.conclusionLabel}>💡 결론</Text>
+          <Text style={[styles.conclusionText, { color }]}>{headline.conclusion}</Text>
+        </View>
+
+        {/* 다음 액션 체크 */}
+        <View style={styles.actionChecksBox}>
+          <Text style={styles.actionChecksTitle}>📋 다음 액션</Text>
+          {actionChecks.map((a, i) => {
+            const sevColor =
+              a.severity === 'red' ? colors.danger : a.severity === 'yellow' ? colors.warning : colors.success;
+            const iconName: keyof typeof Ionicons.glyphMap =
+              a.icon === 'block' ? 'close' : a.icon === 'warn' ? 'alert' : 'checkmark';
+            return (
+              <View key={i} style={styles.actionRow}>
+                <View style={[styles.actionIcon, { backgroundColor: sevColor }]}>
+                  <Ionicons name={iconName} size={13} color="#fff" />
+                </View>
+                <Text style={styles.actionLabel} numberOfLines={2}>
+                  {a.label}
+                </Text>
+                <Text style={[styles.actionValue, { color: sevColor }]}>{a.value}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <Text style={styles.heroDisclaimer}>
+          ⚠️ 참고용 분석이에요. 최종 판단 전 전세피해지원센터(1533-8119) 무료 상담을 권합니다.
+        </Text>
+      </View>
+
+      {/* ====== 숫자로 한눈에 ====== */}
+      {(result.jeontse_ratio > 0 || result.mortgage_ratio > 0) && (
+        <View style={styles.statsCard}>
+          <Text style={styles.statsTitle}>📊 숫자로 한눈에</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statBlock}>
+              <Text style={styles.statLabel}>전세가율</Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color:
+                      jeontsePct >= 80 ? colors.danger : jeontsePct >= 70 ? colors.warning : colors.success,
+                  },
+                ]}
+              >
+                {result.jeontse_ratio > 0 ? `${jeontsePct}%` : '—'}
+              </Text>
+              <Text style={styles.statSub}>
+                {jeontsePct >= 80 ? '🔴 깡통전세 가능' : jeontsePct >= 70 ? '🟡 주의' : '🟢 안전'}
+              </Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statBlock}>
+              <Text style={styles.statLabel}>근저당비율</Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color:
+                      mortgagePct >= 50 ? colors.danger : mortgagePct >= 30 ? colors.warning : colors.success,
+                  },
+                ]}
+              >
+                {result.mortgage_ratio > 0 ? `${mortgagePct}%` : '—'}
+              </Text>
+              <Text style={styles.statSub}>
+                {mortgagePct >= 50 ? '🔴 위험' : mortgagePct >= 30 ? '🟡 주의' : '🟢 안전'}
+              </Text>
+            </View>
+          </View>
+          {result.market_estimate && (result.market_estimate.median_price_krw ?? 0) > 0 && (
+            <Text style={styles.statExplain}>
+              시세 {fmtKoreanAmount(result.market_estimate.median_price_krw ?? 0)} (자동 조회 ·{' '}
+              {result.market_estimate.total_count}건 평균)
+            </Text>
           )}
+        </View>
+      )}
+
+      {/* ====== 위험·주의 통합 (펼침 default) ====== */}
+      {riskCount > 0 ? (
+        <Accordion
+          icon="warning"
+          iconBg={colors.dangerBg}
+          iconColor={colors.danger}
+          title="위험·주의"
+          count={riskCount}
+          countColor={colors.danger}
+          defaultOpen
+        >
+          {hardHazards.map((h, i) => (
+            <ReasonRow
+              key={`h-${i}`}
+              severity="red"
+              icon={h.icon}
+              title={h.title}
+              sub={h.sub}
+            />
+          ))}
+          {cautions.map((c, i) => (
+            <ReasonRow
+              key={`c-${i}`}
+              severity="yellow"
+              icon={c.icon}
+              title={c.title}
+              sub={c.sub}
+            />
+          ))}
+        </Accordion>
+      ) : (
+        <View style={styles.noRiskCard}>
+          <Image
+            source={require('../../assets/duck-celebrate.png')}
+            style={styles.noRiskDuck}
+            resizeMode="contain"
+          />
+          <Text style={styles.noRiskTitle}>이상 무! 🎉</Text>
+          <Text style={styles.noRiskDesc}>
+            감지된 위험 요소가 없어요{'\n'}안전한 계약입니다
+          </Text>
+        </View>
+      )}
+
+      {/* ====== 등기부 추출 정보 (접힘 default) ====== */}
+      {hasPropertyInfo && (
+        <Accordion
+          icon="document-text"
+          title="등기부 추출 정보"
+          defaultOpen={false}
+        >
+          {!!ext.address && <PropertyRow icon="location" label="주소" value={ext.address} />}
           {(!!ext.area_m2 || !!ext.building_use) && (
             <PropertyRow
               icon="resize"
               label="건물"
-              value={[
-                ext.building_use,
-                ext.area_m2 ? `${ext.area_m2} m²` : null,
-              ]
+              value={[ext.building_use, ext.area_m2 ? `${ext.area_m2} m²` : null]
                 .filter(Boolean)
                 .join(' · ')}
             />
@@ -594,276 +926,79 @@ function ResultView({
               }`}
             />
           )}
-          {(!!ext.mortgage_creditor || ext.mortgage_claim_amount_krw > 0) && (
+          {(!!ext.mortgage_creditor || (ext.mortgage_claim_amount_krw ?? 0) > 0) && (
             <PropertyRow
               icon="cash"
               label="근저당"
               value={[
-                ext.mortgage_claim_amount_krw
-                  ? fmtKoreanAmount(ext.mortgage_claim_amount_krw)
-                  : null,
+                ext.mortgage_claim_amount_krw ? fmtKoreanAmount(ext.mortgage_claim_amount_krw) : null,
                 ext.mortgage_creditor,
               ]
                 .filter(Boolean)
                 .join(' · ')}
             />
           )}
-          {!!ext.seizure_text && (
-            <PropertyRow
-              icon="warning"
-              label="가압류"
-              value={ext.seizure_text}
-            />
-          )}
-          {!!ext.special_note && (
-            <PropertyRow
-              icon="alert-circle"
-              label="특이사항"
-              value={ext.special_note}
-            />
-          )}
+          {!!ext.seizure_text && <PropertyRow icon="warning" label="가압류" value={ext.seizure_text} />}
+          {!!ext.special_note && <PropertyRow icon="alert-circle" label="특이사항" value={ext.special_note} />}
           {!!ext.property_id && (
-            <Text style={styles.propertyIdLine}>
-              등기 고유번호: {ext.property_id}
-            </Text>
+            <Text style={styles.propertyIdLine}>등기 고유번호: {ext.property_id}</Text>
           )}
-        </View>
+        </Accordion>
       )}
 
-      {/* 1. 전세가율 평가 — 수치 자체만 (다른 위험요소 섞지 않음) */}
-      {(() => {
-        const jVerdict =
-          jeontsePct < 70
-            ? { c: colors.success, t: '🟢 안전 범위' }
-            : jeontsePct < 80
-            ? { c: colors.warning, t: '🟡 주의' }
-            : { c: colors.danger, t: '🔴 위험 (깡통전세 가능)' };
-        return (
-          <View style={[styles.ratioCard, { borderColor: jVerdict.c }]}>
-            <Text style={styles.ratioLabel}>전세가율 평가</Text>
-            <Text style={[styles.ratioValue, { color: jVerdict.c }]}>
-              {jeontsePct}%
-            </Text>
-            {result.mortgage_ratio > 0 && (
-              <Text style={styles.ratioSubLabel}>근저당비율 {mortgagePct}%</Text>
-            )}
-            <Text style={[styles.ratioSummary, { color: jVerdict.c }]}>
-              {jVerdict.t}
-            </Text>
-            <Text style={styles.ratioExplainSmall}>
-              시세 대비 보증금 비율만 본 평가예요. 아래 위험 요소와 종합 판정을 꼭 함께 확인하세요.
-            </Text>
-          </View>
-        );
-      })()}
-
-      {/* 2. 위험 요소 — 신탁·경매·가압류·근저당 분리 표시 (있을 때만) */}
-      {(() => {
-        const ex = result.extraction as {
-          auction_in_progress?: boolean;
-          trust_registration?: boolean;
-          seizure_count?: number;
-        };
-        const hasHazard =
-          !!ex.auction_in_progress ||
-          !!ex.trust_registration ||
-          (ex.seizure_count ?? 0) > 0 ||
-          (result.mortgage_ratio ?? 0) > 0;
-        if (!hasHazard) return null;
-        return (
-          <View style={styles.hazardCard}>
-            <View style={styles.hazardHeaderRow}>
-              <Ionicons name="warning" size={16} color={colors.danger} />
-              <Text style={styles.hazardHeader}>감지된 위험 요소</Text>
-            </View>
-            {ex.auction_in_progress && (
-              <HazardLine
-                icon="hammer"
-                text="임의경매 진행 중"
-                sub="이미 경매 개시 — 계약 시 보증금 회수 매우 어려움"
-              />
-            )}
-            {ex.trust_registration && (
-              <HazardLine
-                icon="document-text"
-                text="신탁 등기"
-                sub="실소유권이 신탁회사에 있음 — 신탁사 동의 없으면 대항력 무효"
-              />
-            )}
-            {(ex.seizure_count ?? 0) > 0 && (
-              <HazardLine
-                icon="alert-circle"
-                text={`가압류 ${ex.seizure_count}건`}
-                sub="집주인 채무 신호 — 경매 넘어갈 가능성"
-              />
-            )}
-            {result.mortgage_ratio > 0 && (
-              <HazardLine
-                icon="cash"
-                text={`근저당 ${mortgagePct}% (시세 대비)`}
-                sub="선순위 채권자 존재 — 경매 시 보증금보다 먼저 변제됨"
-              />
-            )}
-          </View>
-        );
-      })()}
-
-      {/* 2.5 주의사항 (YELLOW 단계) — 확인·조치 필요 */}
-      {(() => {
-        const cautions: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [];
-        if (coOwnersList.length > 0) {
-          const n = 1 + coOwnersList.length;
-          cautions.push({
-            icon: 'people',
-            title: `공동명의 ${n}인`,
-            sub: '공유자 전원의 동의서·인감증명서 필수 (민법 265조). 대리인 계약 시 위임장 반드시 확인.',
-          });
-        }
-        if (ext.provisional_registration) {
-          cautions.push({
-            icon: 'document-lock',
-            title: '가등기 존재',
-            sub: '본등기 완료 시 소유권 이전 가능. 가등기 해제 여부 확인 권장.',
-          });
-        }
-        if (ext.jeonse_right_registered) {
-          cautions.push({
-            icon: 'key',
-            title: '선순위 전세권',
-            sub: '이미 전세권자 존재. 경매 시 배당 순위 뒤로 밀릴 수 있음.',
-          });
-        }
-        if ((ext.owner_change_within_2_years ?? 0) >= 2) {
-          cautions.push({
-            icon: 'swap-horizontal',
-            title: `소유권 이전 ${ext.owner_change_within_2_years}회 (최근 2년)`,
-            sub: '투자·명의신탁·갭투자 가능성. 집주인 실소유권·재정상태 확인 권장.',
-          });
-        }
-        if (ext.building_use && /다세대|빌라|오피스텔|연립/.test(ext.building_use)) {
-          cautions.push({
-            icon: 'home',
-            title: `${ext.building_use} 시세 주의`,
-            sub: '아파트 실거래가보다 낮게 거래됨. 동일 지역 다세대 실거래 직접 확인 권장.',
-          });
-        }
-        if (cautions.length === 0) return null;
-        return (
-          <View style={styles.cautionCard}>
-            <View style={styles.cautionHeaderRow}>
-              <Ionicons name="alert-circle" size={16} color={colors.warning} />
-              <Text style={styles.cautionHeader}>주의사항 · 확인 권장</Text>
-            </View>
-            {cautions.map((c, i) => (
-              <View key={i} style={styles.cautionLine}>
-                <Ionicons name={c.icon} size={14} color={colors.warning} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cautionLineText}>{c.title}</Text>
-                  <Text style={styles.cautionLineSub}>{c.sub}</Text>
-                </View>
-              </View>
-            ))}
-            <Text style={styles.cautionFooter}>
-              ※ 계약 자체를 피할 수준은 아니지만 추가 확인·조치로 안전을 확보하세요.
-            </Text>
-          </View>
-        );
-      })()}
-
-      {/* 3. 종합 판정 — 전세가율 + 위험요소 통합 결론 */}
-      <View style={[styles.verdictCard, { borderLeftColor: color }]}>
-        <Text style={styles.verdictTitle}>종합 판정</Text>
-        <Text style={[styles.verdictBig, { color }]}>
-          {result.risk_level === 'red'
-            ? '🔴 위험 — 계약 비권장'
-            : result.risk_level === 'yellow'
-            ? '🟡 주의 — HUG 보증보험 필수'
-            : '🟢 안전 — 대항력 확보만 하세요'}
-        </Text>
-        <Text style={styles.verdictBody}>{result.summary}</Text>
-      </View>
-
-      {/* 전세가율 기준 안내 */}
-      <View style={styles.thresholdCard}>
-        <View style={styles.thresholdHeaderRow}>
-          <Ionicons name="information-circle" size={14} color={colors.primaryLight} />
-          <Text style={styles.thresholdHeader}>전세가율 기준</Text>
-        </View>
-        <ThresholdRow
-          color={colors.success}
-          range="~ 70%"
-          label="🟢 안전"
-          active={jeontsePct < 70}
-        />
-        <ThresholdRow
-          color={colors.warning}
-          range="70 ~ 80%"
-          label="🟡 주의"
-          active={jeontsePct >= 70 && jeontsePct < 80}
-        />
-        <ThresholdRow
-          color={colors.danger}
-          range="80% 이상"
-          label="🔴 위험 (깡통전세 가능)"
-          active={jeontsePct >= 80}
-        />
-        <Text style={styles.thresholdNote}>
-          ※ 전세가율이 낮아도 경매·가압류·신탁 등기가 있으면 위험 매물이에요.
-          근저당비율 50% 이상이거나 두 비율 합이 100% 넘으면 보증금 회수가 어려울 수 있어요.
-        </Text>
-      </View>
-
-      {/* 실거래가 자동 조회 결과 */}
-      {result.market_estimate && (
-        <MarketEstimateCard estimate={result.market_estimate} />
-      )}
-
-      {/* 위험 항목 아코디언 */}
-      <View style={styles.sectionHRow}>
-        <Ionicons name="warning" size={18} color={colors.danger} />
-        <Text style={styles.sectionH}>위험 항목</Text>
-      </View>
-      {result.risks.length === 0 ? (
-        <View style={styles.noRiskCard}>
-          <Image
-            source={require('../../assets/duck-celebrate.png')}
-            style={styles.noRiskDuck}
-            resizeMode="contain"
-          />
-          <Text style={styles.noRiskTitle}>이상 무! 🎉</Text>
-          <Text style={styles.noRiskDesc}>
-            감지된 위험 요소가 없어요{'\n'}안전한 계약입니다
-          </Text>
-        </View>
-      ) : (
-        result.risks.map((r, idx) => <RiskAccordion key={idx} risk={r} />)
-      )}
-
-      {/* 다음에 확인하세요 */}
-      <View style={styles.sectionHRow}>
-        <Ionicons name="link" size={18} color={colors.primaryLight} />
-        <Text style={styles.sectionH}>다음에 확인하세요</Text>
-      </View>
-      {result.referrals.map((rf, idx) => (
-        <Pressable
-          key={idx}
-          style={styles.referralCard}
-          onPress={() => Linking.openURL(rf.url)}
+      {/* ====== 법령 + 외부 도움 (접힘 default) ====== */}
+      {(result.risks.length > 0 || result.referrals.length > 0) && (
+        <Accordion
+          icon="library"
+          title="법령 근거 + 외부 도움"
+          count={result.risks.length + result.referrals.length}
+          defaultOpen={false}
         >
-          <Text style={styles.referralIcon}>{rf.icon}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.referralName}>{rf.name}</Text>
-            <Text style={styles.referralDesc}>{rf.description}</Text>
-          </View>
-          <Ionicons name="open-outline" size={18} color={colors.textSub} />
-        </Pressable>
-      ))}
+          {result.risks.length > 0 && (
+            <>
+              <Text style={styles.subsectionLabel}>⚖️ 위험 항목별 법령</Text>
+              {result.risks.map((r, idx) => (
+                <RiskAccordion key={idx} risk={r} />
+              ))}
+            </>
+          )}
+          {result.referrals.length > 0 && (
+            <>
+              <Text style={[styles.subsectionLabel, { marginTop: 12 }]}>🔗 외부 기관·도움</Text>
+              {result.referrals.map((rf, idx) => (
+                <Pressable
+                  key={idx}
+                  style={styles.referralCard}
+                  onPress={() => Linking.openURL(rf.url)}
+                >
+                  <Text style={styles.referralIcon}>{rf.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.referralName}>{rf.name}</Text>
+                    <Text style={styles.referralDesc}>{rf.description}</Text>
+                  </View>
+                  <Ionicons name="open-outline" size={18} color={colors.textSub} />
+                </Pressable>
+              ))}
+            </>
+          )}
+        </Accordion>
+      )}
 
-      {/* 계약 진행 버튼 */}
+      {/* ====== 다음 액션 CTA ====== */}
       <AppPressable style={styles.nextBtn} onPress={onGoChecklist}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.nextBtnLabel}>계약을 진행하기로 했다면</Text>
+          <Text style={styles.nextBtnLabel}>
+            {result.risk_level === 'red' ? '위험 인지 후에도 진행한다면' : '계약을 진행하기로 했다면'}
+          </Text>
           <Text style={styles.nextBtnTitle}>이사 체크리스트 만들기 →</Text>
+          {(() => {
+            const ext2 = result.extraction as { address?: string | null };
+            const hintRegion =
+              result.inferred_region || parseRegionFromAddress(ext2.address);
+            return hintRegion ? (
+              <Text style={styles.nextBtnHint}>📍 {hintRegion} 지역으로 자동 설정</Text>
+            ) : null;
+          })()}
         </View>
         <Ionicons name="arrow-forward-circle" size={32} color="#fff" />
       </AppPressable>
@@ -873,8 +1008,80 @@ function ResultView({
         <Ionicons name="refresh" size={16} color={colors.primary} />
         <Text style={styles.resetText}>다른 등기부 분석하기</Text>
       </AppPressable>
+    </View>
+  );
+}
 
-      <Text style={styles.disclaimer}>{result.disclaimer}</Text>
+// ===== 결과 화면 신규 컴포넌트 =====
+
+function Accordion({
+  icon,
+  iconBg,
+  iconColor,
+  title,
+  count,
+  countColor,
+  defaultOpen = false,
+  children,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconBg?: string;
+  iconColor?: string;
+  title: string;
+  count?: number;
+  countColor?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <View style={styles.accordion}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={styles.accordionHead}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+      >
+        <View style={[styles.accordionIcon, iconBg ? { backgroundColor: iconBg } : null]}>
+          <Ionicons name={icon} size={14} color={iconColor || colors.primary} />
+        </View>
+        <Text style={styles.accordionTitle}>{title}</Text>
+        {count != null && count > 0 && (
+          <View style={[styles.accordionCount, countColor ? { backgroundColor: countColor } : null]}>
+            <Text style={styles.accordionCountText}>{count}</Text>
+          </View>
+        )}
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMute} />
+      </Pressable>
+      {open && <View style={styles.accordionBody}>{children}</View>}
+    </View>
+  );
+}
+
+function ReasonRow({
+  severity,
+  icon,
+  title,
+  sub,
+}: {
+  severity: 'red' | 'yellow' | 'green';
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  sub: string;
+}) {
+  const sevColor =
+    severity === 'red' ? colors.danger : severity === 'yellow' ? colors.warning : colors.success;
+  const sevBg =
+    severity === 'red' ? colors.dangerBg : severity === 'yellow' ? colors.warningBg : colors.successBg;
+  return (
+    <View style={styles.reasonRow}>
+      <View style={[styles.reasonRowIcon, { backgroundColor: sevBg }]}>
+        <Ionicons name={icon} size={14} color={sevColor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.reasonRowTitle}>{title}</Text>
+        <Text style={styles.reasonRowSub}>{sub}</Text>
+      </View>
     </View>
   );
 }
@@ -903,123 +1110,6 @@ function PropertyRow({
       <Text style={styles.propertyRowLabel}>{label}</Text>
       <Text style={styles.propertyRowValue} numberOfLines={2}>
         {value}
-      </Text>
-    </View>
-  );
-}
-
-function HazardLine({
-  icon,
-  text,
-  sub,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  text: string;
-  sub: string;
-}) {
-  return (
-    <View style={styles.hazardLine}>
-      <Ionicons name={icon} size={14} color={colors.danger} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.hazardLineText}>{text}</Text>
-        <Text style={styles.hazardLineSub}>{sub}</Text>
-      </View>
-    </View>
-  );
-}
-
-function ThresholdRow({
-  color,
-  range,
-  label,
-  active,
-}: {
-  color: string;
-  range: string;
-  label: string;
-  active: boolean;
-}) {
-  return (
-    <View style={[styles.thresholdRow, active && { backgroundColor: color + '15' }]}>
-      <View style={[styles.thresholdDot, { backgroundColor: color }]} />
-      <Text style={[styles.thresholdRange, active && { fontWeight: '800' }]}>
-        {range}
-      </Text>
-      <Text style={[styles.thresholdLabel, active && { fontWeight: '800', color }]}>
-        {label}
-      </Text>
-      {active && <Text style={[styles.thresholdActive, { color }]}>현재</Text>}
-    </View>
-  );
-}
-
-function MarketEstimateCard({ estimate }: { estimate: MarketEstimate }) {
-  if (estimate.error) {
-    return (
-      <View style={styles.marketCardError}>
-        <Ionicons name="information-circle-outline" size={16} color={colors.warning} />
-        <Text style={styles.marketErrorText}>{estimate.error}</Text>
-      </View>
-    );
-  }
-  if (!estimate.median_price_krw) return null;
-
-  return (
-    <View style={styles.marketCard}>
-      <View style={styles.marketHeader}>
-        <Ionicons name="trending-up" size={16} color={colors.primary} />
-        <Text style={styles.marketHeaderText}>
-          국토부 실거래가 자동 조회
-        </Text>
-        <Text style={styles.marketBadge}>{estimate.query_ym.slice(0, 4)}.{estimate.query_ym.slice(4)}</Text>
-      </View>
-      <Text style={styles.marketRegion}>{estimate.region}</Text>
-      <View style={styles.marketStats}>
-        <View style={styles.marketStatItem}>
-          <Text style={styles.marketStatLabel}>중위가</Text>
-          <Text style={styles.marketStatValue}>
-            {fmtKoreanAmount(estimate.median_price_krw)}
-          </Text>
-        </View>
-        <View style={styles.marketStatDivider} />
-        <View style={styles.marketStatItem}>
-          <Text style={styles.marketStatLabel}>범위</Text>
-          <Text style={styles.marketStatRange}>
-            {fmtKoreanAmount(estimate.min_price_krw || 0)} ~{' '}
-            {fmtKoreanAmount(estimate.max_price_krw || 0)}
-          </Text>
-        </View>
-      </View>
-      <Text style={styles.marketTotalText}>
-        이번 달 거래 {estimate.total_count}건 · 아파트 매매 기준
-      </Text>
-      <View style={styles.marketBadgeRow}>
-        <Ionicons name="calculator" size={11} color={colors.success} />
-        <Text style={styles.marketBadgeText}>
-          이 값으로 전세가율 자동 계산됨
-        </Text>
-      </View>
-      {estimate.recent_deals.length > 0 && (
-        <View style={styles.marketDealsBox}>
-          <Text style={styles.marketDealsTitle}>최근 거래 상위 {estimate.recent_deals.length}</Text>
-          {estimate.recent_deals.slice(0, 5).map((d, i) => (
-            <View key={i} style={styles.marketDealRow}>
-              <Text style={styles.marketDealDate}>{d.deal_date.slice(5)}</Text>
-              <Text style={styles.marketDealName} numberOfLines={1}>
-                {d.apt_name}
-              </Text>
-              <Text style={styles.marketDealArea}>
-                {d.area_m2.toFixed(0)}㎡ {d.floor}층
-              </Text>
-              <Text style={styles.marketDealPrice}>
-                {fmtKoreanAmount(d.deal_amount_krw)}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-      <Text style={styles.marketSourceNote}>
-        출처: 공공데이터포털 · 국토교통부 아파트 매매 실거래가 API
       </Text>
     </View>
   );
@@ -1085,16 +1175,35 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.lg, paddingBottom: spacing.xxl },
   h1: { ...typography.display },
+  selfOwnedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.primary + '12',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+    borderRadius: radius.sm,
+  },
+  selfOwnedBannerText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.textSub,
+    lineHeight: 18,
+  },
   h1Sub: {
     ...typography.caption,
     marginTop: spacing.xs,
     marginBottom: spacing.lg,
   },
   sectionLabel: {
-    ...typography.captionBold,
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.sm,
     marginTop: spacing.md,
+    letterSpacing: -0.2,
   },
 
   // Mode selector
@@ -1253,189 +1362,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
-  ratioExplainSmall: {
-    ...typography.caption,
-    fontSize: 11,
-    color: colors.textMute,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    lineHeight: 15,
-  },
-  hazardCard: {
-    backgroundColor: colors.dangerBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.danger,
-  },
-  hazardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  hazardHeader: {
-    ...typography.captionBold,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  hazardLine: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.sm,
-    marginBottom: 6,
-  },
-  hazardLineText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.danger,
-    marginBottom: 2,
-  },
-  hazardLineSub: {
-    fontSize: 11,
-    color: colors.textSub,
-    lineHeight: 15,
-  },
-  cautionCard: {
-    backgroundColor: colors.warningBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.warning,
-  },
-  cautionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  cautionHeader: {
-    ...typography.captionBold,
-    color: colors.warning,
-    fontSize: 13,
-  },
-  cautionLine: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.sm,
-    marginBottom: 6,
-  },
-  cautionLineText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.warning,
-    marginBottom: 2,
-  },
-  cautionLineSub: {
-    fontSize: 11,
-    color: colors.textSub,
-    lineHeight: 15,
-  },
-  cautionFooter: {
-    ...typography.caption,
-    fontSize: 11,
-    lineHeight: 15,
-    color: colors.textMute,
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-  },
-  verdictCard: {
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderLeftWidth: 4,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  verdictTitle: {
-    ...typography.captionBold,
-    fontSize: 12,
-    color: colors.textSub,
-    marginBottom: spacing.xs,
-  },
-  verdictBig: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: spacing.sm,
-  },
-  verdictBody: {
-    ...typography.body,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.text,
-  },
-  thresholdCard: {
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  thresholdHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: spacing.sm,
-  },
-  thresholdHeader: {
-    ...typography.captionBold,
-    fontSize: 12,
-    color: colors.textSub,
-  },
-  thresholdRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: 5,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-    marginBottom: 3,
-  },
-  thresholdDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  thresholdRange: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSub,
-    minWidth: 75,
-  },
-  thresholdLabel: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  thresholdActive: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  thresholdNote: {
-    ...typography.caption,
-    fontSize: 11,
-    lineHeight: 16,
-    color: colors.textMute,
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-  },
   autoInfoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1453,149 +1379,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: '500',
     color: colors.primary,
-  },
-  marketBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-  },
-  marketBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.success,
-  },
-  marketCard: {
-    backgroundColor: colors.primaryBg,
-    borderRadius: radius.md,
-    padding: spacing.md + 2,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
-  },
-  marketCardError: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.warningBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  marketErrorText: {
-    ...typography.caption,
-    color: colors.warning,
-    flex: 1,
-  },
-  marketHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  marketHeaderText: {
-    ...typography.captionBold,
-    color: colors.primary,
-    flex: 1,
-  },
-  marketBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.primary,
-    backgroundColor: 'rgba(0, 58, 117, 0.08)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
-  marketRegion: {
-    ...typography.subtitle,
-    fontSize: 15,
-    marginBottom: spacing.sm,
-  },
-  marketStats: {
-    flexDirection: 'row',
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.sm,
-    padding: spacing.sm + 2,
-    marginBottom: spacing.sm,
-  },
-  marketStatItem: {
-    flex: 1,
-  },
-  marketStatDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.sm,
-  },
-  marketStatLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSub,
-    marginBottom: 2,
-  },
-  marketStatValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: -0.5,
-  },
-  marketStatRange: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  marketTotalText: {
-    ...typography.caption,
-    marginBottom: spacing.sm,
-  },
-  marketDealsBox: {
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.sm,
-    padding: spacing.sm + 2,
-    marginTop: spacing.xs,
-  },
-  marketDealsTitle: {
-    ...typography.captionBold,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  marketDealRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: 3,
-  },
-  marketDealDate: {
-    fontSize: 11,
-    color: colors.textSub,
-    width: 38,
-  },
-  marketDealName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.text,
-    flex: 1,
-  },
-  marketDealArea: {
-    fontSize: 10,
-    color: colors.textMute,
-    width: 50,
-  },
-  marketDealPrice: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.primary,
-    textAlign: 'right',
-    minWidth: 60,
-  },
-  marketSourceNote: {
-    fontSize: 10,
-    color: colors.textMute,
-    marginTop: spacing.xs,
-    textAlign: 'right',
   },
   input: {
     backgroundColor: colors.cardBg,
@@ -1660,26 +1443,6 @@ const styles = StyleSheet.create({
 
   // Result
   resultSection: { marginTop: spacing.sm },
-  propertyCard: {
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
-    borderLeftWidth: 4,
-  },
-  propertyHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  propertyHeader: {
-    ...typography.captionBold,
-    color: colors.primary,
-    fontSize: 12,
-  },
   propertyRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1706,48 +1469,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
-  },
-  ratioCard: {
-    backgroundColor: colors.cardBg,
-    padding: spacing.lg + 4,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    borderWidth: 2,
-    marginBottom: spacing.lg,
-  },
-  ratioLabel: { ...typography.captionBold, color: colors.textSub },
-  ratioSubLabel: {
-    ...typography.caption,
-    color: colors.textSub,
-    marginTop: spacing.xs,
-  },
-  ratioValue: {
-    fontSize: 64,
-    fontWeight: '900',
-    marginVertical: spacing.xs,
-    letterSpacing: -2,
-  },
-  ratioSummary: {
-    ...typography.bodyBold,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
-  sectionHRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  sectionH: {
-    ...typography.subtitle,
-  },
-  emptyCard: {
-    backgroundColor: colors.cardBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
   },
   noRiskCard: {
     backgroundColor: colors.cardBg,
@@ -1870,6 +1591,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
+  nextBtnHint: {
+    color: colors.primaryMute,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
+  },
 
   // Reset
   resetBtn: {
@@ -1886,11 +1613,298 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  disclaimer: {
-    ...typography.caption,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    color: colors.textMute,
+  // ============ Hero verdict 카드 ============
+  verdictHero: {
+    borderRadius: 18,
+    padding: spacing.lg - 4,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+  },
+  heroBgRed: {
+    backgroundColor: colors.dangerBg,
+    borderColor: '#f3a7a1',
+  },
+  heroBgYellow: {
+    backgroundColor: colors.warningBg,
+    borderColor: '#f3c976',
+  },
+  heroBgGreen: {
+    backgroundColor: colors.successBg,
+    borderColor: '#82d39c',
+  },
+  verdictTagRow: {
+    marginBottom: spacing.sm,
+  },
+  verdictTag: {
+    alignSelf: 'flex-start',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    overflow: 'hidden',
+  },
+  verdictHeadline: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.text,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+    lineHeight: 30,
+  },
+  verdictProp: {
+    fontSize: 13,
+    color: colors.textSub,
+    marginBottom: spacing.md,
+    lineHeight: 19,
+  },
+  reasonsBox: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: radius.md,
+    padding: spacing.md - 2,
+    marginVertical: spacing.sm,
+  },
+  reasonsTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSub,
+    letterSpacing: 0.3,
+    marginBottom: spacing.sm,
+  },
+  reasonLine: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: 5,
+  },
+  reasonDot: {
+    fontSize: 16,
+    fontWeight: '800',
+    width: 10,
+    lineHeight: 20,
+  },
+  reasonTitleText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    lineHeight: 20,
+  },
+  reasonSubText: {
+    fontSize: 12,
+    color: colors.textSub,
     lineHeight: 18,
+    marginTop: 2,
+  },
+  conclusionBox: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: radius.md,
+    padding: spacing.md - 2,
+    marginVertical: spacing.sm,
+  },
+  conclusionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSub,
+    letterSpacing: 0.3,
+  },
+  conclusionText: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    lineHeight: 24,
+  },
+  actionChecksBox: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: radius.md,
+    padding: spacing.md - 2,
+    marginVertical: spacing.sm,
+  },
+  actionChecksTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSub,
+    letterSpacing: 0.3,
+    marginBottom: 8,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 7,
+  },
+  actionIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 18,
+  },
+  actionValue: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  heroDisclaimer: {
+    fontSize: 12,
+    color: colors.textSub,
+    lineHeight: 19,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.08)',
+  },
+
+  // ============ 신규: 숫자 한눈에 카드 ============
+  statsCard: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: spacing.sm,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  statBlock: {
+    flex: 1,
+    paddingVertical: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSub,
+    marginBottom: 6,
+  },
+  statValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    lineHeight: 30,
+  },
+  statSub: {
+    fontSize: 12,
+    color: colors.textMute,
+    marginTop: 6,
+    lineHeight: 17,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.md,
+    alignSelf: 'stretch',
+  },
+  statExplain: {
+    fontSize: 12,
+    color: colors.textSub,
+    marginTop: spacing.sm + 2,
+    paddingTop: spacing.sm + 2,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    lineHeight: 19,
+  },
+
+  // ============ 신규: Accordion ============
+  accordion: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm + 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  accordionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+  },
+  accordionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accordionTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  accordionCount: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    marginRight: 4,
+  },
+  accordionCountText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  accordionBody: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    paddingTop: spacing.sm,
+  },
+
+  // ============ 신규: ReasonRow (위험·주의 통합 리스트) ============
+  reasonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm + 2,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  reasonRowIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reasonRowTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    lineHeight: 20,
+  },
+  reasonRowSub: {
+    fontSize: 12,
+    color: colors.textSub,
+    marginTop: 3,
+    lineHeight: 18,
+  },
+
+  // ============ 신규: Subsection label (아코디언 내부) ============
+  subsectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSub,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs + 2,
   },
 });

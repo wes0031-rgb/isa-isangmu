@@ -42,9 +42,9 @@ DEFAULT_TOP_LAW_CHAT = 6
 DEFAULT_TOP_GUIDE_CHAT = 4
 DEFAULT_TOP_VIDEO_CHAT = 3
 
-# checklist 용 기본 top-k (쿼리당 작게, 대신 쿼리 수가 많음)
-DEFAULT_TOP_LAW_CHECKLIST = 3
-DEFAULT_TOP_GUIDE_CHECKLIST = 3
+# checklist 용 기본 top-k — 인덱스 커버리지 확대를 위해 5/5 로 상향
+DEFAULT_TOP_LAW_CHECKLIST = 5
+DEFAULT_TOP_GUIDE_CHECKLIST = 5
 
 # ThreadPoolExecutor 풀 타임아웃
 PARALLEL_TIMEOUT_SEC = 30.0

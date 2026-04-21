@@ -6,9 +6,10 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-HouseholdType = Literal["자취", "신혼", "가족"]
+HouseholdType = Literal["자취", "가족"]
 ContractType = Literal["전세", "월세", "자가"]
 SchoolLevel = Literal["초등", "중등", "고등"]
+MovingStyle = Literal["self", "company"]
 
 
 # ===== /checklist =====
@@ -50,10 +51,22 @@ class ChecklistRequest(BaseModel):
         default=False,
         description="주민등록증 재발급 필요 여부 — 10년 경과·분실·사진 변경 등",
     )
+    moving_style: MovingStyle = Field(
+        default="company",
+        description="이사 스타일 — self=셀프 이사 / company=이사업체 이용",
+    )
     # 범위 validation — 음수/비정상값 차단 (abuse 방지)
     deposit_krw: Optional[int] = Field(default=None, ge=0, le=50_000_000_000)
     monthly_rent_krw: Optional[int] = Field(default=None, ge=0, le=100_000_000)
     special_concerns: list[str] = Field(default_factory=list, max_length=20)
+    free_text: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description=(
+            "자유 텍스트 '기타 특이사항'. 토글로 못 잡는 엣지케이스 (예: '해외에서 귀국', "
+            "'전세금 미반환', '신축 입주 하자 점검'). 비워두면 LLM 호출 없이 정적 쿼리만 사용."
+        ),
+    )
 
 
 class ChecklistCitation(BaseModel):
@@ -233,11 +246,13 @@ class ServiceReferral(BaseModel):
 
 class ChatHistoryMessage(BaseModel):
     role: Literal["user", "assistant"]
+    # 개별 메시지 내용 — 길이 cap 은 service 레이어에서 조용히 truncate (422 회피).
     content: str
 
 
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
+    # max_length 넘는 기존 저장분이 들어와도 422 대신 service 에서 history[-8:] 로 slice.
     history: list[ChatHistoryMessage] = Field(
         default_factory=list,
         description="이전 대화 히스토리 (멀티턴 지원). 최근 N개 messages, frontend에서 제공.",
@@ -274,6 +289,10 @@ class SafeContractResponse(BaseModel):
     market_estimate: Optional[MarketEstimate] = Field(
         default=None,
         description="국토부 실거래가 API 자동 조회 결과 (region 제공 시)",
+    )
+    inferred_region: Optional[str] = Field(
+        default=None,
+        description="등기부 주소에서 파싱된 시도+시군구 (체크리스트 프리필용)",
     )
 
 

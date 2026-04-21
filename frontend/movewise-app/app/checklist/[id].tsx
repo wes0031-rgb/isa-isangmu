@@ -229,13 +229,14 @@ export default function TaskDetail() {
           )}
         </View>
 
-        {/* 설명 */}
-        {item.description && (
-          <View style={styles.card}>
-            <SectionHeader icon="reader" title="설명" />
-            <Text style={styles.body}>{item.description}</Text>
-          </View>
-        )}
+        {/* 설명 — 비어있으면 fallback 안내 (디테일 화면이 빈 카드처럼 보이지 않게) */}
+        <View style={styles.card}>
+          <SectionHeader icon="reader" title="설명" />
+          <Text style={styles.body}>
+            {item.description?.trim() ||
+              '이 항목은 자동 생성된 안내입니다. 아래 법적 근거 또는 외부 링크에서 자세한 절차를 확인하세요.'}
+          </Text>
+        </View>
 
         {/* 방법 */}
         {item.method && (
@@ -509,7 +510,7 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
     fontSize: 15,
   },
-  body: { ...typography.body, fontSize: 14, lineHeight: 22 },
+  body: { ...typography.body, fontSize: 15, lineHeight: 23 },
   noteHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -576,8 +577,8 @@ const styles = StyleSheet.create({
   },
   lawBody: {
     ...typography.body,
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 21,
     color: colors.text,
   },
   lawExternalBtn: {

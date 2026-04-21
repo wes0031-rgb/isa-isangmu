@@ -69,6 +69,12 @@ class Settings(BaseSettings):
         default="iim-rag-source", alias="AZURE_BLOB_CONTAINER_NAME"
     )
 
+    # ===== Azure Speech (STT) =====
+    # 챗봇 마이크 입력 → 텍스트 변환. 9ai032foundry 리소스 사용 가정.
+    azure_speech_key: str = Field(default="", alias="AZURE_SPEECH_KEY", repr=False)
+    azure_speech_region: str = Field(default="eastus2", alias="AZURE_SPEECH_REGION")
+    azure_speech_language: str = Field(default="ko-KR", alias="AZURE_SPEECH_LANGUAGE")
+
     # ===== External APIs =====
     data_go_kr_service_key: str = Field(default="", alias="DATA_GO_KR_SERVICE_KEY", repr=False)
     juso_api_key: str = Field(default="", alias="JUSO_API_KEY", repr=False)

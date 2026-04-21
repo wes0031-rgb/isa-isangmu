@@ -10,7 +10,6 @@ export interface RegistrySample {
   text: string;
   deposit: string;
   market: string;
-  region: string;
 }
 
 /**
@@ -30,8 +29,13 @@ export const RISKY_REGISTRY: RegistrySample = {
   description: '깡통전세 · 가압류 · 임의경매',
   deposit: '200000000',
   market: '250000000',
-  region: '서울특별시 강남구',
-  text: `[갑구 - 소유권에 관한 사항]
+  text: `[표제부 - 건물의 표시]
+
+서울특별시 강남구 역삼동 123-45
+철근콘크리트조 슬래브지붕 7층
+전용면적 84.56㎡
+
+[갑구 - 소유권에 관한 사항]
 
 1. 소유권보존 2018-03-12 강민수
 2. 소유권이전 2024-08-15 (2024-08-10 매매) 박지훈
@@ -57,8 +61,13 @@ export const SAFE_REGISTRY: RegistrySample = {
   description: '단일 소유자 · 소액 근저당',
   deposit: '200000000',
   market: '500000000',
-  region: '경기도 성남시 분당구',
-  text: `[갑구 - 소유권에 관한 사항]
+  text: `[표제부 - 건물의 표시]
+
+경기도 성남시 분당구 정자동 178-1 동양파라곤 101동
+철근콘크리트조 지하2층/지상25층 공동주택(아파트)
+전용면적 118.72㎡
+
+[갑구 - 소유권에 관한 사항]
 
 1. 소유권보존 2015-06-10 이정민
 

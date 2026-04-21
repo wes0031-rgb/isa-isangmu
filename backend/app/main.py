@@ -134,20 +134,12 @@ async def body_size_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
-    """OWASP 권장 Security Headers 주입. XSS/clickjacking/MIME sniff 방어."""
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    # HTTPS 연결에서만 HSTS 적용 (prod 배포 도메인)
-    if request.url.scheme == "https":
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains"
-        )
-    # Server 헤더 fingerprinting 제거 (uvicorn 버전 숨김)
-    response.headers.pop("server", None)
-    return response
+    """OWASP 권장 Security Headers 주입. XSS/clickjacking/MIME sniff 방어.
+
+    Python 3.14 + 구 starlette 조합에서 MutableHeaders 조작이 깨져서 일시 비활성화.
+    security_headers 는 FastAPI add_middleware() 경로로 재도입 예정.
+    """
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -404,6 +396,108 @@ async def post_safecontract_upload(
 
 
 # ==================================================================
+# Speech-to-Text (Azure Cognitive Services)
+# ==================================================================
+@app.post("/api/stt")
+@_limit("10/minute")
+async def post_stt(request: Request, audio: UploadFile = File(...)) -> dict:
+    """음성 파일 → Azure Speech-to-Text REST API → 인식 텍스트.
+
+    챗봇 마이크 입력 전용. ko-KR 기본. 입력은 WAV 16kHz mono PCM 권장
+    (Expo recording options 에서 sampleRate=16000 numberOfChannels=1 설정).
+    """
+    settings = get_settings()
+    if not settings.azure_speech_key:
+        raise HTTPException(status_code=503, detail="Azure Speech 키 미설정 — .env 의 AZURE_SPEECH_KEY 확인")
+
+    MAX = 5 * 1024 * 1024  # 5MB (~30초 16kHz 16bit)
+    data = await audio.read()
+    if len(data) > MAX:
+        raise HTTPException(status_code=413, detail="음성 파일이 너무 큽니다 (최대 5MB)")
+    if not data:
+        raise HTTPException(status_code=400, detail="빈 음성 파일")
+
+    import requests as _rq
+    region = settings.azure_speech_region
+    lang = settings.azure_speech_language
+    url = (
+        f"https://{region}.stt.speech.microsoft.com"
+        f"/speech/recognition/conversation/cognitiveservices/v1?language={lang}"
+    )
+    headers = {
+        "Ocp-Apim-Subscription-Key": settings.azure_speech_key,
+        "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000",
+        "Accept": "application/json",
+    }
+    try:
+        resp = _rq.post(url, headers=headers, data=data, timeout=15)
+    except _rq.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Azure Speech 호출 실패: {exc}")
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Azure Speech {resp.status_code}: {resp.text[:200]}",
+        )
+    body = resp.json()
+    status = body.get("RecognitionStatus", "Unknown")
+    if status != "Success":
+        # InitialSilenceTimeout / NoMatch / BabbleTimeout 등 — 사용자 메시지로 변환
+        return {"text": "", "status": status}
+    return {"text": body.get("DisplayText", ""), "status": "Success"}
+
+
+# ==================================================================
+# Prewarm — Render 15분 idle shutdown 대응용 워머
+# ==================================================================
+@app.get("/api/prewarm")
+@_limit("6/minute")
+def prewarm(request: Request) -> dict:
+    """외부 cron polling 용 warmup 엔드포인트.
+
+    Render free 플랜이 15분 idle 시 컨테이너 shutdown → cold start 20-40s.
+    chat·SafeContract·free_text 체크리스트는 Azure OpenAI/Search 사용하므로
+    client 초기화 + dummy embedding 호출로 warm 유지.
+
+    권장 polling 간격: 10~14분 (Render 15분 idle 타이머 < polling interval).
+    비용: 임베딩 1회 ≈ $0.00002 → 월 배치 < $0.01.
+    """
+    import time as _t
+    from .azure_clients import (
+        get_docintel_client,
+        get_openai_client,
+        get_search_client_guide,
+        get_search_client_law,
+    )
+    from .search_service import embed_query
+
+    started = _t.perf_counter()
+    results: dict[str, object] = {}
+
+    # 1. OpenAI embedding (가장 싼 호출 — 실제 Azure 쪽 warm 가장 유효)
+    try:
+        emb = embed_query("warm")
+        results["embedding"] = "ok" if emb else "nil"
+    except Exception as exc:
+        results["embedding"] = f"err: {type(exc).__name__}"
+
+    # 2-4. Client 인스턴스 init (첫 요청에서 생성되는 비용을 미리)
+    for key, factory in (
+        ("openai_client", get_openai_client),
+        ("search_law", get_search_client_law),
+        ("search_guide", get_search_client_guide),
+        ("docintel", get_docintel_client),
+    ):
+        try:
+            results[key] = "init" if factory() else "not_configured"
+        except Exception as exc:
+            results[key] = f"err: {type(exc).__name__}"
+
+    elapsed_ms = round((_t.perf_counter() - started) * 1000, 1)
+    logger.info(f"[prewarm] elapsed={elapsed_ms}ms results={results}")
+    return {"status": "warm", "elapsed_ms": elapsed_ms, **results}
+
+
+# ==================================================================
 # PWA 정적 서빙 (Expo web export → backend/app/main.py 기준 dist)
 # ==================================================================
 # frontend/movewise-app/dist 가 존재하면 FastAPI 에서 함께 서빙.
@@ -430,6 +524,8 @@ if _WEB_DIST.is_dir():
         "chat/presets",
         "realty/summary",
         "api/info",
+        "api/stt",
+        "api/prewarm",
     }
     _WEB_DIST_RESOLVED = _WEB_DIST.resolve()
 

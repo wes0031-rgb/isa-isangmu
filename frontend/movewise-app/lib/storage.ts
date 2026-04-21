@@ -12,6 +12,7 @@ const K = {
   NOTES: 'movewise:notes',
   API_URL: 'movewise:api_url',
   USER_NAME: 'movewise:user_name',
+  PENDING_REGION: 'movewise:pending_region',
 } as const;
 
 // ===== Checklist =====
@@ -47,6 +48,10 @@ export async function loadChecklist(): Promise<StoredChecklist | null> {
       await AsyncStorage.removeItem(K.CHECKLIST);
       await AsyncStorage.removeItem(K.COMPLETIONS);
       return null;
+    }
+    // household '신혼' 은 제거됐음 → '가족' 으로 마이그레이션
+    if ((parsed.request.household as string) === '신혼') {
+      parsed.request.household = '가족';
     }
     return parsed;
   } catch {
@@ -164,4 +169,17 @@ export async function loadUserName(): Promise<string | null> {
 
 export async function saveUserName(name: string): Promise<void> {
   await AsyncStorage.setItem(K.USER_NAME, name);
+}
+
+// 계약 전 체크에서 "체크리스트 만들기" 버튼을 눌렀을 때만 명시적으로 저장.
+// 체크리스트 폼 진입 시 consume(1회성)해서 region 프리필.
+export async function savePendingRegion(region: string): Promise<void> {
+  if (!region) return;
+  await AsyncStorage.setItem(K.PENDING_REGION, region);
+}
+
+export async function consumePendingRegion(): Promise<string | null> {
+  const v = await AsyncStorage.getItem(K.PENDING_REGION);
+  if (v) await AsyncStorage.removeItem(K.PENDING_REGION);
+  return v;
 }

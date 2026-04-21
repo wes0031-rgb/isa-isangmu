@@ -28,9 +28,10 @@ export const API_URL = runtimeApiUrl;
 
 // ===== Types =====
 
-export type HouseholdType = '자취' | '신혼' | '가족';
+export type HouseholdType = '자취' | '가족';
 export type ContractType = '전세' | '월세' | '자가';
 export type SchoolLevel = '초등' | '중등' | '고등';
+export type MovingStyle = 'self' | 'company';
 
 export interface ChecklistRequest {
   household: HouseholdType;
@@ -49,9 +50,12 @@ export interface ChecklistRequest {
   is_employed?: boolean;
   receives_welfare?: boolean;
   needs_id_reissue?: boolean;
+  moving_style?: MovingStyle;
   deposit_krw?: number | null;
   monthly_rent_krw?: number | null;
   special_concerns?: string[];
+  /** 자유 텍스트 — 토글로 못 잡는 엣지케이스. 비우면 LLM 호출 없이 정적 쿼리만. */
+  free_text?: string | null;
 }
 
 export interface Citation {
@@ -155,6 +159,7 @@ export interface SafeContractResponse {
   referrals: ServiceReferral[];
   disclaimer: string;
   market_estimate?: MarketEstimate | null;
+  inferred_region?: string | null;
 }
 
 // ===== Client =====
@@ -230,7 +235,9 @@ async function postMultipart<TRes>(path: string, form: FormData, timeoutMs = 600
 
 export const api = {
   async health(): Promise<{ service: string; version: string; azure_ready: boolean }> {
-    const { signal, clear } = withTimeout(10000);
+    // Render free tier 가 idle 후 sleep → 첫 요청은 cold start 로 30~60s 가능.
+    // timeout 30s 로 흡수. 더 길면 사용자 체감 너무 느림.
+    const { signal, clear } = withTimeout(30000);
     try {
       const res = await fetch(`${getApiUrl()}/`, { signal });
       if (!res.ok) throw new Error(`health ${res.status}`);
@@ -290,6 +297,38 @@ export const api = {
     if (!res.ok) throw new Error(`chat presets ${res.status}`);
     const d = await res.json();
     return d.questions || [];
+  },
+  /** 음성 파일 업로드 → Azure Speech-to-Text → {text, status} (ko-KR).
+   *  status: "Success" / "NoMatch" / "InitialSilenceTimeout" / "BabbleTimeout" 등.
+   *  Render 백엔드에 STT 미배포 상태라 로컬 backend cloudflared tunnel 로 직송 (발표 임시).
+   */
+  async stt(audioUri: string): Promise<{ text: string; status: string }> {
+    const STT_BACKEND_URL = 'https://bobby-roberts-exam-content.trycloudflare.com';
+    const form = new FormData();
+    form.append('audio', {
+      uri: audioUri,
+      name: 'recording.wav',
+      type: 'audio/wav',
+    } as any);
+    const { signal, clear } = withTimeout(20000);
+    try {
+      const res = await fetch(`${STT_BACKEND_URL}/api/stt`, {
+        method: 'POST',
+        body: form,
+        signal,
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`STT ${res.status} ${txt.slice(0, 80)}`);
+      }
+      const d = await res.json();
+      return {
+        text: (d.text || '').toString(),
+        status: (d.status || 'Unknown').toString(),
+      };
+    } finally {
+      clear();
+    }
   },
   async safecontractUpload(params: SafeContractUploadParams): Promise<SafeContractResponse> {
     const form = new FormData();

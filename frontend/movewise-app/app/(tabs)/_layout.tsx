@@ -32,12 +32,12 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="safecontract"
         options={{
-          title: '홈',
+          title: '계약 전 체크',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'home' : 'home-outline'}
+              name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'}
               color={color}
               size={24}
             />
@@ -58,12 +58,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="safecontract"
+        name="index"
         options={{
-          title: '계약 전 체크',
+          title: '홈',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'}
+              name={focused ? 'home' : 'home-outline'}
               color={color}
               size={24}
             />

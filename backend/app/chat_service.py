@@ -553,6 +553,9 @@ def generate_chat_reply(
     context = "\n\n".join(context_parts)
 
     # 멀티턴: 이전 대화를 system 뒤에 삽입 (최근 8개 메시지 = 4 turn)
+    # 개별 메시지 cap: answer max_tokens=1500 ≈ 한글 1200자 기준 여유 포함 2000자.
+    # 총 입력 토큰 폭주 방어 (사용자가 긴 assistant 답변 여러 번 쌓인 경우).
+    _HISTORY_MSG_CHAR_CAP = 2000
     llm_messages: list[dict] = [
         {"role": "system", "content": CHAT_SYSTEM_PROMPT},
     ]
@@ -560,6 +563,8 @@ def generate_chat_reply(
         role = m.get("role")
         content = m.get("content")
         if role in ("user", "assistant") and isinstance(content, str) and content:
+            if len(content) > _HISTORY_MSG_CHAR_CAP:
+                content = content[:_HISTORY_MSG_CHAR_CAP] + "…"
             llm_messages.append({"role": role, "content": content})
     llm_messages.append(
         {
@@ -573,6 +578,7 @@ def generate_chat_reply(
             model=settings.azure_openai_deployment_name,
             temperature=0.3,
             messages=llm_messages,
+            max_tokens=1500,  # 챗봇 답변 cap — 출력 길어져 응답 지연 방지
             timeout=25,
         )
         answer = (resp.choices[0].message.content or "").strip()

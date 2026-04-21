@@ -48,13 +48,15 @@ export const radius = {
   pill: 999,
 };
 
+// 한국어 가독성 최적화 — lineHeight 1.5~1.6 / fontSize 모바일 표준
+// letterSpacing 약간 음수: 한글 자간 타이트 효과 + 칩·버튼 라벨 밀림 방지
 export const typography = {
-  display: { fontSize: 30, fontWeight: '800' as const, color: colors.primary, lineHeight: 38 },
-  title: { fontSize: 22, fontWeight: '700' as const, color: colors.text, lineHeight: 30 },
-  subtitle: { fontSize: 17, fontWeight: '700' as const, color: colors.text, lineHeight: 24 },
-  body: { fontSize: 15, fontWeight: '400' as const, color: colors.text, lineHeight: 22 },
-  bodyBold: { fontSize: 15, fontWeight: '600' as const, color: colors.text, lineHeight: 22 },
-  caption: { fontSize: 13, fontWeight: '400' as const, color: colors.textSub, lineHeight: 18 },
-  captionBold: { fontSize: 13, fontWeight: '700' as const, color: colors.textSub, lineHeight: 18 },
-  tabLabel: { fontSize: 12, fontWeight: '700' as const, lineHeight: 14 },
+  display: { fontSize: 28, fontWeight: '800' as const, color: colors.primary, lineHeight: 40, letterSpacing: -0.3 },
+  title: { fontSize: 22, fontWeight: '700' as const, color: colors.text, lineHeight: 32, letterSpacing: -0.2 },
+  subtitle: { fontSize: 18, fontWeight: '700' as const, color: colors.text, lineHeight: 28, letterSpacing: -0.2 },
+  body: { fontSize: 16, fontWeight: '400' as const, color: colors.text, lineHeight: 26, letterSpacing: -0.1 },
+  bodyBold: { fontSize: 16, fontWeight: '600' as const, color: colors.text, lineHeight: 26, letterSpacing: -0.1 },
+  caption: { fontSize: 13, fontWeight: '400' as const, color: colors.textSub, lineHeight: 20 },
+  captionBold: { fontSize: 13, fontWeight: '700' as const, color: colors.textSub, lineHeight: 20 },
+  tabLabel: { fontSize: 11, fontWeight: '700' as const, lineHeight: 16, letterSpacing: -0.1 },
 };

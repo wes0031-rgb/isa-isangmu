@@ -60,7 +60,8 @@ backend/
 ```
 사용자 조건
   │
-  ├─ Step 1: build_queries_llm → 검색 쿼리 5~10개 생성 (GPT-4o)
+  ├─ Step 1: build_queries_rule_based → 토글 → 정적 쿼리 (LLM 호출 0회)
+  │           + free_text 있으면 build_queries_freetext_llm 추가 (GPT-4o)
   │
   ├─ Step 2: search_procedures → Azure AI Search 통합 인덱스 하이브리드 검색
   │                              (semantic + 벡터, source_type 필터)

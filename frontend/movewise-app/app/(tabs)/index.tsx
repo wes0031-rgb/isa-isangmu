@@ -48,12 +48,32 @@ export default function Home() {
 
   useFocusEffect(
     useCallback(() => {
-      api
-        .health()
-        .then(setHealth)
-        .catch((e) => setHealthError(e.message));
+      let cancelled = false;
+      // health 체크 + 실패 시 1회 자동 재시도 (Render cold start 흡수).
+      // 백엔드 wake-up 후엔 첫 요청 외 모두 빠름.
+      async function checkHealth(retry = false) {
+        try {
+          const h = await api.health();
+          if (!cancelled) {
+            setHealth(h);
+            setHealthError(null);
+          }
+        } catch (e: any) {
+          if (cancelled) return;
+          if (!retry) {
+            setHealthError('백엔드가 깨어나는 중이에요... (잠시 후 자동 재시도)');
+            setTimeout(() => checkHealth(true), 5000);
+          } else {
+            setHealthError('백엔드 연결 실패 — 네트워크 또는 서버 상태를 확인하세요');
+          }
+        }
+      }
+      checkHealth();
       loadChecklist().then(setSaved);
       loadCompletions().then(setCompletions);
+      return () => {
+        cancelled = true;
+      };
     }, []),
   );
 
@@ -154,18 +174,29 @@ export default function Home() {
           </AppPressable>
         )}
 
-        {/* Backend status */}
+        {/* Backend status — 재시도 중이면 warning 색, 최종 실패만 danger */}
+        {(health || healthError) && (
         <View
           style={[
             styles.statusCard,
-            { backgroundColor: healthError ? colors.dangerBg : colors.cardBg },
+            healthError
+              ? {
+                  backgroundColor: healthError.includes('깨어나는')
+                    ? colors.warningBg
+                    : colors.dangerBg,
+                }
+              : { backgroundColor: colors.cardBg },
           ]}
         >
           {healthError ? (
             <>
-              <Ionicons name="alert-circle" size={18} color={colors.danger} />
-              <Text style={styles.statusError}>
-                백엔드 연결 실패
+              <Ionicons
+                name={healthError.includes('깨어나는') ? 'sync' : 'alert-circle'}
+                size={18}
+                color={healthError.includes('깨어나는') ? colors.warning : colors.danger}
+              />
+              <Text style={[styles.statusError, healthError.includes('깨어나는') && { color: colors.warning }]}>
+                {healthError}
               </Text>
             </>
           ) : health ? (
@@ -182,10 +213,9 @@ export default function Home() {
               </Text>
               <Text style={styles.statusVersion}>v{health.version}</Text>
             </>
-          ) : (
-            <Text style={styles.statusText}>백엔드 확인 중...</Text>
-          )}
+          ) : null}
         </View>
+        )}
 
         {/* Today tasks — 오늘 시작할 일 */}
         {todayTasks.length > 0 && (
@@ -325,13 +355,6 @@ export default function Home() {
               color={colors.textSub}
             />
           </AppPressable>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <StatCard label="법률 인용" value="572" unit="건" />
-          <StatCard label="행정 절차" value="200" unit="청크" />
-          <StatCard label="지역 매핑" value="34" unit="개사" />
         </View>
 
         <Text style={styles.footerNote}>

@@ -159,6 +159,35 @@ export default function MyScreen() {
           </Text>
         </View>
 
+        {/* 데이터 출처 */}
+        <View style={styles.card}>
+          <View style={styles.policyHeader}>
+            <Ionicons name="library" size={18} color={colors.primary} />
+            <Text style={styles.sectionTitle}>데이터 출처</Text>
+          </View>
+          <View style={styles.sourceRow}>
+            <Text style={styles.sourceLabel}>법률 인용</Text>
+            <Text style={styles.sourceValue}>
+              국가법령정보(law.go.kr) · 찾기쉬운 생활법령(easylaw.go.kr)
+            </Text>
+          </View>
+          <View style={styles.sourceRow}>
+            <Text style={styles.sourceLabel}>행정 절차</Text>
+            <Text style={styles.sourceValue}>
+              정부24 · 공공데이터포털 · 각 부처 고시
+            </Text>
+          </View>
+          <View style={styles.sourceRow}>
+            <Text style={styles.sourceLabel}>지역 매핑</Text>
+            <Text style={styles.sourceValue}>
+              도로명주소 API · 행정표준코드
+            </Text>
+          </View>
+          <Text style={styles.sourceFooter}>
+            법률 1,635 + 절차 340 + 영상 147 = 총 2,122 청크 · Azure AI Search 인덱싱
+          </Text>
+        </View>
+
         {/* 데이터 관리 */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>데이터 관리</Text>
@@ -227,6 +256,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 19,
     color: colors.textSub,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  sourceLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+    width: 64,
+  },
+  sourceValue: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.textSub,
+    lineHeight: 18,
+  },
+  sourceFooter: {
+    marginTop: spacing.sm,
+    fontSize: 11,
+    color: colors.textMute,
+    fontStyle: 'italic',
   },
   label: {
     ...typography.captionBold,

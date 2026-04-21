@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이사이상무 — 계약 전 체크 · 결과 화면 리디자인 목업</title>
+<style>
+  :root {
+    --navy: #003A75;
+    --navy-light: #2563a8;
+    --navy-bg: #eaf1f9;
+    --orange: #F5A623;
+    --orange-bg: #fdf3e1;
+    --danger: #E74C3C;
+    --danger-bg: #fdecea;
+    --warning: #F39C12;
+    --warning-bg: #fff5e1;
+    --success: #27AE60;
+    --success-bg: #e8f7ee;
+    --text: #1c2530;
+    --text-sub: #5b6878;
+    --text-mute: #99a4b3;
+    --border: #e3e8ef;
+    --border-light: #eef2f6;
+    --bg: #f4f6f9;
+    --card: #ffffff;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  /* 헤더 */
+  .top-bar {
+    padding: 24px 24px 8px;
+    background: var(--bg);
+  }
+  .top-title {
+    margin: 0; font-size: 26px; font-weight: 800; color: var(--navy);
+    letter-spacing: -0.5px;
+  }
+  .top-sub {
+    margin: 6px 0 0; font-size: 14px; color: var(--text-sub);
+  }
+  .legend {
+    display: inline-flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .legend-pill {
+    padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    background: var(--navy-bg); color: var(--navy);
+  }
+
+  /* 두 폰을 나란히 — 데스크톱 width 1100+ */
+  .compare {
+    display: flex; flex-wrap: wrap; gap: 32px;
+    padding: 24px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .phone-wrap {
+    flex: 0 0 auto;
+    max-width: 380px;
+    width: 100%;
+  }
+  .phone-label {
+    text-align: center;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-sub);
+    letter-spacing: 0.5px;
+  }
+  .phone-label .tag {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 999px; margin-right: 8px;
+    font-size: 11px;
+  }
+  .tag-before { background: #f1f3f6; color: #6c7886; }
+  .tag-after { background: var(--navy); color: #fff; }
+
+  .phone {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 18px 14px 28px;
+    box-shadow: 0 8px 32px rgba(0,58,117,.08);
+    overflow: hidden;
+  }
+  .phone-screen {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 4px 4px 12px;
+  }
+
+  /* 카드 공통 */
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 6px rgba(0,0,0,.025);
+  }
+  .card-title {
+    font-size: 14px; font-weight: 700; color: var(--navy);
+    margin: 0 0 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .icon-circle {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #fff;
+  }
+
+  /* 결과 헤더 — h1 */
+  .result-h1 {
+    font-size: 20px; font-weight: 800; color: var(--text);
+    margin: 8px 0 4px; padding: 0 6px;
+  }
+  .result-sub {
+    font-size: 12px; color: var(--text-sub);
+    margin: 0 0 14px; padding: 0 6px;
+  }
+
+  /* ========== BEFORE: 현재 화면 (8 카드 나열) ========== */
+  .before .property-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px;
+    margin-bottom: 12px;
+  }
+  .before .prop-row {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 4px 0; font-size: 13px;
+  }
+  .before .prop-icon { color: var(--navy-light); width: 16px; flex-shrink: 0; }
+  .before .prop-label { font-weight: 600; min-width: 50px; color: var(--text-sub); font-size: 12px; }
+  .before .prop-value { flex: 1; color: var(--text); font-size: 12px; }
+
+  .before .ratio-card {
+    background: var(--card); border-radius: 14px; padding: 16px;
+    margin-bottom: 12px; border: 2px solid var(--danger);
+    text-align: center;
+  }
+  .before .ratio-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+  .before .ratio-value { font-size: 36px; font-weight: 800; color: var(--danger); margin: 4px 0; line-height: 1; }
+  .before .ratio-summary { font-size: 13px; font-weight: 700; color: var(--danger); margin: 8px 0; }
+  .before .ratio-explain { font-size: 11px; color: var(--text-mute); margin-top: 8px; line-height: 1.5; }
+
+  .before .hazard-card {
+    background: var(--danger-bg); border-radius: 14px; padding: 14px;
+    margin-bottom: 12px; border-left: 4px solid var(--danger);
+  }
+  .before .hazard-line {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 6px 0; font-size: 12px;
+  }
+  .before .hazard-icon { color: var(--danger); flex-shrink: 0; }
+  .before .hazard-text-wrap { flex: 1; }
+  .before .hazard-title { font-weight: 700; font-size: 13px; color: var(--text); }
+  .before .hazard-sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; line-height: 1.4; }
+
+  .before .verdict-card {
+    background: var(--card); border-radius: 14px; padding: 16px;
+    margin-bottom: 12px; border-left: 5px solid var(--danger);
+  }
+  .before .verdict-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
+  .before .verdict-big { font-size: 18px; font-weight: 800; color: var(--danger); margin-bottom: 8px; }
+  .before .verdict-body { font-size: 12px; color: var(--text); line-height: 1.5; }
+
+  .before .threshold-card {
+    background: var(--navy-bg); border-radius: 14px; padding: 12px;
+    margin-bottom: 12px;
+  }
+  .before .threshold-header {
+    font-size: 12px; font-weight: 700; color: var(--navy);
+    display: flex; align-items: center; gap: 4px; margin-bottom: 8px;
+  }
+  .before .threshold-row {
+    display: flex; justify-content: space-between; padding: 4px 0;
+    font-size: 11px;
+  }
+  .before .threshold-row.active { font-weight: 700; }
+  .before .threshold-note {
+    font-size: 10px; color: var(--text-mute); margin-top: 8px; line-height: 1.4;
+  }
+
+  .before .section-h {
+    display: flex; align-items: center; gap: 6px;
+    margin: 16px 6px 8px; font-size: 14px; font-weight: 700; color: var(--text);
+  }
+  .before .risk-card {
+    background: var(--card); border-radius: 14px; padding: 14px;
+    margin-bottom: 8px; border: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .before .risk-card .label {
+    font-weight: 700; color: var(--danger); font-size: 13px; margin-bottom: 4px;
+  }
+  .before .referral-card {
+    background: var(--card); border-radius: 12px; padding: 12px;
+    margin-bottom: 6px; border: 1px solid var(--border-light);
+    display: flex; gap: 10px; align-items: center;
+    font-size: 12px;
+  }
+  .before .referral-icon { font-size: 18px; }
+  .before .referral-name { font-weight: 700; }
+  .before .referral-desc { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+  .before .next-btn {
+    background: var(--navy); border-radius: 12px; padding: 14px;
+    margin-top: 16px; color: #fff;
+  }
+  .before .next-btn-label { font-size: 11px; opacity: .8; }
+  .before .next-btn-title { font-size: 14px; font-weight: 700; margin-top: 2px; }
+
+  /* ========== AFTER: 추천 디자인 ========== */
+
+  /* 결론 헤더 카드 (큰 verdict) */
+  .verdict-hero {
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #fdecea 0%, #fbd5d2 100%);
+    border: 1px solid #f3a7a1;
+  }
+  .verdict-hero.yellow {
+    background: linear-gradient(135deg, #fff5e1 0%, #ffe2b3 100%);
+    border-color: #f3c976;
+  }
+  .verdict-hero.green {
+    background: linear-gradient(135deg, #e8f7ee 0%, #c4ebd1 100%);
+    border-color: #82d39c;
+  }
+  .verdict-tag {
+    display: inline-block;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(255,255,255,.7);
+    font-size: 11px; font-weight: 800;
+    color: var(--danger);
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .verdict-tag.yellow { color: #b9760f; }
+  .verdict-tag.green { color: #1d8847; }
+
+  .verdict-headline {
+    font-size: 22px; font-weight: 800; color: var(--text);
+    margin: 0 0 6px; letter-spacing: -0.3px;
+  }
+  .verdict-prop {
+    font-size: 12px; color: var(--text-sub);
+    margin: 0 0 14px;
+  }
+  .verdict-reasons {
+    background: rgba(255,255,255,.65);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 14px 0;
+  }
+  .verdict-reasons-title {
+    font-size: 11px; color: var(--text-sub); font-weight: 700;
+    margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .reason-line {
+    display: flex; gap: 8px; padding: 4px 0;
+    font-size: 13px; color: var(--text);
+  }
+  .reason-line .dot {
+    color: var(--danger); font-weight: 800;
+  }
+
+  .verdict-score {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 12px;
+  }
+  .score-bar {
+    flex: 1; height: 8px; background: rgba(255,255,255,.6);
+    border-radius: 999px; overflow: hidden;
+  }
+  .score-fill {
+    height: 100%; width: 23%;
+    background: var(--danger);
+    border-radius: 999px;
+  }
+  .score-fill.yellow { background: var(--warning); width: 55%; }
+  .score-fill.green { background: var(--success); width: 88%; }
+  .score-num {
+    font-size: 14px; font-weight: 800; color: var(--text);
+    min-width: 60px; text-align: right;
+  }
+
+  .verdict-disclaimer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,.08);
+    font-size: 11px; color: var(--text-sub);
+    line-height: 1.5;
+  }
+
+  /* 통합 카드 — 숫자 한눈에 */
+  .stats-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 8px;
+  }
+  .stat-block {
+    padding: 8px 0;
+  }
+  .stat-block + .stat-block { border-left: 1px solid var(--border); padding-left: 16px; }
+  .stat-label {
+    font-size: 11px; color: var(--text-sub); font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 22px; font-weight: 800; color: var(--danger);
+    line-height: 1;
+  }
+  .stat-value.muted { color: var(--text-sub); font-size: 18px; }
+  .stat-sub {
+    font-size: 10px; color: var(--text-mute); margin-top: 4px;
+  }
+  .stat-explain {
+    font-size: 11px; color: var(--text-sub); margin-top: 10px;
+    padding-top: 10px; border-top: 1px solid var(--border-light);
+    line-height: 1.5;
+  }
+
+  /* 아코디언 */
+  .accordion {
+    background: var(--card);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .accordion-head {
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+  }
+  .acc-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--navy-bg); color: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .acc-icon.danger { background: var(--danger-bg); color: var(--danger); }
+  .acc-icon.warning { background: var(--warning-bg); color: var(--warning); }
+  .acc-icon.success { background: var(--success-bg); color: var(--success); }
+  .acc-title {
+    flex: 1;
+    font-size: 14px; font-weight: 700; color: var(--text);
+  }
+  .acc-count {
+    background: var(--danger);
+    color: #fff;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    margin-right: 8px;
+  }
+  .acc-count.muted { background: var(--text-mute); }
+  .acc-chevron {
+    color: var(--text-mute);
+    font-size: 12px;
+  }
+  .acc-body {
+    padding: 0 16px 14px;
+    border-top: 1px solid var(--border-light);
+  }
+  .acc-body .body-inner { padding-top: 10px; }
+
+  /* 위험·주의 통합 리스트 */
+  .risk-list .risk-line {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px dashed var(--border-light);
+  }
+  .risk-list .risk-line:last-child { border-bottom: none; }
+  .risk-mark {
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .risk-mark.red { background: var(--danger-bg); color: var(--danger); }
+  .risk-mark.yellow { background: var(--warning-bg); color: var(--warning); }
+  .risk-text-wrap { flex: 1; min-width: 0; }
+  .risk-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .risk-sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; line-height: 1.4; }
+
+  /* 부동산 정보 grid 형태 */
+  .prop-grid {
+    display: grid; grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .prop-row-2 {
+    display: flex; gap: 8px; padding: 6px 0;
+    border-bottom: 1px dashed var(--border-light);
+    font-size: 12px;
+  }
+  .prop-row-2:last-child { border-bottom: none; }
+  .prop-row-2 .l { color: var(--text-sub); font-weight: 600; min-width: 56px; }
+  .prop-row-2 .v { flex: 1; color: var(--text); }
+
+  /* 다음 버튼 */
+  .next-cta {
+    background: var(--navy);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 16px;
+    color: #fff;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .next-cta-text { flex: 1; }
+  .next-cta-label { font-size: 11px; opacity: .8; }
+  .next-cta-title { font-size: 15px; font-weight: 800; margin-top: 2px; }
+  .next-cta-hint { font-size: 11px; opacity: .8; margin-top: 4px; }
+  .next-cta-arrow { font-size: 24px; }
+
+  /* 안내 문구 */
+  .footnote {
+    text-align: center;
+    margin-top: 32px; padding: 16px;
+    font-size: 11px; color: var(--text-mute);
+  }
+
+  /* 화살표 비교 */
+  .arrow-divider {
+    align-self: center;
+    font-size: 36px; color: var(--orange); font-weight: 800;
+    padding: 0 8px;
+  }
+  @media (max-width: 900px) {
+    .arrow-divider { transform: rotate(90deg); padding: 16px 0; }
+  }
+
+  /* 변경점 요약 박스 */
+  .change-summary {
+    background: linear-gradient(135deg, #fdf3e1 0%, #fcdf9d 100%);
+    border-radius: 18px; padding: 22px;
+    margin: 8px 24px 16px;
+    border: 1px solid #f3c976;
+  }
+  .change-summary h3 {
+    margin: 0 0 12px; font-size: 16px; color: var(--navy);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .change-summary ul {
+    margin: 0; padding-left: 20px;
+    font-size: 13px; line-height: 1.8; color: var(--text);
+  }
+  .change-summary li b { color: var(--navy); }
+  .change-summary li .delta {
+    color: var(--success); font-weight: 800;
+  }
+
+  /* ===== 점수 영역 3 옵션 ===== */
+  .score-options-section {
+    margin: 24px;
+    background: #fff;
+    border-radius: 18px; padding: 24px;
+    border: 2px solid var(--orange);
+    box-shadow: 0 4px 16px rgba(245,166,35,.1);
+  }
+  .score-options-section h3 {
+    margin: 0 0 6px; font-size: 18px; color: var(--navy);
+  }
+  .score-options-section .feedback {
+    margin: 0 0 24px; padding: 12px 16px;
+    background: var(--accentBg, #fff8ec);
+    border-left: 3px solid var(--orange);
+    border-radius: 6px;
+    font-size: 13px; color: var(--text);
+    font-style: italic;
+  }
+  .score-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  }
+  @media (max-width: 900px) {
+    .score-grid { grid-template-columns: 1fr; }
+  }
+  .score-option {
+    background: #fdecea;
+    border: 1px solid #f3a7a1;
+    border-radius: 14px; padding: 18px;
+  }
+  .score-option .opt-label {
+    display: inline-block;
+    padding: 4px 12px; border-radius: 999px;
+    background: var(--navy); color: #fff;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  .score-option .opt-name {
+    font-size: 14px; font-weight: 800; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .score-option .opt-desc {
+    font-size: 11px; color: var(--text-sub);
+    margin-bottom: 14px;
+  }
+  .opt-mock {
+    background: rgba(255,255,255,.7);
+    border-radius: 10px; padding: 14px;
+    margin-top: 8px;
+  }
+
+  /* Option 1 — 점수 + 라벨 강화 */
+  .opt1-label {
+    font-size: 11px; color: var(--text-sub); font-weight: 700;
+    margin-bottom: 6px; letter-spacing: 0.3px;
+  }
+  .opt1-row {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .opt1-num {
+    font-size: 26px; font-weight: 800; color: var(--danger);
+    letter-spacing: -0.5px;
+  }
+  .opt1-grade {
+    font-size: 13px; font-weight: 800; color: var(--danger);
+  }
+  .opt1-bar {
+    margin-top: 10px;
+    height: 8px;
+    background: linear-gradient(90deg, var(--danger) 0%, var(--warning) 50%, var(--success) 100%);
+    border-radius: 999px;
+    position: relative;
+  }
+  .opt1-marker {
+    position: absolute; left: 23%;
+    top: -3px;
+    width: 14px; height: 14px;
+    background: #fff;
+    border: 3px solid var(--danger);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  .opt1-axis {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px; font-weight: 700; color: var(--text-mute);
+  }
+
+  /* Option 2 — 점수 제거 + 핵심 결론만 */
+  .opt2-key {
+    font-size: 11px; color: var(--text-sub); font-weight: 700;
+    margin-bottom: 8px; letter-spacing: 0.3px;
+  }
+  .opt2-action {
+    font-size: 16px; font-weight: 800; color: var(--danger);
+    line-height: 1.4;
+  }
+  .opt2-action .em {
+    background: var(--danger); color: #fff;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 14px;
+  }
+  .opt2-sub {
+    font-size: 12px; color: var(--text-sub);
+    margin-top: 8px; line-height: 1.5;
+  }
+
+  /* Option 3 — 액션 가능 (HUG 보증보험) */
+  .opt3-row {
+    display: flex; gap: 8px; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(0,0,0,.1);
+  }
+  .opt3-row:last-child { border-bottom: none; }
+  .opt3-icon {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--danger);
+    color: #fff; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+  .opt3-icon.warn { background: var(--warning); }
+  .opt3-row .label {
+    flex: 1;
+    font-size: 12px; color: var(--text);
+  }
+  .opt3-row .value {
+    font-size: 12px; font-weight: 800; color: var(--danger);
+  }
+</style>
+</head>
+<body>
+
+<header class="top-bar">
+  <h1 class="top-title">계약 전 체크 — 결과 화면 리디자인</h1>
+  <p class="top-sub">현재(Before) ↔ 추천(After) 비교 · RISKY 샘플(강남구 역삼동 84.56㎡) 기준</p>
+  <div class="legend">
+    <span class="legend-pill">🦆 이사이상무</span>
+    <span class="legend-pill">A안 + B안 결합</span>
+    <span class="legend-pill">8 카드 → 4 카드</span>
+  </div>
+</header>
+
+<div class="change-summary">
+  <h3>🎯 핵심 개선점 (3가지)</h3>
+  <ul>
+    <li><b>결론 먼저</b> — 첫 화면에 큰 verdict 카드(🔴/🟡/🟢 + 핵심 사유 3줄 + 안전 점수). 종합 판정이 5번째였던 걸 1번째로. <span class="delta">스크롤 4번 → 0번</span></li>
+    <li><b>중복 제거</b> — 전세가율 평가·기준·종합판정 3카드 → 1개 통합. 위험 요소·주의사항·위험항목 3섹션 → 1개 아코디언. <span class="delta">8 카드 → 4 카드</span></li>
+    <li><b>아코디언 도입</b> — 부동산 정보·법령 근거·외부 도움은 접힌 상태로 시작. 유저가 펴서 봄. <span class="delta">첫 스크롤 1.5화면 → 0.5화면</span></li>
+  </ul>
+</div>
+
+<div class="compare">
+
+  <!-- ============ BEFORE ============ -->
+  <div class="phone-wrap">
+    <div class="phone-label">
+      <span class="tag tag-before">BEFORE</span>현재 — 8 카드 세로 나열
+    </div>
+    <div class="phone before">
+      <div class="phone-screen">
+        <h1 class="result-h1">계약 전 체크</h1>
+        <p class="result-sub">등기부등본을 쉬운 말로 해석해드립니다</p>
+
+        <!-- 1. AI 추출 정보 -->
+        <div class="property-card">
+          <div class="card-title">📄 AI 추출 정보</div>
+          <div class="prop-row"><span class="prop-icon">📍</span><span class="prop-label">주소</span><span class="prop-value">서울 강남구 역삼동 123-45</span></div>
+          <div class="prop-row"><span class="prop-icon">📐</span><span class="prop-label">건물</span><span class="prop-value">철근콘크리트 7층 · 84.56 m²</span></div>
+          <div class="prop-row"><span class="prop-icon">👤</span><span class="prop-label">소유자</span><span class="prop-value">김하늘</span></div>
+          <div class="prop-row"><span class="prop-icon">💴</span><span class="prop-label">근저당</span><span class="prop-value">4억원 · 국민은행</span></div>
+          <div class="prop-row"><span class="prop-icon">⚠️</span><span class="prop-label">가압류</span><span class="prop-value">서울중앙지법 청구 1.5억</span></div>
+        </div>
+
+        <!-- 2. 전세가율 평가 -->
+        <div class="ratio-card">
+          <div class="ratio-label">전세가율 평가</div>
+          <div class="ratio-value">10%</div>
+          <div class="ratio-summary">🟢 안전 범위</div>
+          <div class="ratio-explain">시세 대비 보증금 비율만 본 평가예요. 아래 위험 요소와 종합 판정을 꼭 함께 확인하세요.</div>
+        </div>
+
+        <!-- 3. 위험 요소 -->
+        <div class="hazard-card">
+          <div class="card-title" style="color:var(--danger)">⚠️ 감지된 위험 요소</div>
+          <div class="hazard-line">
+            <span class="hazard-icon">🔨</span>
+            <div class="hazard-text-wrap">
+              <div class="hazard-title">임의경매 진행 중</div>
+              <div class="hazard-sub">이미 경매 개시 — 계약 시 보증금 회수 매우 어려움</div>
+            </div>
+          </div>
+          <div class="hazard-line">
+            <span class="hazard-icon">⚠️</span>
+            <div class="hazard-text-wrap">
+              <div class="hazard-title">가압류 1건</div>
+              <div class="hazard-sub">집주인 채무 신호 — 경매 넘어갈 가능성</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 주의사항 (생략, 이번 케이스엔 잦은 이전만) -->
+        <div class="hazard-card" style="background:var(--warning-bg); border-left-color:var(--warning)">
+          <div class="card-title" style="color:var(--warning)">🟡 주의사항 · 확인 권장</div>
+          <div class="hazard-line">
+            <span class="hazard-icon" style="color:var(--warning)">🔄</span>
+            <div class="hazard-text-wrap">
+              <div class="hazard-title">소유권 이전 2회 (최근 2년)</div>
+              <div class="hazard-sub">투자·명의신탁·갭투자 가능성. 집주인 실소유권·재정 확인 권장.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 종합 판정 -->
+        <div class="verdict-card">
+          <div class="verdict-label">종합 판정</div>
+          <div class="verdict-big">🔴 위험 — 계약 비권장</div>
+          <div class="verdict-body">임의경매가 이미 진행 중이고 가압류·다수 근저당이 있어 보증금 회수가 매우 어렵습니다. HUG 보증보험도 거절될 가능성이 높습니다.</div>
+        </div>
+
+        <!-- 6. 전세가율 기준 -->
+        <div class="threshold-card">
+          <div class="threshold-header">ℹ️ 전세가율 기준</div>
+          <div class="threshold-row active" style="color:var(--success)"><span>~ 70%</span><span>🟢 안전</span></div>
+          <div class="threshold-row" style="color:var(--warning)"><span>70 ~ 80%</span><span>🟡 주의</span></div>
+          <div class="threshold-row" style="color:var(--danger)"><span>80% 이상</span><span>🔴 위험 (깡통전세)</span></div>
+          <div class="threshold-note">※ 전세가율이 낮아도 경매·가압류·신탁 등기가 있으면 위험 매물이에요.</div>
+        </div>
+
+        <!-- 7. 위험 항목 -->
+        <div class="section-h">⚠️ 위험 항목</div>
+        <div class="risk-card">
+          <div class="label">🔴 임의경매 개시</div>
+          <div style="font-size:11px;color:var(--text-sub)">이미 경매 절차 진입 — 보증금 회수 가능성 매우 낮음</div>
+        </div>
+        <div class="risk-card">
+          <div class="label">🔴 가압류 1건</div>
+          <div style="font-size:11px;color:var(--text-sub)">집주인 채무 신호 — 경매 진행 가속 가능</div>
+        </div>
+
+        <!-- 8. 다음에 확인하세요 -->
+        <div class="section-h">🔗 다음에 확인하세요</div>
+        <div class="referral-card"><span class="referral-icon">📞</span><div><div class="referral-name">전세피해지원센터 1533-8119</div><div class="referral-desc">국토부 산하 — 깡통전세 의심 사례 무료 상담</div></div></div>
+        <div class="referral-card"><span class="referral-icon">⚖️</span><div><div class="referral-name">대한법률구조공단 132</div><div class="referral-desc">무료 법률 상담 (전세사기 포함)</div></div></div>
+        <div class="referral-card"><span class="referral-icon">🏛️</span><div><div class="referral-name">대법원 인터넷등기소</div><div class="referral-desc">최신 등기부등본 직접 발급</div></div></div>
+        <div class="referral-card" style="opacity:.5"><span class="referral-icon">🛡️</span><div><div class="referral-name">HUG 안심전세 앱</div><div class="referral-desc">집주인 사고 이력 조회</div></div></div>
+        <div class="referral-card" style="opacity:.4">… 외 9개</div>
+
+        <!-- 다음 버튼 -->
+        <div class="next-btn">
+          <div class="next-btn-label">계약을 진행하기로 했다면</div>
+          <div class="next-btn-title">이사 체크리스트 만들기 →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-divider">→</div>
+
+  <!-- ============ AFTER ============ -->
+  <div class="phone-wrap">
+    <div class="phone-label">
+      <span class="tag tag-after">AFTER</span>추천 — 결론 헤더 + 4 카드
+    </div>
+    <div class="phone after">
+      <div class="phone-screen">
+        <h1 class="result-h1">계약 전 체크</h1>
+        <p class="result-sub">등기부등본을 쉬운 말로 해석해드렸어요</p>
+
+        <!-- HERO: verdict 큰 카드 -->
+        <div class="verdict-hero">
+          <span class="verdict-tag">🔴 위험 · 계약 비권장</span>
+          <h2 class="verdict-headline">보증금 돌려받기 어려워요</h2>
+          <p class="verdict-prop">서울 강남구 역삼동 123-45 · 84.56㎡ · 김하늘님</p>
+
+          <div class="verdict-reasons">
+            <div class="verdict-reasons-title">🔍 핵심 사유 (Top 3)</div>
+            <div class="reason-line"><span class="dot">•</span><span><b>임의경매 진행 중</b> — 이미 경매 개시</span></div>
+            <div class="reason-line"><span class="dot">•</span><span><b>가압류 1건</b> — 집주인 채무 1.5억</span></div>
+            <div class="reason-line"><span class="dot">•</span><span><b>근저당 4억</b> — 시세의 16% 선순위</span></div>
+          </div>
+
+          <div class="verdict-score">
+            <div class="score-bar"><div class="score-fill"></div></div>
+            <span class="score-num">23 / 100</span>
+          </div>
+
+          <p class="verdict-disclaimer">
+            ⚠️ 참고용 분석이에요. 최종 판단 전 <b>전세피해지원센터(1533-8119)</b> 무료 상담을 권합니다.
+          </p>
+        </div>
+
+        <!-- 숫자 한눈에 -->
+        <div class="stats-card">
+          <div class="card-title">📊 숫자로 한눈에</div>
+          <div class="stats-grid">
+            <div class="stat-block">
+              <div class="stat-label">전세가율</div>
+              <div class="stat-value muted">10%</div>
+              <div class="stat-sub">🟢 비율은 양호</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-label">근저당비율</div>
+              <div class="stat-value">16%</div>
+              <div class="stat-sub">🟢 단독은 OK</div>
+            </div>
+          </div>
+          <div class="stat-explain">
+            시세 <b>20.6억</b> (국토부 자동 조회 · 30건 평균) · 보증금 <b>2억</b><br>
+            ※ 비율은 안전 범위지만 <b>위 위험 요소</b> 때문에 결국 위험 매물입니다.
+          </div>
+        </div>
+
+        <!-- 위험·주의 통합 카드 (펼침 default) -->
+        <div class="accordion">
+          <div class="accordion-head">
+            <div class="acc-icon danger">⚠</div>
+            <div class="acc-title">위험·주의 (3건)</div>
+            <span class="acc-count">3</span>
+            <span class="acc-chevron">▾</span>
+          </div>
+          <div class="acc-body">
+            <div class="body-inner risk-list">
+              <div class="risk-line">
+                <div class="risk-mark red">🔨</div>
+                <div class="risk-text-wrap">
+                  <div class="risk-title">임의경매 개시</div>
+                  <div class="risk-sub">이미 법원 경매 절차 진입. 계약해도 보증금 회수 매우 어려움.</div>
+                </div>
+              </div>
+              <div class="risk-line">
+                <div class="risk-mark red">⚠</div>
+                <div class="risk-text-wrap">
+                  <div class="risk-title">가압류 1건 (1.5억원)</div>
+                  <div class="risk-sub">집주인 채무로 가압류. 경매 진행 가속 가능. 채권자: 우리은행.</div>
+                </div>
+              </div>
+              <div class="risk-line">
+                <div class="risk-mark yellow">🔄</div>
+                <div class="risk-text-wrap">
+                  <div class="risk-title">소유권 이전 2회 (최근 2년)</div>
+                  <div class="risk-sub">투자·갭투자 가능성. 집주인 실소유권·재정 확인 권장.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 부동산 정보 (접힘) -->
+        <div class="accordion">
+          <div class="accordion-head">
+            <div class="acc-icon">📄</div>
+            <div class="acc-title">등기부 추출 정보</div>
+            <span class="acc-chevron">▸</span>
+          </div>
+        </div>
+
+        <!-- 법령·도움 (접힘) -->
+        <div class="accordion">
+          <div class="accordion-head">
+            <div class="acc-icon">📚</div>
+            <div class="acc-title">법령 근거 + 외부 도움 (12)</div>
+            <span class="acc-chevron">▸</span>
+          </div>
+        </div>
+
+        <!-- 다음 액션 -->
+        <div class="next-cta">
+          <div class="next-cta-text">
+            <div class="next-cta-label">위험 인지 후에도 진행한다면</div>
+            <div class="next-cta-title">이사 체크리스트 만들기</div>
+            <div class="next-cta-hint">📍 서울특별시 강남구 자동 설정</div>
+          </div>
+          <div class="next-cta-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footnote">
+  💡 펼친 상태도 보고 싶으면 폰 width 가 좁을 때 모든 아코디언이 자동 펼쳐지도록 설정 가능 ·
+  발표 데모용으로는 처음 진입 시 <b>위험·주의</b> 만 펼치고 나머지는 접힌 상태가 가장 깔끔
+</div>
+
+<!-- ===== 점수 영역 3 옵션 비교 ===== -->
+<div class="score-options-section">
+  <h3>🎯 안전 점수 영역 — 어떤 안으로 갈까요?</h3>
+  <p class="feedback">📝 피드백: <b>"23인데 왜 위험이지? 라고 생각할 수 있다. 이 수치가 무엇을 담당하는지 명확해야 한다"</b></p>
+
+  <div class="score-grid">
+    <!-- Option 1: 점수 + 라벨 강화 -->
+    <div class="score-option">
+      <span class="opt-label">옵션 1</span>
+      <div class="opt-name">점수 + 라벨 강화</div>
+      <div class="opt-desc">"안전도" 라벨 + 등급 단어 + 색상 그라디언트 척도</div>
+
+      <div class="opt-mock">
+        <div class="opt1-label">🛡️ 보증금 안전도 (높을수록 안전)</div>
+        <div class="opt1-row">
+          <span class="opt1-num">23</span>
+          <span style="color:var(--text-mute);font-weight:600">/ 100</span>
+          <span class="opt1-grade">· 매우 위험</span>
+        </div>
+        <div class="opt1-bar">
+          <div class="opt1-marker"></div>
+        </div>
+        <div class="opt1-axis">
+          <span style="color:var(--danger)">위험</span>
+          <span style="color:var(--warning)">주의</span>
+          <span style="color:var(--success)">안전</span>
+        </div>
+      </div>
+
+      <p style="font-size:11px;color:var(--text-sub);margin:12px 0 0;line-height:1.5">
+        ✅ 점수 의미 명확 · 등급 단어 즉시 인지 · 척도 시각화로 "왜 빨강인지" 한 눈에<br>
+        ⚠️ 정보 밀도 약간 높음 (3줄)
+      </p>
+    </div>
+
+    <!-- Option 2: 점수 제거 -->
+    <div class="score-option">
+      <span class="opt-label">옵션 2</span>
+      <div class="opt-name">점수 제거 — 결론 단어로</div>
+      <div class="opt-desc">추상적 점수 대신 유저가 진짜 알고 싶은 결론</div>
+
+      <div class="opt-mock">
+        <div class="opt2-key">💡 결론</div>
+        <div class="opt2-action">
+          <span class="em">계약하지 마세요</span>
+        </div>
+        <div class="opt2-sub">
+          이 매물은 <b>이미 경매 중</b>이고 <b>가압류</b>까지 있어 보증금 회수가 거의 불가능합니다.
+        </div>
+      </div>
+
+      <p style="font-size:11px;color:var(--text-sub);margin:12px 0 0;line-height:1.5">
+        ✅ 가장 명확 · 행동 지시 직접 · 추상적 수치 없음<br>
+        ⚠️ 등급 시각화 약함 (red 색상에만 의존)
+      </p>
+    </div>
+
+    <!-- Option 3: 액션 체크리스트 -->
+    <div class="score-option">
+      <span class="opt-label">옵션 3 추천</span>
+      <div class="opt-name">실행 가능 체크</div>
+      <div class="opt-desc">유저가 실제로 다음에 뭐 해야 하는지 보여주기</div>
+
+      <div class="opt-mock">
+        <div class="opt2-key">📋 다음 액션</div>
+        <div class="opt3-row">
+          <div class="opt3-icon">✕</div>
+          <span class="label">HUG 보증보험 가입</span>
+          <span class="value">거절 가능성</span>
+        </div>
+        <div class="opt3-row">
+          <div class="opt3-icon">✕</div>
+          <span class="label">전세대출 승인</span>
+          <span class="value">매우 어려움</span>
+        </div>
+        <div class="opt3-row">
+          <div class="opt3-icon warn">!</div>
+          <span class="label">전세피해지원센터 상담</span>
+          <span class="value" style="color:var(--warning)">강력 권장</span>
+        </div>
+      </div>
+
+      <p style="font-size:11px;color:var(--text-sub);margin:12px 0 0;line-height:1.5">
+        ✅ <b>점수 X · 추상 X · 행동 가능</b> — 유저가 무엇을 못 하는지 즉시 인지<br>
+        ⚠️ 데이터 추가 필요 (HUG 가입 가능성 추론 로직)
+      </p>
+    </div>
+  </div>
+
+  <p style="font-size:13px;color:var(--text-sub);margin:20px 0 0;text-align:center;line-height:1.6">
+    👆 셋 중 어느 것으로 갈까요? 픽 후 코드에 적용합니다.<br>
+    <small style="color:var(--text-mute)">또는 "1+3 결합" 같은 조합도 OK</small>
+  </p>
+</div>
+
+</body>
+</html>

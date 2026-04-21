@@ -4,7 +4,8 @@
  * Azure 연결 후: GPT-4o 자연어 답변 (자동 전환)
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { Audio } from 'expo-av';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -58,12 +59,12 @@ function renderAnswerWithTags(text: string, textColor: string) {
         <Text
           key={i}
           style={{
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: '800',
             color: meta.color,
             backgroundColor: meta.bg,
-            paddingHorizontal: 5,
-            paddingVertical: 1,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
             borderRadius: 4,
             overflow: 'hidden',
           }}
@@ -112,6 +113,10 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [presets, setPresets] = useState<string[]>([]);
+  // STT 녹음 상태 — Azure Speech-to-Text (ko-KR)
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [sttLoading, setSttLoading] = useState(false);
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   useEffect(() => {
     api
@@ -119,6 +124,105 @@ export default function ChatScreen() {
       .then(setPresets)
       .catch(() => setPresets([]));
   }, []);
+
+  async function startRecording() {
+    try {
+      // 권한 요청 (마이크)
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) {
+        setMessages((prev) => [
+          ...prev,
+          { role: 'bot', text: '마이크 권한이 없어요. 설정에서 허용 후 다시 시도해주세요.' },
+        ]);
+        return;
+      }
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      // Azure STT 가 가장 잘 받는 포맷: WAV 16kHz mono PCM.
+      // 중요: extension '.wav' 만으로는 iOS 가 CAF (Core Audio Format) 로 저장 가능.
+      // `outputFormat: IOSOutputFormat.LINEARPCM ('lpcm')` 을 명시해야 실제 RIFF WAV 로 저장됨.
+      // Android 도 THREE_GPP default 로 빠지면 mp4 컨테이너가 되므로 명시적 PCM 설정 유지.
+      const rec = new Audio.Recording();
+      await rec.prepareToRecordAsync({
+        isMeteringEnabled: false,
+        android: {
+          extension: '.wav',
+          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+        },
+        ios: {
+          extension: '.wav',
+          outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm',
+          bitsPerSecond: 128000,
+        },
+      });
+      await rec.startAsync();
+      recordingRef.current = rec;
+      setRecording(rec);
+    } catch (e: any) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'bot', text: `녹음 시작 실패: ${e.message}` },
+      ]);
+    }
+  }
+
+  async function stopRecording() {
+    const rec = recordingRef.current;
+    if (!rec) return;
+    setRecording(null);
+    setSttLoading(true);
+    try {
+      await rec.stopAndUnloadAsync();
+      const uri = rec.getURI();
+      recordingRef.current = null;
+      if (!uri) throw new Error('녹음 파일 경로 없음');
+      // backend /api/stt 로 multipart 전송
+      const { text, status } = await api.stt(uri);
+      if (text.trim()) {
+        setInput((prev) => (prev ? prev + ' ' + text : text));
+      } else {
+        // 인식 실패 케이스별 친절한 안내
+        const reason =
+          status === 'NoMatch'
+            ? '말씀하신 내용을 인식 못 했어요. 더 또렷하게 다시 말해주세요.'
+            : status === 'InitialSilenceTimeout'
+            ? '소리가 없었어요. 마이크 권한·마이크 가까이 다시 시도해주세요.'
+            : status === 'BabbleTimeout'
+            ? '주변 소음이 너무 커요. 조용한 곳에서 다시 시도해주세요.'
+            : `음성 인식 실패 (${status}). 다시 시도해주세요.`;
+        setMessages((prev) => [...prev, { role: 'bot', text: reason }]);
+      }
+    } catch (e: any) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'bot', text: `음성 인식 실패: ${e.message}` },
+      ]);
+    } finally {
+      setSttLoading(false);
+    }
+  }
+
+  function toggleMic() {
+    if (sttLoading) return;
+    if (recording) stopRecording();
+    else startRecording();
+  }
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -235,13 +339,33 @@ export default function ChatScreen() {
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="질문을 입력하세요..."
+            placeholder={recording ? '듣는 중... 다시 누르면 변환' : sttLoading ? '음성 변환 중...' : '질문을 입력하거나 마이크를 누르세요'}
             placeholderTextColor={colors.textMute}
             style={styles.input}
             onSubmitEditing={() => send(input)}
             returnKeyType="send"
-            editable={!loading}
+            editable={!loading && !sttLoading}
           />
+          <AppPressable
+            style={[
+              styles.micBtn,
+              recording && styles.micBtnRecording,
+              (loading || sttLoading) && { opacity: 0.4 },
+            ]}
+            onPress={toggleMic}
+            disabled={loading || sttLoading}
+            accessibilityLabel={recording ? '녹음 중지' : '음성 입력 시작'}
+          >
+            {sttLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Ionicons
+                name={recording ? 'stop' : 'mic'}
+                size={20}
+                color={recording ? '#fff' : colors.primary}
+              />
+            )}
+          </AppPressable>
           <AppPressable
             style={[styles.sendBtn, (!input.trim() || loading) && { opacity: 0.4 }]}
             onPress={() => send(input)}
@@ -340,12 +464,12 @@ function CitationsGrouped({ citations }: { citations: ChatCitation[] }) {
                     ? 'logo-youtube'
                     : 'document-text'
                 }
-                size={11}
+                size={12}
                 color={meta.color}
               />
               <Text
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: '800',
                   color: meta.color,
                 }}
@@ -415,7 +539,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   modeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: colors.textSub,
   },
@@ -434,18 +558,18 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.sm,
   },
   bubbleText: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 23,
   },
   citationsBox: {
-    marginTop: spacing.xs,
-    gap: 3,
+    marginTop: spacing.sm,
+    gap: 4,
   },
   citationsLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.textSub,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   citationChip: {
     flexDirection: 'row',
@@ -453,13 +577,14 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: colors.primaryBg,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: radius.sm,
   },
   citationText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.primary,
     flex: 1,
+    lineHeight: 17,
   },
   loading: {
     flexDirection: 'row',
@@ -503,8 +628,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.borderLight,
   },
   disclaimerText: {
-    fontSize: 10,
+    fontSize: 11,
     color: colors.textSub,
+    lineHeight: 16,
     flex: 1,
   },
   inputBar: {
@@ -530,5 +656,19 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  micBtn: {
+    backgroundColor: colors.primaryBg,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  micBtnRecording: {
+    backgroundColor: colors.danger,
+    borderColor: colors.danger,
   },
 });
