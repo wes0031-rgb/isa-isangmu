@@ -183,9 +183,6 @@ export default function MyScreen() {
               도로명주소 API · 행정표준코드
             </Text>
           </View>
-          <Text style={styles.sourceFooter}>
-            법률 1,635 + 절차 340 + 영상 147 = 총 2,122 청크 · Azure AI Search 인덱싱
-          </Text>
         </View>
 
         {/* 데이터 관리 */}
