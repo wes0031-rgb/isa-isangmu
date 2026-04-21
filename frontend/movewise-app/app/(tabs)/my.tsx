@@ -30,15 +30,35 @@ export default function MyScreen() {
   const [healthError, setHealthError] = useState<string | null>(null);
   const [fontLevel, setFontLevel] = useFontScaleLevel();
 
+  // 탭 진입 시 health 체크. AbortController 로 언마운트 시 진짜 취소해서
+  // context-cancel 로 인한 false-positive "연결 실패" 방지. 3회 재시도까지 조용히
+  // 넘기고 최종 실패 시에만 경고 톤으로 표시.
   useFocusEffect(
     useCallback(() => {
-      api
-        .health()
-        .then((h) => {
+      const controller = new AbortController();
+      let attempts = 0;
+      async function check() {
+        if (controller.signal.aborted) return;
+        attempts += 1;
+        try {
+          const h = await api.health();
+          if (controller.signal.aborted) return;
           setHealth(h);
           setHealthError(null);
-        })
-        .catch((e) => setHealthError(e.message));
+        } catch (e: any) {
+          if (controller.signal.aborted) return;
+          if (e?.name === 'AbortError') return;
+          if (attempts < 3) {
+            setTimeout(check, 3000);
+            return;
+          }
+          setHealthError('상태 확인 중...');
+        }
+      }
+      check();
+      return () => {
+        controller.abort();
+      };
     }, []),
   );
 
@@ -95,12 +115,12 @@ export default function MyScreen() {
             {healthError ? (
               <>
                 <Ionicons
-                  name="alert-circle"
+                  name="sync"
                   size={18}
-                  color={colors.danger}
+                  color={colors.textSub}
                 />
-                <Text style={[styles.statusText, { color: colors.danger }]}>
-                  서버 연결 실패
+                <Text style={[styles.statusText, { color: colors.textSub }]}>
+                  {healthError}
                 </Text>
               </>
             ) : health ? (
