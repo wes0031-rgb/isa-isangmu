@@ -235,11 +235,12 @@ async function postMultipart<TRes>(path: string, form: FormData, timeoutMs = 600
 
 export const api = {
   async health(): Promise<{ service: string; version: string; azure_ready: boolean }> {
-    // Render free tier 가 idle 후 sleep → 첫 요청은 cold start 로 30~60s 가능.
-    // timeout 30s 로 흡수. 더 길면 사용자 체감 너무 느림.
+    // `/` 는 PWA SPA fallback 라우트라 dist/index.html 이 없으면 500 반환 →
+    // 진단용은 `/api/info` 사용. 스키마도 정확히 {service, version, azure_ready}.
+    // Render free tier cold start 30~60s 흡수용 timeout 30s.
     const { signal, clear } = withTimeout(30000);
     try {
-      const res = await fetch(`${getApiUrl()}/`, { signal });
+      const res = await fetch(`${getApiUrl()}/api/info`, { signal });
       if (!res.ok) throw new Error(`health ${res.status}`);
       return res.json();
     } catch (e) {
