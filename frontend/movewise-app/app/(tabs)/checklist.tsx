@@ -1516,14 +1516,15 @@ function ChecklistCard({
   // D-day 배지는 "이사일 기준" offset 으로 통일 (각 카드마다 고정 값)
   // 예: d_day_offset=-7 → "이사 7일 전", 0 → "이사 당일", +1 → "이사 1일 후"
   const dDay = formatMoveOffsetLabel(item.d_day_offset);
-  // D-day 색 계층: 법정기한+임박 → danger, 임박(-3~0) → warning, 가까움(-7~-4) → accent, 그 외 → primaryLight
-  const urgencyColor = (() => {
-    const off = item.d_day_offset;
-    if (legal) return off >= -3 ? colors.danger : colors.warning;
-    if (off >= -3 && off <= 0) return colors.warning;
-    if (off >= -7 && off <= -4) return colors.accent;
-    return colors.primaryLight;
-  })();
+  // 3단계 우선순위 (2026-04-21 직관 단순화):
+  //   🔴 필수 — 법정기한 있음 (과태료·페널티 위험)
+  //   🟠 중요 — 법정기한 없지만 이사일 ±7일 임박
+  //   🔷 참고 — 그 외 (법적 권리 안내 / 장기 준비 / 사후)
+  const urgencyColor = legal
+    ? colors.danger
+    : item.d_day_offset >= -7 && item.d_day_offset <= 7
+      ? colors.warning
+      : colors.primaryLight;
   return (
     <Pressable
       onPress={onPress}
