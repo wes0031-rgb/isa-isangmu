@@ -37,6 +37,28 @@ logger = logging.getLogger("movewise")
 # 너무 작으면 recall 손실, 너무 크면 latency. 50은 Azure 문서 권장선.
 VECTOR_K_NEIGHBORS = 50
 
+# Semantic 쿼터 소진 감지 플래그 — 프로세스 전역. Azure free tier 는 월 1000 쿼리
+# 후 'Semantic Usage exceeded' 를 반환하는데, 이후 모든 semantic 호출이 동일 오류로
+# 실패. 이 플래그가 true 면 semantic 생략하고 vector+keyword 만 사용 (품질 약간↓,
+# 하지만 벡터 임베딩이 있으면 semantic re-rank 없이도 좋은 recall 유지).
+# 프로세스 재시작 시 reset — Azure 쿼터도 월 초 자동 reset 이라 정합적.
+_SEMANTIC_DISABLED = False
+
+
+def _is_semantic_quota_error(exc: Exception) -> bool:
+    """Azure Semantic free-tier 쿼터 초과 오류 판정."""
+    msg = str(exc).lower()
+    return any(
+        s in msg
+        for s in (
+            "semantic usage exceeded",
+            "semantic billing",
+            "semantic quota",
+            "free query semantic",
+        )
+    )
+
+
 # chat 용 기본 top-k (컨텍스트 배분)
 DEFAULT_TOP_LAW_CHAT = 6
 DEFAULT_TOP_GUIDE_CHAT = 4
@@ -120,17 +142,20 @@ def hybrid_search(
 
     embedding=None 이면 vector 쿼리 생략 (semantic-only). 이 경우에도 결과는 반환.
     top<=0 이면 호출 생략 (빈 리스트 반환).
+
+    쿼터 처리: Azure Semantic free-tier 가 월 소진되면 이후 호출 전부 오류.
+    첫 감지 시 _SEMANTIC_DISABLED 플래그 set → 해당 호출 즉시 vector+keyword 로
+    재시도 + 이후 모든 호출은 semantic 생략 (재시도 지연 방지).
     """
+    global _SEMANTIC_DISABLED
     if client is None or top <= 0:
         return []
 
-    search_kwargs = {
+    use_semantic = not _SEMANTIC_DISABLED
+    base_kwargs = {
         "search_text": query,
         "top": top,
-        "query_type": "semantic",
-        "semantic_configuration_name": semantic_config,
     }
-
     if embedding is not None:
         from azure.search.documents.models import VectorizedQuery
 
@@ -139,12 +164,34 @@ def hybrid_search(
             k_nearest_neighbors=VECTOR_K_NEIGHBORS,
             fields=vector_field,
         )
-        search_kwargs["vector_queries"] = [vector_query]
+        base_kwargs["vector_queries"] = [vector_query]
+
+    def _run(with_semantic: bool) -> list[dict]:
+        kwargs = dict(base_kwargs)
+        if with_semantic:
+            kwargs["query_type"] = "semantic"
+            kwargs["semantic_configuration_name"] = semantic_config
+        hits = list(client.search(**kwargs))
+        return [dict(h) for h in hits]
 
     try:
-        hits = list(client.search(**search_kwargs))
-        return [dict(h) for h in hits]
+        return _run(with_semantic=use_semantic)
     except Exception as exc:
+        if use_semantic and _is_semantic_quota_error(exc):
+            # 쿼터 소진 감지 — 플래그 set + vector+keyword 로 즉시 재시도.
+            if not _SEMANTIC_DISABLED:
+                logger.warning(
+                    "semantic quota exhausted — disabling semantic re-rank process-wide. "
+                    "Falling back to vector+keyword hybrid for remaining queries."
+                )
+                _SEMANTIC_DISABLED = True
+            try:
+                return _run(with_semantic=False)
+            except Exception as exc2:
+                logger.warning(
+                    f"vector+keyword fallback failed ({type(exc2).__name__}): {exc2}"
+                )
+                return []
         logger.warning(
             f"hybrid_search failed ({type(exc).__name__}) config={semantic_config}: {exc}"
         )
