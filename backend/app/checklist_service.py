@@ -141,7 +141,9 @@ def build_queries_freetext_llm(req: ChecklistRequest) -> list[str]:
         "→ JSON 배열로만 응답. 예: {\"queries\": [\"임차권등기명령 신청\", \"전세보증금 반환 소송\"]}"
     )
     try:
-        resp = client.chat.completions.create(
+        # max_retries=0: SDK 기본 2회 재시도 X → 총 대기시간 = timeout 그대로.
+        # 재시도해도 쿼터 초과 같은 영구 오류는 안 풀리고, 대기시간만 3배로 늘어남.
+        resp = client.with_options(max_retries=0).chat.completions.create(
             model=settings.azure_openai_deployment_name,
             temperature=0,
             seed=42,
@@ -364,7 +366,9 @@ def structure_checklist_llm(
     import logging as _log
     _logger = _log.getLogger("movewise")
     try:
-        resp = client.chat.completions.create(
+        # max_retries=0: SDK 기본 2회 재시도 X → 총 대기시간 = timeout 그대로.
+        # 재시도 2회 시 최악 20s * 3 = 60s → 프론트 45s 초과.
+        resp = client.with_options(max_retries=0).chat.completions.create(
             model=settings.azure_openai_deployment_name,
             temperature=0,
             seed=42,  # 결정론화
