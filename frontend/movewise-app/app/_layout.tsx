@@ -1,8 +1,10 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ConsentModal } from '../components/ConsentModal';
+import { hasConsented, markConsented } from '../lib/consent';
 import { loadFontScale } from '../lib/fontScale';
 import { colors } from '../theme/colors';
 
@@ -15,6 +17,20 @@ export default function RootLayout() {
       /* AsyncStorage 에러는 조용히 무시 — 기본값(normal) 유지 */
     });
   }, []);
+
+  // 이용 동의 — 최초 1회 강제. undefined=확인중, true=동의, false=미동의.
+  // AsyncStorage 실패 시 false 로 간주해 동의 모달 표시 (안전장치).
+  const [consented, setConsented] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    hasConsented().then(setConsented).catch(() => setConsented(false));
+  }, []);
+
+  function handleAgree() {
+    setConsented(true);
+    markConsented().catch(() => {
+      /* 저장 실패해도 세션 내 통과 — 다음 실행 시 재동의 */
+    });
+  }
 
   return (
     <SafeAreaProvider>
@@ -31,6 +47,9 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="checklist/[id]" options={{ title: '항목 상세' }} />
       </Stack>
+      {/* consented === undefined 동안은 모달 표시 안 함 (깜빡임 방지).
+          false 로 결정되면 Modal 띄우고 동의 전까지 앱 사용 차단. */}
+      <ConsentModal visible={consented === false} onAgree={handleAgree} />
     </SafeAreaProvider>
   );
 }
