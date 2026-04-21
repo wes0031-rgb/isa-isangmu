@@ -3,7 +3,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -46,34 +46,47 @@ export default function Home() {
   const [saved, setSaved] = useState<StoredChecklist | null>(null);
   const [completions, setCompletions] = useState<CompletionMap>({});
 
+  // health 체크는 mount 시 1회만 (탭 전환마다 X). 실패해도 앱 다른 기능은 정상이면
+  // UI 경고 띄우지 않고 조용히 재시도. 실제 API 호출 실패는 해당 화면(체크리스트/챗봇/
+  // SafeContract) 자체 에러 메시지로 표시.
+  useEffect(() => {
+    const controller = new AbortController();
+    let attempts = 0;
+    async function checkHealth() {
+      if (controller.signal.aborted) return;
+      attempts += 1;
+      try {
+        const h = await api.health();
+        if (controller.signal.aborted) return;
+        setHealth(h);
+        setHealthError(null);
+      } catch (e: any) {
+        if (controller.signal.aborted) return;
+        // AbortError (화면 언마운트) 는 silent. 진짜 네트워크 에러는 콘솔에만 남김.
+        if (e?.name === 'AbortError') return;
+        // 재시도 최대 3회까지. 첫 번째 실패는 조용히 넘어감 (cold start 흡수).
+        if (attempts < 3) {
+          setTimeout(checkHealth, 5000);
+          return;
+        }
+        // 3회 연속 실패해도 healthError state 는 유지 — my.tsx 시스템 상태 카드에서만 표시.
+        // 홈 화면 배너로는 띄우지 않음 (false-positive 방지).
+        setHealthError('백엔드 상태 확인 실패');
+      }
+    }
+    checkHealth();
+    loadChecklist().then(setSaved);
+    loadCompletions().then(setCompletions);
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  // 탭 재진입 시 저장된 체크리스트만 최신화 (health 재호출 안 함 → context cancel 방지).
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      // health 체크 + 실패 시 1회 자동 재시도 (Render cold start 흡수).
-      // 백엔드 wake-up 후엔 첫 요청 외 모두 빠름.
-      async function checkHealth(retry = false) {
-        try {
-          const h = await api.health();
-          if (!cancelled) {
-            setHealth(h);
-            setHealthError(null);
-          }
-        } catch (e: any) {
-          if (cancelled) return;
-          if (!retry) {
-            setHealthError('백엔드가 깨어나는 중이에요... (잠시 후 자동 재시도)');
-            setTimeout(() => checkHealth(true), 5000);
-          } else {
-            setHealthError('백엔드 연결 실패 — 네트워크 또는 서버 상태를 확인하세요');
-          }
-        }
-      }
-      checkHealth();
       loadChecklist().then(setSaved);
       loadCompletions().then(setCompletions);
-      return () => {
-        cancelled = true;
-      };
     }, []),
   );
 
@@ -174,47 +187,20 @@ export default function Home() {
           </AppPressable>
         )}
 
-        {/* Backend status — 재시도 중이면 warning 색, 최종 실패만 danger */}
-        {(health || healthError) && (
-        <View
-          style={[
-            styles.statusCard,
-            healthError
-              ? {
-                  backgroundColor: healthError.includes('깨어나는')
-                    ? colors.warningBg
-                    : colors.dangerBg,
-                }
-              : { backgroundColor: colors.cardBg },
-          ]}
-        >
-          {healthError ? (
-            <>
-              <Ionicons
-                name={healthError.includes('깨어나는') ? 'sync' : 'alert-circle'}
-                size={18}
-                color={healthError.includes('깨어나는') ? colors.warning : colors.danger}
-              />
-              <Text style={[styles.statusError, healthError.includes('깨어나는') && { color: colors.warning }]}>
-                {healthError}
-              </Text>
-            </>
-          ) : health ? (
-            <>
-              <Ionicons
-                name={health.azure_ready ? 'sparkles' : 'construct'}
-                size={18}
-                color={colors.primaryLight}
-              />
-              <Text style={styles.statusText}>
-                {health.azure_ready
-                  ? 'Azure LLM 모드'
-                  : 'Local fallback 모드'}
-              </Text>
-              <Text style={styles.statusVersion}>v{health.version}</Text>
-            </>
-          ) : null}
-        </View>
+        {/* Backend status — 성공 상태만 홈에 표시. 실패(healthError)는 my 탭에서 확인.
+            홈 배너로 띄우면 false-positive (탭 전환 context-cancel) 로 혼란 유발. */}
+        {health && (
+          <View style={[styles.statusCard, { backgroundColor: colors.cardBg }]}>
+            <Ionicons
+              name={health.azure_ready ? 'sparkles' : 'construct'}
+              size={18}
+              color={colors.primaryLight}
+            />
+            <Text style={styles.statusText}>
+              {health.azure_ready ? 'Azure LLM 모드' : 'Local fallback 모드'}
+            </Text>
+            <Text style={styles.statusVersion}>v{health.version}</Text>
+          </View>
         )}
 
         {/* Today tasks — 오늘 시작할 일 */}
