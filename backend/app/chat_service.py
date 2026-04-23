@@ -97,13 +97,23 @@ def _strip_particle(token: str) -> str:
     return token
 
 
+# 영문 2자 약어 중 도메인상 의미 있는 것만 보존 (나머지 영어 관사·전치사 노이즈 차단)
+_SHORT_EN_ALLOWLIST = {"TV", "AI", "IT", "KT", "SK", "LG", "HUG", "PC"}
+
+
 def _extract_query_keywords(question: str) -> list[str]:
     """질문에서 검색 쿼리로 사용할 구문 추출."""
     import re
 
-    tokens = re.findall(r"[가-힣]{2,}|[A-Za-z]{3,}", question)
+    # 한글 2자+, 영문 2자+ (이전엔 3자라 TV/KT/HUG 누락 → 통신사·보증보험 검색 정확도↓)
+    tokens = re.findall(r"[가-힣]{2,}|[A-Za-z]{2,}", question)
     # 한글 조사 제거 (전입신고는 → 전입신고, 보증금이 → 보증금, 언제까지 → 언제)
     tokens = [_strip_particle(t) for t in tokens]
+    # 영문 2자는 도메인 약어만 통과
+    tokens = [
+        t for t in tokens
+        if not (t.isascii() and len(t) == 2 and t.upper() not in _SHORT_EN_ALLOWLIST)
+    ]
     # 의미 없는 한글 토큰 제거 (조사 떼고 난 후 stop 체크)
     stop = {
         "언제", "어디", "어떻게", "뭐", "무엇", "왜", "합니까",

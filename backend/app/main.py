@@ -136,10 +136,20 @@ async def body_size_middleware(request: Request, call_next):
 async def security_headers_middleware(request: Request, call_next):
     """OWASP 권장 Security Headers 주입. XSS/clickjacking/MIME sniff 방어.
 
-    Python 3.14 + 구 starlette 조합에서 MutableHeaders 조작이 깨져서 일시 비활성화.
-    security_headers 는 FastAPI add_middleware() 경로로 재도입 예정.
+    Python 3.14 + 구 starlette 조합 호환 이슈로 일시 비활성화 했었으나,
+    starlette 1.0+ 에서 MutableHeaders 정상 동작 → 2026-04-23 재활성화.
     """
-    return await call_next(request)
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # HSTS 는 https 응답에만 (개발환경 http 배제)
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+    return response
 
 
 @app.middleware("http")
