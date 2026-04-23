@@ -82,11 +82,25 @@ def test_ratios_seizure_forces_red():
     assert level == "red"
 
 
-def test_ratios_yellow_zone_high_jeontse():
-    """전세가율 80% 이상이면 yellow (근저당 없더라도)."""
+def test_ratios_red_zone_high_jeontse():
+    """전세가율 80% 이상 단독으로도 red (2026-04-23 임계값 강화 — 이전엔 yellow)."""
     e = RegistryExtraction(mortgage_total_krw=0)
     _, _, level = _compute_ratios(e, deposit=420_000_000, market=500_000_000)
+    assert level == "red"
+
+
+def test_ratios_yellow_zone_mid_jeontse():
+    """전세가율 70-79% 면 yellow (red 임계값 80% 미만)."""
+    e = RegistryExtraction(mortgage_total_krw=0)
+    _, _, level = _compute_ratios(e, deposit=375_000_000, market=500_000_000)
     assert level == "yellow"
+
+
+def test_ratios_red_zone_high_mortgage():
+    """근저당비율 50% 이상 단독으로도 red."""
+    e = RegistryExtraction(mortgage_total_krw=300_000_000)
+    _, _, level = _compute_ratios(e, deposit=100_000_000, market=500_000_000)
+    assert level == "red"
 
 
 def test_ratios_market_zero_returns_safe_default():

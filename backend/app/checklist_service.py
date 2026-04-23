@@ -1896,29 +1896,61 @@ _FLAG_TO_CATEGORIES: dict[str, tuple[str, ...]] = {
 }
 
 
+# 키워드 매칭 후 같은 컨텍스트 윈도우 안에 있으면 false positive 로 판정해 skip 하는 패턴.
+# - 부정: "강아지 키우고 싶지만 못", "직장이 없어서", "회사 안 다녀요"
+# - 과거: "아파트 살았는데", "고등학교 다닐 때"
+# - 타인: "친구가 외국인", "이전 직장에서"
+_NEGATION_PATTERNS = ("없", "안 ", "못 ", "안다닌", "안다녀", "안키")
+_PAST_PATTERNS = ("었어", "었던", "었을", "었지", "였어", "였던", "다녔", "살았",
+                  "지냈", "받았", "였습", "었습")
+_OTHER_PERSON_PATTERNS = ("친구", "지인", "이전", "예전", "전에", "옛날", "동생",
+                          "부모님", "어머니", "아버지", "형이", "누나가", "언니가")
+
+
+def _is_negated_context(text: str, kw: str) -> bool:
+    """키워드 매칭이 부정/과거/타인 컨텍스트인지 휴리스틱.
+
+    키워드 위치 ±15자 윈도우에 부정·과거·타인 지칭 패턴이 있으면 True.
+    한글 부정어가 키워드보다 뒤에 오는 경우가 많아 뒤쪽 윈도우를 더 넓게.
+    """
+    idx = text.find(kw)
+    if idx < 0:
+        return False
+    start = max(0, idx - 10)
+    end = min(len(text), idx + len(kw) + 20)
+    window = text[start:end]
+    for p in _NEGATION_PATTERNS + _PAST_PATTERNS + _OTHER_PERSON_PATTERNS:
+        if p in window:
+            return True
+    return False
+
+
 def _augment_flags_from_freetext(
     req: ChecklistRequest,
 ) -> tuple[ChecklistRequest, list[str], list[str]]:
     """free_text 를 파싱해 구조화 플래그 (has_pet 등) 를 끌어올림.
 
     이미 True 인 플래그는 건드리지 않음 (사용자가 명시적으로 체크한 건 유지).
-    False 인 플래그 중 free_text 에 관련 키워드가 있으면 True 로 승격.
+    False 인 플래그 중 free_text 에 관련 키워드가 있으면 True 로 승격하되,
+    부정·과거·타인 지칭 컨텍스트는 휴리스틱으로 false positive 차단.
     반환: (새 req, 매칭 키워드, 승격된 플래그). 승격 없으면 원본 req + 빈 리스트 × 2.
     """
     ft = (req.free_text or "")
     if not ft.strip():
         return req, [], []
-    ft_lower = ft.lower()
     updates: dict = {}
     matched: list[str] = []
     for flag, keywords in _FREETEXT_FLAG_KEYWORDS:
         if getattr(req, flag, False):
             continue  # 이미 True 면 유지
         for kw in keywords:
-            if kw in ft or kw in ft_lower:
-                updates[flag] = True
-                matched.append(kw)
-                break  # 같은 flag 는 한 키워드만
+            if kw not in ft:
+                continue
+            if _is_negated_context(ft, kw):
+                continue  # 부정·과거·타인 컨텍스트 → skip
+            updates[flag] = True
+            matched.append(kw)
+            break  # 같은 flag 는 한 키워드만
     if not updates:
         return req, [], []
     import logging as _log
