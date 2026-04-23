@@ -2065,14 +2065,23 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
         _logger.info(f"[checklist] cache HIT key={cache_key}")
         return cached
 
-    # ★ 2026-04-22: LLM 경로 완전 비활성화 — 결정론 100% 확보
-    # free_text 의 효과는 _augment_flags_from_freetext 의 키워드→플래그 승격으로
-    # 반영되므로 LLM 호출 없이도 "강아지·아파트·외국인" 등 특수 상황의 canonical
-    # 항목이 정적 경로로 주입된다. LLM 은 호출마다 미세 변동이 사라지지 않아
-    # "다시 만들 때마다 항목이 달라진다" 문제의 근본 원인이었으므로 제거.
-    queries = build_queries_rule_based(req)
-    items = structure_checklist_fallback(req, chunks=[])
-    _logger.info(f"[checklist] mode=static-only items={len(items)}")
+    # 2) 경로 분기 — free_text 있을 때만 LLM 경로 (Azure Search + GPT-4o)
+    # 정형 토글만이면 정적 fallback. free_text 의 자유 표현은 키워드 매칭으로
+    # 못 잡는 엣지케이스(예: "신축 입주 하자 점검", "조부모 동거") 까지 커버.
+    # 결정론은 _request_cache_key 캐시 (위) 가 담당 — 같은 input → 같은 output.
+    has_free_text = bool(original_ft)
+    if has_free_text:
+        queries = build_queries_freetext_llm(req)
+        chunks = search_procedures(queries, req)
+        items, used_fallback = structure_checklist_llm(req, chunks)
+        _logger.info(
+            f"[checklist] mode=llm free_text=on queries={len(queries)} "
+            f"chunks={len(chunks)} items={len(items)} fallback={used_fallback}"
+        )
+    else:
+        queries = build_queries_rule_based(req)
+        items = structure_checklist_fallback(req, chunks=[])
+        _logger.info(f"[checklist] mode=static items={len(items)}")
 
     items = _ensure_utility_items(items, req)
     items = _ensure_conditional_items(items, req)
