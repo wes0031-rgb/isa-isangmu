@@ -718,25 +718,32 @@ def _explain_with_llm(
         # 맞아야 헤더(risk_level 기반)와 본문 톤이 어긋나지 않음.
         "pre_computed_risk_level": pre_computed_risk_level,
     }
-    resp = client.chat.completions.create(
-        model=settings.azure_openai_deployment_name,
-        temperature=0,
-        seed=42,
-        messages=[
-            {"role": "system", "content": EXPLAIN_SYSTEM},
-            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-        ],
-        response_format={"type": "json_object"},
-        max_tokens=2000,  # 위험 요약 + 5~8 risk items 충분
-        timeout=20,
-    )
-    raw = resp.choices[0].message.content or "{}"
+    # try 블록을 client.create 까지 확장 — 이전엔 호출이 try 밖이라 timeout/네트워크
+    # 오류 시 caller 까지 propagate → /safecontract 500. 의도된 fallback (rule-based)
+    # 안 탐.
     try:
+        resp = client.chat.completions.create(
+            model=settings.azure_openai_deployment_name,
+            temperature=0,
+            seed=42,
+            messages=[
+                {"role": "system", "content": EXPLAIN_SYSTEM},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=2000,  # 위험 요약 + 5~8 risk items 충분
+            timeout=20,
+        )
+        raw = resp.choices[0].message.content or "{}"
         data = json.loads(raw)
         summary = data.get("summary", "")
         risks = [RiskItem(**r) for r in data.get("risks", [])]
         return summary, risks
-    except Exception:
+    except Exception as exc:
+        import logging as _log
+        _log.getLogger("movewise").warning(
+            f"_explain_with_llm failed ({type(exc).__name__}): {exc} — rule-based fallback"
+        )
         return _explain_rule_based(extraction, jeontse_ratio, mortgage_ratio)
 
 
