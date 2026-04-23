@@ -50,6 +50,8 @@ export interface ChecklistRequest {
   is_employed?: boolean;
   receives_welfare?: boolean;
   needs_id_reissue?: boolean;
+  /** 한국 국적자 해외 거주 후 귀국 여부 — 외국 국적자(is_foreigner)와 별개 */
+  is_returning_from_abroad?: boolean;
   moving_style?: MovingStyle;
   deposit_krw?: number | null;
   monthly_rent_krw?: number | null;

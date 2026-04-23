@@ -1307,6 +1307,69 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
             "citations": [{"law_name": "출입국관리법", "article": "제36조"}],
         },
     ),
+    # 한국인 귀국자 4종 — 외국인과 별개 (is_returning_from_abroad 트리거)
+    (
+        lambda req: getattr(req, "is_returning_from_abroad", False),
+        ("재외국민 거소", "재외국민 신고"),
+        {
+            "category": "재외국민 거소신고",
+            "title": "재외국민 국내거소신고 (장기 해외체류 후 귀국 시)",
+            "description": (
+                "30일 이상 해외 체류 후 귀국하여 국내 거주 시 관할 출입국·외국인관서 또는 정부24에서 "
+                "국내거소신고. 신고 후 거소신고증 발급. 본인 확인·금융·통신 개설에 활용 가능."
+            ),
+            "d_day_offset": 1,
+            "has_legal_deadline": False,
+            "method": "정부24 또는 출입국·외국인청 방문",
+            "citations": [{"law_name": "재외동포의 출입국과 법적 지위에 관한 법률", "article": "제6조"}],
+        },
+    ),
+    (
+        lambda req: getattr(req, "is_returning_from_abroad", False),
+        ("외국 운전면허", "외국면허 인정"),
+        {
+            "category": "외국 운전면허 한국 인정",
+            "title": "외국 운전면허 → 한국 면허 인정 신청",
+            "description": (
+                "한국이 인정하는 국가의 운전면허는 적성검사 후 한국 면허로 갱신 가능 (필기·실기 면제). "
+                "운전면허시험장 또는 안전운전 통합민원에서 신청. 미인정 국가면 신규 취득 절차."
+            ),
+            "d_day_offset": 14,
+            "has_legal_deadline": False,
+            "method": "도로교통공단 운전면허시험장 방문",
+            "citations": [{"law_name": "도로교통법 시행규칙", "article": "제53조"}],
+        },
+    ),
+    (
+        lambda req: getattr(req, "is_returning_from_abroad", False),
+        ("건강보험 재가입", "건강보험 자격"),
+        {
+            "category": "건강보험 재가입",
+            "title": "건강보험 자격 재취득 (해외 체류 중 자격정지된 경우)",
+            "description": (
+                "1개월 이상 해외 체류 시 건강보험 자격정지 신청한 경우, 입국 후 자격 재취득 신고 필요. "
+                "직장가입자는 회사 4대보험 담당, 지역가입자는 가까운 건강보험공단 지사 방문 또는 1577-1000."
+            ),
+            "d_day_offset": 7,
+            "has_legal_deadline": False,
+            "method": "건강보험공단 1577-1000 또는 지사 방문",
+        },
+    ),
+    (
+        lambda req: getattr(req, "is_returning_from_abroad", False),
+        ("해외 휴대전화", "해외 번호"),
+        {
+            "category": "해외 휴대전화 정리",
+            "title": "해외 통신사 정리 + 한국 번호 개통/이전",
+            "description": (
+                "해외 체류 중 사용한 현지 통신사 자동결제·로밍·해지 처리. 한국 번호는 본인 명의 신규 개통 "
+                "(외국 영주권자는 거소신고증 또는 여권 본인확인) 또는 가족 명의 회선 본인 명의 변경."
+            ),
+            "d_day_offset": 1,
+            "has_legal_deadline": False,
+            "method": "통신사 대리점 방문 (본인 신분증·거소신고증)",
+        },
+    ),
     # 전세·월세 계약일 때만
     (
         lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
@@ -1868,6 +1931,11 @@ _FREETEXT_FLAG_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
     # 항목이 한국인에게 잘못 추가됨) → 제외. 한국인 귀국자 전용 항목은 별도 플래그
     # (`is_returning_from_abroad`) 도입 시 처리.
     ("is_foreigner", ("외국인", "비자", "영주권", "이주민", "체류")),
+    # 한국인 귀국자 — 재외국민 거소신고·외국면허 인정·건강보험 재가입·해외 휴대전화 정리
+    ("is_returning_from_abroad", (
+        "해외에서 귀국", "해외에서 돌아", "한국으로 돌아", "한국 돌아",
+        "귀국", "역이민", "재외국민", "장기 해외 체류",
+    )),
     ("is_apartment", ("아파트", "오피스텔", "단지", "관리사무소", "입주자 카드")),
     ("receives_welfare", ("기초생활수급", "복지급여", "장애인연금",
                           "한부모", "수급자")),
@@ -1887,6 +1955,12 @@ _FLAG_TO_CATEGORIES: dict[str, tuple[str, ...]] = {
     ),
     "has_children": ("자녀 전학", "자녀 학원 주소 확인"),
     "is_foreigner": ("외국인등록 주소변경",),
+    "is_returning_from_abroad": (
+        "재외국민 거소신고",
+        "외국 운전면허 한국 인정",
+        "건강보험 재가입",
+        "해외 휴대전화 정리",
+    ),
     "is_apartment": (
         "관리사무소 입주 신고",
         "우편함 명패 교체",

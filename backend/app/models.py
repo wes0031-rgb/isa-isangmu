@@ -51,6 +51,13 @@ class ChecklistRequest(BaseModel):
         default=False,
         description="주민등록증 재발급 필요 여부 — 10년 경과·분실·사진 변경 등",
     )
+    is_returning_from_abroad: bool = Field(
+        default=False,
+        description=(
+            "한국 국적자 해외 거주 후 귀국 여부 — 재외국민 거소신고·외국면허 인정·"
+            "건강보험 재가입·해외 휴대전화 정리 등 항목 트리거. 외국 국적자 (is_foreigner) 와 별개."
+        ),
+    )
     moving_style: MovingStyle = Field(
         default="company",
         description="이사 스타일 — self=셀프 이사 / company=이사업체 이용",
