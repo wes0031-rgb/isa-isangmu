@@ -414,7 +414,28 @@ def _merge_custom_into_extraction(
             if extraction.seizure_count < 1:
                 extraction.seizure_count = 1
 
-    # 7) 대지권 미등기 → raw_notes 누적
+    # 7) 근저당 채권최고액 보강 — LLM 이 누락(0) 한 경우에만 Custom 값 합산.
+    #    Custom Neural 정확도 50-77% (메모리 기준) 라 보수적으로 LLM=0 일 때만 사용.
+    #    덮어쓰지 않음 — false positive 깡통전세 위험 차단.
+    if extraction.mortgage_claim_amount_krw == 0:
+        custom_total = 0
+        any_custom = False
+        for ck in _CUSTOM_MORTGAGE_AMOUNT_KEYS:
+            if ck not in custom:
+                continue
+            value, conf = custom[ck]
+            if conf < _CUSTOM_CONF_THRESHOLD_FLAG or not value:
+                continue
+            try:
+                custom_total += _parse_korean_amount(re.sub(r"[^\d억만천]", "", value))
+                any_custom = True
+            except Exception:
+                continue
+        if any_custom and custom_total > 0:
+            extraction.mortgage_claim_amount_krw = custom_total
+            extraction.mortgage_total_krw = int(custom_total * 0.83)
+
+    # 8) 대지권 미등기 → raw_notes 누적
     if _CUSTOM_LAND_RIGHTS_UNREGISTERED_KEY in custom:
         value, conf = custom[_CUSTOM_LAND_RIGHTS_UNREGISTERED_KEY]
         if conf >= _CUSTOM_CONF_THRESHOLD_FLAG and value:
@@ -606,17 +627,18 @@ def _compute_ratios(
     combined = jeontse + mortgage
 
     # RED 트리거 (치명) — 시세 의존인 깡통전세는 시세 있을 때만, 등기 플래그는 항상 평가
+    # 임계값은 frontend stat 색상과 일치 (jeontse>=80 / mortgage>=50 / combined>=100)
     critical = (
-        (has_market and combined >= 1.0)
+        (has_market and (combined >= 1.0 or jeontse >= 0.8 or mortgage >= 0.5))
         or extraction.seizure_count > 0
         or extraction.trust_registration
         or extraction.auction_in_progress
         or extraction.injunction_registered  # 가처분
         or extraction.non_residential_use  # 비주거용
     )
-    # YELLOW 트리거 (주의)
+    # YELLOW 트리거 (주의) — frontend warning 색상 임계값과 일치 (jeontse>=70 / mortgage>=30)
     cautionary = (
-        (has_market and (jeontse >= 0.8 or mortgage >= 0.5))
+        (has_market and (jeontse >= 0.7 or mortgage >= 0.3))
         or extraction.provisional_registration  # 가등기
         or extraction.jeonse_right_registered  # 전세권
         or len(extraction.co_owners) > 0  # 공동명의
@@ -731,6 +753,18 @@ def _explain_rule_based(
         # 전세가율은 낮아도 경매/신탁/가압류 있으면 무조건 RED
         summary_parts.append(f"🔴 {' · '.join(critical_flags)} · 계약 주의 (전세가율 {jeontse_pct}%)")
     elif jeontse_ratio >= 0.8 or mortgage_ratio >= 0.5:
+        # 깡통전세는 아니지만 단일 지표가 RED 임계값 도달 (combined<100 케이스)
+        risks.append(RiskItem(
+            severity="red",
+            label=f"전세가율 {jeontse_pct}% · 근저당비율 {mortgage_pct}%",
+            explanation_plain=(
+                "단일 지표가 위험 임계값(전세가율 80% / 근저당비율 50%) 에 도달. "
+                "HUG 보증보험 가입 가능 여부 확인 + 전입신고·확정일자로 대항력·우선변제권 확보 필수."
+            ),
+            related_laws=[_cite("주택임대차보호법", "제3조의2")],
+        ))
+        summary_parts.append(f"🔴 전세가율 {jeontse_pct}% · 근저당비율 {mortgage_pct}%")
+    elif jeontse_ratio >= 0.7 or mortgage_ratio >= 0.3:
         risks.append(RiskItem(
             severity="yellow",
             label=f"전세가율 {jeontse_pct}% · 근저당비율 {mortgage_pct}%",
@@ -740,7 +774,7 @@ def _explain_rule_based(
             ),
             related_laws=[_cite("주택임대차보호법", "제3조의2")],
         ))
-        summary_parts.append(f"🟡 전세가율 {jeontse_pct}% 주의")
+        summary_parts.append(f"🟡 전세가율 {jeontse_pct}% / 근저당 {mortgage_pct}% 주의")
     else:
         summary_parts.append(f"🟢 전세가율 {jeontse_pct}% · 안전 범위")
         risks.append(RiskItem(

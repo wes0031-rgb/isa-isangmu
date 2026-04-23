@@ -714,10 +714,17 @@ function ResultView({
       hh.push({ icon: 'document-text', title: '신탁 등기', sub: '실소유권이 신탁회사 — 신탁사 동의 없으면 대항력 무효' });
     if ((ext.seizure_count ?? 0) > 0)
       hh.push({ icon: 'alert-circle', title: `가압류 ${ext.seizure_count}건`, sub: '집주인 채무 신호 — 경매 가능성' });
-    if (result.mortgage_ratio > 0)
+    // 임계값: 50%+ hard hazard, 30-49 caution, <30 미표시 (백엔드 risk_level 임계값과 일치)
+    if (mortgagePct >= 50)
       hh.push({ icon: 'cash', title: `근저당 ${mortgagePct}% (시세 대비)`, sub: '선순위 채권자 — 경매 시 보증금보다 먼저 변제' });
+    if (jeontsePct >= 80)
+      hh.push({ icon: 'trending-up', title: `전세가율 ${jeontsePct}% (깡통전세 가능)`, sub: '시세 하락 시 보증금 회수 어려움' });
 
     const cs: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [];
+    if (mortgagePct >= 30 && mortgagePct < 50)
+      cs.push({ icon: 'cash', title: `근저당 ${mortgagePct}% (시세 대비)`, sub: '선순위 채권 — 보증금 회수 순위 뒤로 밀림' });
+    if (jeontsePct >= 70 && jeontsePct < 80)
+      cs.push({ icon: 'trending-up', title: `전세가율 ${jeontsePct}%`, sub: '안전 범위(70% 미만) 초과 — HUG 보증보험 가입 검토' });
     if (coOwnersList.length > 0)
       cs.push({ icon: 'people', title: `공동명의 ${1 + coOwnersList.length}인`, sub: '공유자 전원 동의·인감 필수 (민법 265조)' });
     if (ext.provisional_registration)
@@ -758,6 +765,11 @@ function ResultView({
         </View>
         <Text style={styles.verdictHeadline}>{headline.headline}</Text>
         {!!propOneLine && <Text style={styles.verdictProp}>{propOneLine}</Text>}
+
+        {/* AI 한 줄 요약 — 백엔드 _explain_with_llm summary */}
+        {!!result.summary && (
+          <Text style={styles.verdictSummary}>{result.summary}</Text>
+        )}
 
         {/* 핵심 사유 Top 3 */}
         {topReasons.length > 0 && (
@@ -1682,6 +1694,17 @@ const styles = StyleSheet.create({
     color: colors.textSub,
     marginBottom: spacing.md,
     lineHeight: 19,
+  },
+  verdictSummary: {
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 22,
+    marginTop: -spacing.sm + 2,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: radius.sm,
   },
   reasonsBox: {
     backgroundColor: 'rgba(255,255,255,0.7)',
