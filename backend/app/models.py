@@ -112,8 +112,11 @@ class ChecklistResponse(BaseModel):
 
 
 class SafeContractRequest(BaseModel):
+    # Body 1MB cap (middleware) + 일반 등기부 typical 5~15KB → 50KB cap 으로 메모리·
+    # 캐시 키 hash 비용·LLM 입력 cap (15K) 모두 안전 마진 안에 들어옴.
     text: Optional[str] = Field(
         default=None,
+        max_length=50_000,
         description="인터넷등기소에서 복사한 등기부등본 텍스트 (P0)",
     )
     # PDF 업로드는 multipart 엔드포인트로 별도 처리

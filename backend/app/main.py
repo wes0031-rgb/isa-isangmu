@@ -287,8 +287,13 @@ def get_chat_presets() -> dict:
 
 
 @app.get("/realty/summary")
-def get_realty_summary(region: str) -> dict:
-    """지역명으로 국토부 실거래가 최근 요약 반환 (홈 대시보드용)."""
+@_limit("30/minute")
+def get_realty_summary(request: Request, region: str) -> dict:
+    """지역명으로 국토부 실거래가 최근 요약 반환 (홈 대시보드용).
+
+    rate limit: 외부 국토부 API 호출 (data.go.kr) 쿼터 보호. 한 사용자가 30회/분 이상
+    호출할 일 없음 + 쿼터 abuse 방어.
+    """
     from .realty_price import get_region_price_summary
 
     s = get_region_price_summary(region)
