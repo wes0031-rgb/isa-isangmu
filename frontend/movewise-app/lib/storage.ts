@@ -120,14 +120,22 @@ export async function loadNotes(): Promise<NotesMap> {
   }
 }
 
-export async function setNote(key: string, text: string): Promise<void> {
-  const current = await loadNotes();
-  if (text.trim()) {
-    current[key] = text;
-  } else {
-    delete current[key];
-  }
-  await AsyncStorage.setItem(K.NOTES, JSON.stringify(current));
+// read-modify-write 직렬화 큐. 빠른 연속 호출 시 stale read 로 인한 변경분 loss 방지.
+// 예: 메모 A 작성 중 메모 B 작성 → 둘 다 같은 빈 상태에서 시작해 마지막 write 가 첫 write 덮음.
+let _notesQueue: Promise<void> = Promise.resolve();
+
+export function setNote(key: string, text: string): Promise<void> {
+  const next = _notesQueue.then(async () => {
+    const current = await loadNotes();
+    if (text.trim()) {
+      current[key] = text;
+    } else {
+      delete current[key];
+    }
+    await AsyncStorage.setItem(K.NOTES, JSON.stringify(current));
+  });
+  _notesQueue = next.catch(() => {}); // 실패해도 다음 작업 영향 없게
+  return next;
 }
 
 // ===== Completion state =====
@@ -144,10 +152,17 @@ export async function loadCompletions(): Promise<CompletionMap> {
   }
 }
 
-export async function setCompletion(key: string, done: boolean): Promise<void> {
-  const current = await loadCompletions();
-  current[key] = done;
-  await AsyncStorage.setItem(K.COMPLETIONS, JSON.stringify(current));
+// 완료 상태 토글도 read-modify-write 라 직렬화 필요 (체크박스 빠른 멀티 클릭 시 loss).
+let _completionQueue: Promise<void> = Promise.resolve();
+
+export function setCompletion(key: string, done: boolean): Promise<void> {
+  const next = _completionQueue.then(async () => {
+    const current = await loadCompletions();
+    current[key] = done;
+    await AsyncStorage.setItem(K.COMPLETIONS, JSON.stringify(current));
+  });
+  _completionQueue = next.catch(() => {});
+  return next;
 }
 
 export async function clearCompletions(): Promise<void> {

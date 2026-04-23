@@ -568,17 +568,25 @@ def _extract_rule_based(text: str) -> RegistryExtraction:
 
 
 def _parse_korean_amount(s: str) -> int:
-    """'2억4천만' → 240000000 대략 파싱."""
-    eok = 0
+    """'2억4천만' → 240000000, '3.5억' → 350000000 대략 파싱.
+
+    소수점 지원: 이전엔 re.sub(r"\\D",...) 가 점도 제거해서 "3.5억" → 35억 으로
+    잘못 인식 (10배 부풀림 — 깡통전세 false positive 위험).
+    """
+    eok_won = 0
     if "억" in s:
         head, s = s.split("억", 1)
-        eok = int(re.sub(r"\D", "", head) or 0)
+        try:
+            head_num = float(re.sub(r"[^\d.]", "", head) or "0")
+            eok_won = int(head_num * 100_000_000)
+        except ValueError:
+            eok_won = 0
     cheon = 0
     if "천" in s:
         head, s = s.split("천", 1)
         cheon = int(re.sub(r"\D", "", head) or 0) * 1000
     man = int(re.sub(r"\D", "", s) or 0)
-    return eok * 100_000_000 + (cheon + man) * 10_000
+    return eok_won + (cheon + man) * 10_000
 
 
 def _search_law_context(extraction: RegistryExtraction) -> list[dict]:
