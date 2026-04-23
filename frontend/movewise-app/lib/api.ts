@@ -80,6 +80,7 @@ export interface ChecklistItem {
   contact?: string | null;
   region_hint?: string | null;
   citations: Citation[];
+  from_freetext?: boolean;
 }
 
 export interface ChecklistResponse {

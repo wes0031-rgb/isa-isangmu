@@ -5,7 +5,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -90,6 +90,13 @@ export default function SafeContractScreen() {
   const [result, setResult] = useState<SafeContractResponse | null>(null);
   const [isSelfOwnedUser, setIsSelfOwnedUser] = useState(false);
   const loadingMessage = useRotatingText(SAFECONTRACT_LOADING_STEPS, loading, 2500);
+
+  // form ↔ result 가 같은 ScrollView 를 공유 → form 에서 스크롤한 위치가 result 진입
+  // 시 그대로 남아 헤드라인이 화면 위로 잘려 보이는 버그 방지. result 토글마다 최상단 복귀.
+  const scrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [result]);
 
   // 이미 자가로 저장된 체크리스트가 있으면 안내 배너 표시
   useFocusEffect(
@@ -213,7 +220,7 @@ export default function SafeContractScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
           <Text style={styles.h1}>계약 전 체크</Text>
           <Text style={styles.h1Sub}>
             등기부등본을 쉬운 말로 해석해드립니다

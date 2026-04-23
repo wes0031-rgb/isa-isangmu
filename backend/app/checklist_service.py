@@ -368,16 +368,21 @@ def structure_checklist_llm(
     try:
         # max_retries=0: SDK 기본 2회 재시도 X → 총 대기시간 = timeout 그대로.
         # 재시도 2회 시 최악 20s * 3 = 60s → 프론트 45s 초과.
+        # 결정론 완전 잠금 — temp=0 / seed=42 만으로는 Azure OpenAI 가 best-effort.
+        # top_p·frequency/presence_penalty 까지 default 고정해서 호출마다 미세 변동 최소화.
         resp = client.with_options(max_retries=0).chat.completions.create(
             model=settings.azure_openai_deployment_name,
             temperature=0,
-            seed=42,  # 결정론화
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+            seed=42,
             messages=[
                 {"role": "system", "content": STRUCTURE_SYSTEM_PROMPT},
                 {"role": "user", "content": f"조건:\n{req.model_dump_json()}\n\n검색결과:\n{context}"},
             ],
             response_format={"type": "json_object"},
-            max_tokens=3000,  # 출력 cap (~25개 항목 충분). 무제한 시 LLM 늘어짐 방지.
+            max_tokens=3000,
             timeout=20,
         )
     except Exception as exc:
@@ -542,19 +547,8 @@ def structure_checklist_fallback(
             "has_legal_deadline": False,
             "method": "시·구청 폐기물 시스템 / 전자제품 무상수거 1599-0903",
         },
-        {
-            "category": "이사업체 피해예방",
-            "title": "이사업체 견적 비교 + 허가업체 확인",
-            "description": (
-                "이사 3~4주 전 최소 3개 업체 방문 견적 비교. "
-                "전국화물자동차운송주선사업연합회(allmaeul.or.kr)에서 '화물자동차 운송주선' "
-                "허가업체 여부 반드시 확인. 계약금은 총액의 10% 이내, 견적서에 품목·옵션·"
-                "추가요금 조건 모두 서면 명시. 피해 시 소비자상담센터 1372."
-            ),
-            "d_day_offset": -21,
-            "has_legal_deadline": False,
-            "method": "allmaeul.or.kr 허가업체 조회 · 소비자상담센터 1372",
-        },
+        # "이사업체 피해예방" 은 moving_style != "self" 조건부로 items = base 이후
+        # 분기에서 주입 (셀프 이사 시 무의미한 항목 노이즈 제거).
         {
             "category": "인터넷 이전 설치",
             "title": "인터넷·TV 이전 설치",
@@ -691,6 +685,22 @@ def structure_checklist_fallback(
         })
 
     items = base
+    # 이사업체 피해예방 — 셀프 이사(moving_style="self")는 업체 미사용이라 제외.
+    # CONDITIONAL_REQUIRED 의 동명 canonical 과 조건 정합 유지.
+    if (getattr(req, "moving_style", "company") or "company") != "self":
+        items.append({
+            "category": "이사업체 피해예방",
+            "title": "이사업체 견적 비교 + 허가업체 확인",
+            "description": (
+                "이사 3~4주 전 최소 3개 업체 방문 견적 비교. "
+                "전국화물자동차운송주선사업연합회(allmaeul.or.kr)에서 '화물자동차 운송주선' "
+                "허가업체 여부 반드시 확인. 계약금은 총액의 10% 이내, 견적서에 품목·옵션·"
+                "추가요금 조건 모두 서면 명시. 피해 시 소비자상담센터 1372."
+            ),
+            "d_day_offset": -21,
+            "has_legal_deadline": False,
+            "method": "allmaeul.or.kr 허가업체 조회 · 소비자상담센터 1372",
+        })
     if req.has_pet:
         items.append({
             "category": "반려동물 주소변경",
@@ -1067,7 +1077,8 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
         },
     ),
     (
-        lambda req: True,
+        # 2026-04-22 옵션화 — 보험 가입 없는 사람 있으므로 체크박스로 이동
+        lambda req: "보험 가입 있음 (생명·손해·실손)" in (req.special_concerns or []),
         ("보험사 주소", "보험 주소", "생명보험", "손해보험"),
         {
             "category": "보험사 주소변경",
@@ -1099,7 +1110,9 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
     ),
     # ===== 사용자 피드백 반영 누락 6종 (2026-04-21) =====
     (
-        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        # 전세만 — HUG 안심전세보증·SGI 전세금보장신용보험 모두 전세 전용 상품.
+        # 월세 임차인에게 뜨면 무관한 항목이라 사용자 혼선 → 조건 좁힘.
+        lambda req: "전세" in (req.contracts or [req.contract]),
         ("전세보증보험", "보증보험", "안심전세", "HUG", "SGI"),
         {
             "category": "전세보증보험 가입 검토",
@@ -1117,7 +1130,8 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
         },
     ),
     (
-        lambda req: True,
+        # 2026-04-22 옵션화 — 풀옵션 원룸 이사는 불필요하므로 체크박스로 이동
+        lambda req: "가전 설치 필요 (에어컨·세탁기·정수기 등)" in (req.special_concerns or []),
         ("에어컨", "세탁기", "가전 설치", "가전설치", "정수기 이전"),
         {
             "category": "가전 설치 업체 예약",
@@ -1149,17 +1163,35 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
         },
     ),
     (
-        lambda req: True,
-        ("학교 주소", "학원 주소", "병원 주소", "진료카드", "학생기록부"),
+        # 자녀 학원 — 자녀 있을 때만. 학교는 "학교 학적 주소변경"(학생 본인)
+        # + "자녀 전학"(has_children) canonical 이 이미 커버.
+        lambda req: bool(getattr(req, "has_children", False)),
+        ("학원 주소", "자녀 학원", "다니던 학원"),
         {
-            "category": "학교·병원 주소 확인",
-            "title": "학교·병원·자녀 학원 등록 주소 확인",
+            "category": "자녀 학원 주소 확인",
+            "title": "자녀 학원 등록 주소 확인",
             "description": (
-                "주민등록 자동 연계가 안 되는 학교·병원·학원은 별도 신청 필요. "
-                "자녀 학교 학적, 단골 병원·치과 진료카드, 영유아 검진 안내 발송지, "
-                "다니던 학원·헬스장 회원 정보 등."
+                "주민등록 자동 연계가 안 되는 학원은 별도 신청 필요. "
+                "다니던 학원·피아노·미술·태권도 등 회원 정보 주소 갱신."
             ),
-            "method": "각 기관 직접 방문 또는 전화로 주소 변경 요청.",
+            "method": "학원 직접 방문 또는 전화로 주소 변경 요청.",
+            "d_day_offset": 14,
+            "has_legal_deadline": False,
+        },
+    ),
+    (
+        # 병원 주소 확인 — 모두 공통. 단골 병원·치과 진료카드 주소 갱신.
+        # 건강보험 주소변경(전입신고 자동연계) 과는 별도 — 각 병원 진료 기록은 수동.
+        lambda req: True,
+        ("병원 주소", "단골 병원", "진료카드", "치과 주소"),
+        {
+            "category": "병원 주소 확인",
+            "title": "단골 병원·치과 진료카드 주소 확인",
+            "description": (
+                "주민등록 자동 연계가 안 되는 단골 병원·치과·영상의학과 등 "
+                "진료카드 주소는 별도 신청. 건강보험 주소는 별도 항목으로 자동 반영."
+            ),
+            "method": "해당 병원 직접 방문 또는 전화로 주소 변경 요청.",
             "d_day_offset": 14,
             "has_legal_deadline": False,
         },
@@ -1181,7 +1213,8 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
         },
     ),
     (
-        lambda req: True,
+        # 2026-04-22 옵션화 — 온라인 쇼핑 안 쓰는 사람 있으므로 체크박스로 이동
+        lambda req: "온라인 쇼핑·배달앱 이용" in (req.special_concerns or []),
         ("쇼핑몰", "배달앱", "배송 주소", "배송주소", "쿠팡", "배민"),
         {
             "category": "쇼핑몰·배달앱 배송 주소 수정",
@@ -1345,9 +1378,11 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
             ],
         },
     ),
-    # 장기수선충당금 반환 — 아파트·오피스텔 거주 (공동주택) + 임차인
+    # 장기수선충당금 반환 — 아파트·오피스텔(공동주택) + 임차인만 해당.
+    # 일반 원룸·빌라는 장기수선충당금 제도 없음 → is_apartment 조건 필수.
     (
-        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        lambda req: bool(getattr(req, "is_apartment", False))
+        and any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
         ("장기수선충당금", "수선충당"),
         {
             "category": "장기수선충당금 반환청구",
@@ -1371,10 +1406,12 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
             "citations": [{"law_name": "공동주택관리법", "article": "제24조"}],
         },
     ),
-    # 차임·보증금 증감청구 한도 (월세 인상률 5% 상한) — 월세만
+    # 차임·보증금 증감청구 한도 (5% 상한) — 주임법 제7조 는 "차임 또는 보증금"
+    # 모두 규율 → 전세·월세 모두 해당. 이전엔 월세만 조건으로 걸려 전세 임차인이
+    # 누락되던 오류 수정.
     (
-        lambda req: "월세" in (req.contracts or [req.contract]),
-        ("증감청구", "증감 청구", "월세 인상"),
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("증감청구", "증감 청구", "월세 인상", "전세금 인상"),
         {
             "category": "차임·보증금 증감청구 한도 안내",
             "title": "월세/보증금 증감청구 한도 안내",
@@ -1471,18 +1508,8 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
             "has_legal_deadline": False,
         },
     ),
-    # 인터넷 이전
-    (
-        lambda req: "인터넷 이전" in (req.special_concerns or []),
-        ("인터넷 이전", "통신사 이전", "광랜"),
-        {
-            "category": "인터넷 이전 설치",
-            "title": "인터넷 이전 설치 예약",
-            "description": "KT(100) / SKB(106) / LGU+(101) 고객센터 또는 홈페이지에서 이사일 5~7일 전 예약. 약정 기간 남았으면 이전 무료, 해지 시 위약금 확인.",
-            "d_day_offset": -7,
-            "has_legal_deadline": False,
-        },
-    ),
+    # (인터넷 이전 설치 canonical 은 위쪽 `lambda req: True` 조건으로 이미 정의되어 있음 —
+    #  special_concerns 기반 중복 정의는 제거. step 1 정확 일치로 항상 skip 되어 작동 안 함.)
     # TV 이전 (인터넷 이전과 별도 관리 — 하위 옵션이지만 하드코딩은 독립)
     (
         lambda req: "TV 이전" in (req.special_concerns or []),
@@ -1495,27 +1522,264 @@ _CONDITIONAL_REQUIRED: list[tuple] = [
             "has_legal_deadline": False,
         },
     ),
+    # ===== 임차인 이전 집 퇴거 (2026-04-22 추가) =====
+    # structure_checklist_fallback 의 base 리스트에만 있던 7종을 canonical 로 승격.
+    # free_text 있을 때(LLM 경로)는 base fallback 을 안 호출하므로, 이 항목들이
+    # LLM 결과에 누락되면 사용자 눈엔 "재생성했더니 임대인 관련 항목이 사라졌다" 로 보였음.
+    # _ensure_conditional_items 가 정적/LLM 양 경로 모두에서 호출되므로 여기 canonical 로
+    # 두면 항상 주입됨. 정적 경로는 base 에 이미 있어 step1 정확 일치로 skip → 중복 없음.
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("계약 종료 통지", "계약 해지 통지", "종료 통지", "해지 통지"),
+        {
+            "category": "계약 해지 통지",
+            "title": "임대인에게 계약 종료 통지",
+            "description": "계약 만료 6개월~2개월 전에 서면(문자·카톡 포함)으로 종료 의사 통지. 통지 안 하면 묵시적 갱신되어 이사 곤란.",
+            "d_day_offset": -60,
+            "has_legal_deadline": True,
+            "penalty": "묵시적 갱신 (2년 자동 연장)",
+            "citations": [{"law_name": "주택임대차보호법", "article": "제6조"}],
+        },
+    ),
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("보증금 반환 일정", "반환 일정 확인"),
+        {
+            "category": "보증금 반환 일정 확인",
+            "title": "임대인에게 보증금 반환 일정 재확인",
+            "description": "이사 당일 보증금 반환이 원칙. 임대인이 미루면 분쟁 조정 또는 임차권등기명령 준비.",
+            "d_day_offset": -30,
+            "has_legal_deadline": False,
+            "method": "주택임대차분쟁조정위원회 1600-2571",
+            "citations": [{"law_name": "주택임대차보호법", "article": "제4조"}],
+        },
+    ),
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("사전 퇴실 점검", "퇴실 점검표", "1차 점검"),
+        {
+            "category": "사전 퇴실 점검",
+            "title": "임대인과 1차 점검 + 퇴실 점검표 준비",
+            "description": "이사 전 임대인과 함께 집 상태 사전 확인, 공제 항목 미리 합의. '퇴실점검표' 양식 준비하여 방·거실·주방·욕실·가전 상태 체크.",
+            "d_day_offset": -7,
+            "has_legal_deadline": False,
+            "method": "문자·카톡 기록 보관 필수",
+        },
+    ),
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("계량기 촬영", "계량기 사진", "계량기 기록"),
+        {
+            "category": "계량기 촬영",
+            "title": "전기·수도·가스 계량기 사진+영상 기록",
+            "description": "이사 당일 아침 계량기 숫자를 사진과 영상으로 기록. 임대인과 함께 확인. 요금 정산 분쟁의 결정적 증거.",
+            "d_day_offset": 0,
+            "has_legal_deadline": False,
+            "method": "사진 + 1~2초 영상 (조작 의심 차단)",
+        },
+    ),
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("최종 퇴실 점검", "퇴실 최종 점검", "원상회복"),
+        {
+            "category": "최종 퇴실 점검",
+            "title": "임대인과 함께 집 상태 최종 점검 + 양측 서명",
+            "description": "D-7 에 준비한 퇴실 점검표로 방별 체크. 합의 내용에 양측 서명. 원상회복 기준은 대법원 판례 참고 (5년 이상 거주 시 벽지·장판은 통상 마모).",
+            "d_day_offset": 0,
+            "has_legal_deadline": False,
+            "method": "양측 서명 점검표 1부 보관",
+            "citations": [
+                {"law_name": "민법", "article": "제615조"},
+                {"law_name": "민법", "article": "제623조"},
+            ],
+        },
+    ),
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("보증금 수령", "키 반납", "열쇠 인계"),
+        {
+            "category": "보증금 수령 후 키 반납",
+            "title": "보증금 입금 확인 후 열쇠 인계",
+            "description": "원칙: 보증금 계좌 입금 확인 → 정산서 수령 → 열쇠 인계. 절대 반환 전에 열쇠 넘기지 말 것. 임대인이 '입금했다' 해도 본인 계좌 앱에서 직접 확인.",
+            "d_day_offset": 0,
+            "has_legal_deadline": False,
+            "citations": [{"law_name": "주택임대차보호법", "article": "제3조의2"}],
+        },
+    ),
+    # (대항력·우선변제권 canonical 은 위 line 1278-1289 에 이미 있어 중복 제거됨)
+
+    # ===== 기본 법정 절차 (2026-04-22 추가) =====
+    # 전입신고·확정일자 는 base(structure_checklist_fallback) 에만 있어서
+    # free_text 있는 LLM 경로 진입 시 LLM 응답에 빠지면 그대로 누락됐다.
+    # 이 두 항목은 모든 이사 · 모든 임차인의 최필수 법정 절차라서 무조건 보강.
+    (
+        lambda req: True,  # 전입신고는 모든 이사에 법정 필수 (14일 이내)
+        ("전입신고",),
+        {
+            "category": "전입신고",
+            "title": "전입신고",
+            "description": "이사한 날부터 14일 이내에 정부24 또는 주민센터에서 전입신고를 해야 합니다.",
+            "d_day_offset": 1,
+            "has_legal_deadline": True,
+            "deadline_days": 14,
+            "penalty": "5만원 이하 과태료",
+            "method": "정부24 온라인 또는 주민센터 방문",
+            "citations": [{"law_name": "주민등록법", "article": "제16조"}],
+        },
+    ),
+    (
+        lambda req: any(c in ("전세", "월세") for c in (req.contracts or [req.contract])),
+        ("확정일자",),
+        {
+            "category": "확정일자/임차권",
+            "title": "확정일자 취득",
+            "description": "보증금 보호를 위해 전입신고 당일 확정일자를 받아두세요.",
+            "d_day_offset": 1,
+            "deadline_days": 1,
+            "has_legal_deadline": False,
+            "method": "주민센터 방문 또는 인터넷등기소",
+            "citations": [{"law_name": "주택임대차보호법", "article": "제3조의2"}],
+        },
+    ),
+    # ===== base 에만 있던 실무·조건부 항목 보강 (2026-04-22) =====
+    (
+        # 셀프 이사는 업체 미사용 → 피해예방 항목이 무의미하므로 제외.
+        # base 분기 조건과 정합.
+        lambda req: (getattr(req, "moving_style", "company") or "company") != "self",
+        ("이사업체 피해예방", "허가업체", "화물자동차 운송주선", "이사업체 견적"),
+        {
+            "category": "이사업체 피해예방",
+            "title": "이사업체 견적 비교 + 허가업체 확인",
+            "description": (
+                "이사 3~4주 전 최소 3개 업체 방문 견적 비교. "
+                "전국화물자동차운송주선사업연합회(allmaeul.or.kr)에서 '화물자동차 운송주선' "
+                "허가업체 여부 반드시 확인. 계약금은 총액의 10% 이내, 견적서에 품목·옵션·"
+                "추가요금 조건 모두 서면 명시. 피해 시 소비자상담센터 1372."
+            ),
+            "d_day_offset": -21,
+            "has_legal_deadline": False,
+            "method": "allmaeul.or.kr 허가업체 조회 · 소비자상담센터 1372",
+        },
+    ),
+    (
+        lambda req: bool(getattr(req, "receives_welfare", False)),
+        ("복지급여", "기초생활수급", "복지로"),
+        {
+            "category": "복지급여 주소변경",
+            "title": "복지급여 주소변경",
+            "description": (
+                "기초생활수급자·장애인연금·아동수당·한부모가족지원 등 복지급여 수급자는 "
+                "이사 시 주소 반영 확인 필수. 대부분 전입신고로 자동 연계되지만 "
+                "수급자격은 관할 자치단체 심사가 필요한 경우가 있어 누락되면 급여 중단 리스크."
+            ),
+            "d_day_offset": 7,
+            "has_legal_deadline": False,
+            "method": "복지로(bokjiro.go.kr) 또는 읍·면·동 주민센터 (☎ 129)",
+            "citations": [{"law_name": "국민기초생활보장법", "article": "제23조"}],
+        },
+    ),
+    (
+        lambda req: bool(getattr(req, "needs_id_reissue", False)),
+        ("주민등록증 재발급",),
+        {
+            "category": "주민등록증 재발급",
+            "title": "주민등록증 재발급",
+            "description": (
+                "주소 변경은 전입신고로 자동 반영되므로 재발급 의무는 없음. "
+                "10년 이상 경과·분실·훼손·사진 변경 시에만 신청. "
+                "수수료 5,000원, 6개월 이내 촬영 규격 사진 필요."
+            ),
+            "d_day_offset": 14,
+            "has_legal_deadline": False,
+            "method": "정부24(gov.kr) 또는 주민센터 방문",
+            "citations": [{"law_name": "주민등록법", "article": "제24조"}],
+        },
+    ),
+    (
+        lambda req: bool(getattr(req, "is_apartment", False)),
+        ("관리사무소", "입주자 카드"),
+        {
+            "category": "관리사무소 입주 신고",
+            "title": "관리사무소 입주자 카드 작성 (아파트·오피스텔)",
+            "description": (
+                "입주 당일 단지 관리사무소 방문하여 입주자 카드 작성. "
+                "세대주·가족 인원·연락처·차량 정보 등록. "
+                "관리비 고지서·승강기 카드·입주민 앱 이용에 필요."
+            ),
+            "d_day_offset": 0,
+            "has_legal_deadline": False,
+            "method": "단지 관리사무소 방문",
+        },
+    ),
+    (
+        lambda req: bool(getattr(req, "is_apartment", False)),
+        ("우편함 명패", "현관 명패", "명패 교체"),
+        {
+            "category": "우편함 명패 교체",
+            "title": "우편함·현관 명패 교체",
+            "description": (
+                "이전 거주자 명의가 남아있으면 우편물 오배송·분실 리스크. "
+                "관리사무소에 명패 교체 요청 또는 직접 교체."
+            ),
+            "d_day_offset": 3,
+            "has_legal_deadline": False,
+        },
+    ),
+    (
+        lambda req: bool(getattr(req, "is_apartment", False))
+        and bool(getattr(req, "has_car", False)),
+        ("단지 주차", "주차 등록", "입주민 주차"),
+        {
+            "category": "단지 주차 등록",
+            "title": "단지 주차 등록 (차량 보유자)",
+            "description": (
+                "차량 번호·모델·사진 등록 후 입주민 주차 스티커 발급. "
+                "미등록 차량은 견인 또는 과태료 대상."
+            ),
+            "d_day_offset": 1,
+            "has_legal_deadline": False,
+            "method": "관리사무소 주차 등록 창구",
+        },
+    ),
 ]
 
 
 def _ensure_conditional_items(
     items: list[ChecklistItem], req: ChecklistRequest
 ) -> list[ChecklistItem]:
-    """조건부 필수 항목 보정. 3-way 로직:
+    """조건부 필수 항목 보정. 3-way 로직 (결정론 강화판 · 2026-04-22):
 
-    1. canonical category 와 정확히 일치하는 item 이 이미 있음 → skip (중복 방지)
-    2. 유사 항목(aliases 키워드 매칭)이 있음 → category 만 canonical 로 rename
-       (LLM 이 쓴 풍부한 title/description/citations 는 보존)
-    3. 둘 다 없음 → fallback_dict 로 새 항목 주입
+    1. canonical category 와 정확히 일치하는 item 이 이미 있음 → 본문(title·
+       description·d_day_offset·has_legal_deadline·citations)을 하드코드로
+       **덮어씀** — LLM 호출마다 미세하게 바뀌던 문구를 제거.
+    2. 유사 항목(aliases 매칭)이 있음 → category 뿐 아니라 본문 전체를 canonical
+       하드코드로 **덮어씀** (이전에는 category 만 rename 하고 LLM 문구 보존 →
+       호출마다 description 변동이 사용자에게 "내용이 달라진다" 체감 원인).
+    3. 둘 다 없음 → fallback_dict 로 새 항목 주입.
 
-    2번 rename 방식은 평가 스크립트 기대 category 와 정확 매칭시키면서도
-    LLM 결과의 맥락을 잃지 않기 위함.
-
-    가드: 다른 canonical 카테고리(이미 _CONDITIONAL_REQUIRED 의 다른 항목으로
-    분류된 것)는 alias 매칭 후보에서 제외 — 예: "건강보험 주소변경" 항목이
-    "보험" alias 에 잡혀 "보험사 주소변경" 으로 잘못 rename 되는 것 방지.
+    결과: 같은 조건·같은 free_text 라면 canonical 에 해당하는 50개 항목은 문구
+    까지 완전히 동일. LLM 은 canonical 탐지용으로만 사용.
     """
     all_canonicals = {fb["category"] for _, _, fb in _CONDITIONAL_REQUIRED}
+
+    def _overwrite_with_fallback(it: ChecklistItem, fb: dict) -> None:
+        """LLM 문구 변동 제거를 위해 item 본문을 canonical 하드코드로 대체."""
+        raw = enrich_item_with_region(dict(fb), req.region)
+        new_item = _item_from_dict(raw, req.move_date)
+        it.category = new_item.category
+        it.title = new_item.title
+        it.description = new_item.description
+        it.d_day_offset = new_item.d_day_offset
+        it.start_date = new_item.start_date
+        it.deadline_date = new_item.deadline_date
+        it.deadline_days = new_item.deadline_days
+        it.has_legal_deadline = new_item.has_legal_deadline
+        it.penalty = new_item.penalty
+        it.method = new_item.method
+        it.contact = new_item.contact
+        it.region_hint = new_item.region_hint
+        it.citations = new_item.citations
+
     for condition_fn, aliases, fallback_dict in _CONDITIONAL_REQUIRED:
         try:
             if not condition_fn(req):
@@ -1524,11 +1788,13 @@ def _ensure_conditional_items(
             continue
         canonical = fallback_dict["category"]
 
-        # 1) 정확 일치가 이미 있음
-        if any(it.category == canonical for it in items):
+        # 1) 정확 일치가 이미 있음 — 본문 덮어쓰기로 결정론 보장
+        exact = next((it for it in items if it.category == canonical), None)
+        if exact is not None:
+            _overwrite_with_fallback(exact, fallback_dict)
             continue
 
-        # 2) aliases 매칭되는 유사 LLM 항목 찾기 → 첫 번째를 canonical 로 rename
+        # 2) aliases 매칭되는 유사 LLM 항목 찾기 → canonical 본문 전체로 대체
         #    단, 이미 다른 canonical 카테고리로 분류된 항목은 건드리지 않음
         renamed = False
         for it in items:
@@ -1536,7 +1802,7 @@ def _ensure_conditional_items(
                 continue
             hay = f"{it.category} {it.title}"
             if any(kw in hay for kw in aliases):
-                it.category = canonical
+                _overwrite_with_fallback(it, fallback_dict)
                 renamed = True
                 break
         if renamed:
@@ -1586,6 +1852,83 @@ def _request_cache_key(req: ChecklistRequest) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
 
 
+# ---------- free_text 키워드 → 구조화 플래그 자동 승격 ----------
+# 사용자가 체크박스를 안 켜고 기타 특이사항에만 "강아지 키울 예정" 같이 서술한 경우,
+# LLM 은 맞춤 항목을 생성할 수 있어도 `has_pet` 조건 canonical (반려동물 등록 주소변경 등)
+# 은 주입되지 않아 핵심 법정 절차가 누락됨. 키워드 매칭으로 플래그를 끌어올려 정적
+# 경로의 canonical 조건을 재활용한다.
+_FREETEXT_FLAG_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
+    ("has_pet", ("강아지", "고양이", "반려동물", "반려견", "반려묘", "댕댕이",
+                 "냥이", "개를 키", "고양이를 키")),
+    ("has_car", ("자동차", "차량", "운전면허", "차고지", "자가용", "승용차")),
+    ("has_children", ("자녀", "아이가", "아이를", "유치원", "어린이집",
+                      "초등학교", "중학교", "고등학교", "자녀 전학")),
+    ("is_foreigner", ("외국인", "해외에서", "귀국", "비자", "영주권",
+                      "이주민", "체류")),
+    ("is_apartment", ("아파트", "오피스텔", "단지", "관리사무소", "입주자 카드")),
+    ("receives_welfare", ("기초생활수급", "복지급여", "장애인연금",
+                          "한부모", "수급자")),
+    ("is_employed", ("직장", "회사", "재직", "근무 중", "출근", "사내")),
+    ("needs_id_reissue", ("주민등록증 재발급", "신분증 분실", "주민증 분실")),
+]
+
+
+# 승격된 플래그 → 영향받는 canonical category 매핑 (프론트 보라색 표시용).
+_FLAG_TO_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "has_pet": ("반려동물 등록 주소변경",),
+    "has_car": (
+        "자동차 변경등록",
+        "운전면허 주소변경",
+        "자동차보험 주소변경",
+        "단지 주차 등록",
+    ),
+    "has_children": ("자녀 전학", "자녀 학원 주소 확인"),
+    "is_foreigner": ("외국인등록 주소변경",),
+    "is_apartment": (
+        "관리사무소 입주 신고",
+        "우편함 명패 교체",
+        "단지 주차 등록",
+        "장기수선충당금 반환청구",
+    ),
+    "is_employed": ("직장 주소변경 신고",),
+    "receives_welfare": ("복지급여 주소변경",),
+    "needs_id_reissue": ("주민등록증 재발급",),
+}
+
+
+def _augment_flags_from_freetext(
+    req: ChecklistRequest,
+) -> tuple[ChecklistRequest, list[str], list[str]]:
+    """free_text 를 파싱해 구조화 플래그 (has_pet 등) 를 끌어올림.
+
+    이미 True 인 플래그는 건드리지 않음 (사용자가 명시적으로 체크한 건 유지).
+    False 인 플래그 중 free_text 에 관련 키워드가 있으면 True 로 승격.
+    반환: (새 req, 매칭 키워드, 승격된 플래그). 승격 없으면 원본 req + 빈 리스트 × 2.
+    """
+    ft = (req.free_text or "")
+    if not ft.strip():
+        return req, [], []
+    ft_lower = ft.lower()
+    updates: dict = {}
+    matched: list[str] = []
+    for flag, keywords in _FREETEXT_FLAG_KEYWORDS:
+        if getattr(req, flag, False):
+            continue  # 이미 True 면 유지
+        for kw in keywords:
+            if kw in ft or kw in ft_lower:
+                updates[flag] = True
+                matched.append(kw)
+                break  # 같은 flag 는 한 키워드만
+    if not updates:
+        return req, [], []
+    import logging as _log
+    _log.getLogger("movewise").info(
+        f"[checklist] freetext→flags promoted: {list(updates.keys())} "
+        f"matched={matched}"
+    )
+    return req.model_copy(update=updates), matched, list(updates.keys())
+
+
 def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     """체크리스트 생성 — 정적 매핑 중심 + free_text 만 LLM.
 
@@ -1596,9 +1939,15 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
       → build_queries_freetext_llm → search_procedures → structure_checklist_llm.
     - 기본 경로(free_text 비어있음): search/LLM 전부 스킵하고 fallback 리스트만 사용 +
       _ensure_utility_items · _ensure_conditional_items 로 26+ 조건부 항목 보강.
+    - free_text 에 "강아지"·"아파트" 같은 키워드가 있으면 체크박스 미선택이어도
+      구조화 플래그로 자동 승격되어 해당 canonical 항목이 주입된다 (2026-04-22).
     """
     import logging as _log
     _logger = _log.getLogger("movewise")
+
+    # 0) free_text 키워드 → 구조화 플래그 자동 승격 (체크박스 누락 보정)
+    original_ft = (req.free_text or "").strip()
+    req, matched_keywords, promoted_flags = _augment_flags_from_freetext(req)
 
     # 1) 캐시 hit → 즉시 반환 (LLM 호출 0회)
     cache_key = _request_cache_key(req)
@@ -1607,42 +1956,44 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
         _logger.info(f"[checklist] cache HIT key={cache_key}")
         return cached
 
-    has_free_text = bool((req.free_text or "").strip())
+    # ★ 2026-04-22: LLM 경로 완전 비활성화 — 결정론 100% 확보
+    # free_text 의 효과는 _augment_flags_from_freetext 의 키워드→플래그 승격으로
+    # 반영되므로 LLM 호출 없이도 "강아지·아파트·외국인" 등 특수 상황의 canonical
+    # 항목이 정적 경로로 주입된다. LLM 은 호출마다 미세 변동이 사라지지 않아
+    # "다시 만들 때마다 항목이 달라진다" 문제의 근본 원인이었으므로 제거.
     queries = build_queries_rule_based(req)
-    fallback_used = False
-
-    if has_free_text:
-        # === LLM 경로 — free_text 엣지케이스 전담 ===
-        queries.extend(build_queries_freetext_llm(req))
-        # dedupe (대소문자 무시) — 정적/freetext 쿼리 겹침 방지
-        seen: set[str] = set()
-        queries = [q for q in queries if not (q.lower() in seen or seen.add(q.lower()))]
-        chunks = search_procedures(queries, req)
-        items, fallback_used = structure_checklist_llm(req, chunks)
-        _logger.info(
-            f"[checklist] mode=llm_freetext queries={len(queries)} chunks={len(chunks)} "
-            f"items={len(items)} fallback={fallback_used}"
-        )
-    else:
-        # === 정적 경로 — LLM 0회 ===
-        # structure_checklist_fallback 은 chunks=[] 로 호출해도 base+조건부 하드코딩만으로
-        # 항목 생성. citation 보강은 _ensure_conditional_items 의 하드코딩된 citations 로 커버.
-        items = structure_checklist_fallback(req, chunks=[])
-        _logger.info(f"[checklist] mode=static items={len(items)}")
+    items = structure_checklist_fallback(req, chunks=[])
+    _logger.info(f"[checklist] mode=static-only items={len(items)}")
 
     items = _ensure_utility_items(items, req)
     items = _ensure_conditional_items(items, req)
+
+    # free_text 승격된 플래그로 인해 등장한 항목에 from_freetext=True 마킹
+    # 프론트에서 해당 item 보라색 표시용.
+    if promoted_flags:
+        freetext_cats: set[str] = set()
+        for flag in promoted_flags:
+            freetext_cats.update(_FLAG_TO_CATEGORIES.get(flag, ()))
+        for it in items:
+            if it.category in freetext_cats:
+                it.from_freetext = True
+
     # 결정론적 정렬: d_day_offset → category → title (tie-break 안정화)
     items.sort(key=lambda x: (x.d_day_offset, x.category or "", x.title or ""))
 
-    # warning 규칙 (정적 전환 후):
-    # - fallback_used=True  : LLM 경로 호출 실패 (free_text 있었지만 Azure 다운) → 사용자 안내
-    # - azure_ready=False + has_free_text: 자유 텍스트 분석 불가 안내
-    # - 그 외: 정상 (static 이 primary path 이므로 warning 없음)
-    if fallback_used:
-        warning = "AI 자유 텍스트 분석이 일시적으로 불안정하여 기본 체크리스트를 제공합니다. 나중에 다시 생성하면 맞춤 결과를 받을 수 있어요."
-    elif has_free_text and not get_settings().azure_ready:
-        warning = "Azure 자격 증명이 없어 자유 텍스트 분석을 건너뛰었습니다. 기본 체크리스트는 정상 생성되었어요."
+    # free_text 반영 여부 사용자 피드백 메시지 — warning 필드 재활용.
+    if matched_keywords:
+        unique_kws = list(dict.fromkeys(matched_keywords))  # 순서 유지 dedupe
+        warning = (
+            f"입력하신 \"{', '.join(unique_kws[:3])}\" 키워드로 관련 체크 항목이 "
+            f"자동 추가되었습니다."
+        )
+    elif original_ft:
+        warning = (
+            "입력하신 내용에 해당하는 추가 항목이 없어요. "
+            "예) 강아지·고양이 · 아파트·오피스텔 · 자녀·아이 · 외국인·귀국 · "
+            "직장·재직 · 복지급여 · 자동차 · 보험 · 주민등록증 재발급 등"
+        )
     else:
         warning = None
 
@@ -1654,7 +2005,5 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
         used_queries=queries,
         warning=warning,
     )
-    # 2) fallback 이 아닐 때만 캐시 저장 (Azure 일시 장애 시 결과는 캐시 안 함)
-    if not fallback_used:
-        _cache_put(cache_key, response)
+    _cache_put(cache_key, response)
     return response

@@ -3,9 +3,10 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -71,6 +72,10 @@ const EXTRA_LABELS = {
   largeWaste: '대형 폐기물 배출',
   internet: '인터넷 이전',
   tvTransfer: 'TV 이전',
+  // 2026-04-22 추가 — 모든 이사 공통에서 개인 편차 큰 3종
+  applianceInstall: '가전 설치 필요 (에어컨·세탁기·정수기 등)',
+  onlineShopping: '온라인 쇼핑·배달앱 이용',
+  insurance: '보험 가입 있음 (생명·손해·실손)',
 } as const;
 const EXTRA_KEYS = Object.keys(EXTRA_LABELS) as (keyof typeof EXTRA_LABELS)[];
 
@@ -137,6 +142,9 @@ export default function ChecklistScreen() {
     largeWaste: false,
     internet: false,
     tvTransfer: false,
+    applianceInstall: false,
+    onlineShopping: false,
+    insurance: false,
   });
   const toggleExtra = (k: keyof typeof EXTRA_LABELS) =>
     setExtra((prev) => ({ ...prev, [k]: !prev[k] }));
@@ -452,6 +460,23 @@ export default function ChecklistScreen() {
     description: string;
     start_date: string; // YYYY-MM-DD — 사용자가 달력에서 고른 날짜
   }) {
+    // 완료 상태 key 는 "category::title" 단일 공간이라, AI/기존 커스텀 과
+    // 같은 (카테고리·제목) 조합이 들어오면 두 항목이 완료 체크를 공유하게 됨.
+    // 사용자 눈엔 "다른 항목이 멋대로 체크/해제" 처럼 보이므로 사전 차단.
+    const candidateCategory = draft.category || '내가 추가';
+    const candidateKey = `${candidateCategory}::${draft.title}`;
+    const existingKeys = new Set<string>();
+    if (result) {
+      for (const it of result.items) existingKeys.add(itemKey(it));
+    }
+    for (const it of customItems) existingKeys.add(itemKey(it));
+    if (existingKeys.has(candidateKey)) {
+      await alertAsync(
+        '이미 있는 항목',
+        `"${draft.title}" 은(는) 이미 체크리스트에 있어요. 제목을 조금 다르게 바꿔주세요.`,
+      );
+      return;
+    }
     // 이사일 기준 offset 계산 (카드의 "이사 N일 전/후" 라벨에 사용)
     const [sy, sm, sd] = draft.start_date.split('-').map(Number);
     const [my, mm, md] = moveDate.split('-').map(Number);
@@ -461,7 +486,7 @@ export default function ChecklistScreen() {
       (startDate.getTime() - moveDateObj.getTime()) / (1000 * 60 * 60 * 24),
     );
     const newItem: ChecklistItem = {
-      category: draft.category || '내가 추가',
+      category: candidateCategory,
       title: draft.title,
       description: draft.description,
       d_day_offset: offset,
@@ -501,13 +526,63 @@ export default function ChecklistScreen() {
       ? Math.round((completedCount / result.items.length) * 100)
       : 0;
 
+  // freeText TextInput 가림 방지 — 플랫폼별 단일 메커니즘:
+  //  · iOS: KeyboardAvoidingView behavior="padding" + offset 88 단독 (아래 JSX). 끝.
+  //  · Android: pan 모드 + 동적 paddingBottom + scrollToEnd 3단 방어.
+  // iOS 에서 KAV padding · automaticallyAdjustKeyboardInsets · scrollToEnd 를 동시에
+  // 쓰면 paddingBottom 확장이 ScrollView 끝을 입력창보다 더 아래로 밀어내고 scrollToEnd
+  // 가 그 끝으로 점프해 입력창이 화면 위로 사라지는 버그가 발생.
+  const formScrollRef = useRef<ScrollView>(null);
+  const [kbdHeight, setKbdHeight] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios') return; // iOS 는 KAV 가 처리. 리스너 불필요.
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKbdHeight(e.endCoordinates.height);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      setKbdHeight(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  const scrollFormToEnd = () => {
+    if (Platform.OS === 'ios') return; // iOS 는 KAV padding 이 입력창을 키보드 위로 올림
+    setTimeout(() => {
+      formScrollRef.current?.scrollToEnd({ animated: true });
+    }, 400);
+  };
+
+  // form ↔ result 가 같은 ScrollView ref 를 공유 → form 스크롤 위치가 result 진입 시
+  // 그대로 남아 첫 항목이 화면 위로 잘려 보이는 버그 방지. 모드 전환마다 최상단 복귀.
+  useEffect(() => {
+    formScrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [mode]);
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
+        // Android 는 softwareKeyboardLayoutMode="pan" 으로 OS 가 화면 자체를 밀어올림.
+        // behavior="height" 로 두면 ScrollView 와 중복 조정되어 오히려 가림 발생.
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView
+          ref={formScrollRef}
+          contentContainerStyle={[
+            styles.container,
+            // Android pan 모드 전용: scrollToEnd 가 도달할 여유 공간 확보.
+            // iOS 는 KAV padding 이 키보드 높이만큼 ScrollView 자체를 밀어올림.
+            Platform.OS === 'android' && kbdHeight > 0 && { paddingBottom: kbdHeight + 120 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
           {mode === 'form' ? (
             <FormView
               editing={result !== null}
@@ -554,6 +629,7 @@ export default function ChecklistScreen() {
               toggleConcern={toggleConcern}
               freeText={freeText}
               setFreeText={setFreeText}
+              onFreeTextFocus={scrollFormToEnd}
               movingStyle={movingStyle}
               setMovingStyle={setMovingStyle}
               extra={extra}
@@ -643,12 +719,16 @@ function AddItemModal({
     if (visible) setStartDate(moveDate);
   }, [visible, moveDate]);
 
-  function reset() {
-    setTitle('');
-    setCategory('');
-    setDescription('');
-    setStartDate(moveDate);
-  }
+  // 모달이 실제로 닫힌 뒤(= 추가 성공 또는 사용자가 취소) 에만 입력값 초기화.
+  // submit 직후 바로 reset 하면: 상위의 async 중복 체크가 실패 시, 모달은 열린 채
+  // 입력값만 비어버려 "직접 추가한 내용이 그냥 빠진 것처럼" 보이는 버그가 있었음.
+  React.useEffect(() => {
+    if (!visible) {
+      setTitle('');
+      setCategory('');
+      setDescription('');
+    }
+  }, [visible]);
 
   function submit() {
     if (!title.trim()) return;
@@ -658,7 +738,6 @@ function AddItemModal({
       description: description.trim(),
       start_date: startDate,
     });
-    reset();
   }
 
   // 이사일 대비 offset 계산 (미리보기 라벨용)
@@ -814,6 +893,7 @@ interface FormViewProps {
   toggleConcern: (label: string) => void;
   freeText: string;
   setFreeText: (v: string) => void;
+  onFreeTextFocus?: () => void;
   movingStyle: MovingStyle;
   setMovingStyle: (v: MovingStyle) => void;
   extra: Record<keyof typeof EXTRA_LABELS, boolean>;
@@ -861,6 +941,7 @@ function FormView(props: FormViewProps) {
     toggleConcern,
     freeText,
     setFreeText,
+    onFreeTextFocus,
     movingStyle,
     setMovingStyle,
     extra,
@@ -1192,6 +1273,25 @@ function FormView(props: FormViewProps) {
             active={extra.largeWaste}
             onPress={() => toggleExtra('largeWaste')}
           />
+          {/* 2026-04-22 옵션화 — 모든 이사 공통에서 개인 편차 큰 3종 */}
+          <ToggleChip
+            icon="hardware-chip"
+            label="가전 설치 필요"
+            active={extra.applianceInstall}
+            onPress={() => toggleExtra('applianceInstall')}
+          />
+          <ToggleChip
+            icon="cart"
+            label="온라인 쇼핑 이용"
+            active={extra.onlineShopping}
+            onPress={() => toggleExtra('onlineShopping')}
+          />
+          <ToggleChip
+            icon="shield-checkmark"
+            label="보험 가입 있음"
+            active={extra.insurance}
+            onPress={() => toggleExtra('insurance')}
+          />
         </View>
         {extra.internet && (
           <View style={styles.subOption}>
@@ -1242,6 +1342,7 @@ function FormView(props: FormViewProps) {
       <TextInput
         value={freeText}
         onChangeText={setFreeText}
+        onFocus={onFreeTextFocus}
         placeholder="비워두면 AI 호출 없이 빠르게 진행돼요 (선택)"
         placeholderTextColor={colors.textMute}
         multiline
@@ -1333,7 +1434,15 @@ function ResultView({
   onItemPress: (item: ChecklistItem, idx: number) => void;
 }) {
   const aiCount = result.items.length;
-  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+  // accordion 기본값: 실무 phase(before/day/after) 는 **기본 펼침** — 항목이 숨겨져
+  // "빠진 것처럼 보이는" 착시 방지. 참고·안내 만 법적 참고성(분쟁·갱신요구권 등)
+  // 이라 기본 접힘. 사용자가 헤더 탭으로 언제든 토글 가능.
+  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({
+    before: false,
+    day: false,
+    after: false,
+    reference: true,
+  });
   const togglePhase = (k: string) =>
     setCollapsedPhases((p) => ({ ...p, [k]: !p[k] }));
   return (
@@ -1384,7 +1493,10 @@ function ResultView({
       {(() => {
         // 4 phase 분류: 이사 전 / 당일 / 후 / 참고·안내
         type Phase = 'before' | 'day' | 'after' | 'reference';
-        const REFERENCE_PAT = /(안내|방법|기준|분쟁|수선의무|증감|갱신요구권|주의사항)/;
+        // 실무 액션(임대인 통지·점검·제출·퇴실) 은 "안내/방법/기준/주의사항" 이
+        // 포함돼도 before/day/after 로 분류되어야 한다. reference 는 법률 참고성만.
+        // "주의사항" 은 실무 항목 제목에 흔히 섞여 있어(예: 전입신고 주의사항) 제외.
+        const REFERENCE_PAT = /(분쟁|수선의무|증감|갱신요구권|임차권등기)/;
         const classify = (it: ChecklistItem): Phase => {
           const t = `${it.title || ''} ${it.category || ''}`;
           if (REFERENCE_PAT.test(t)) return 'reference';
@@ -1392,13 +1504,34 @@ function ResultView({
           if (it.d_day_offset === 0) return 'day';
           return 'after';
         };
-        const groups: Record<Phase, { it: ChecklistItem; idx: number }[]> = {
+        const groups: Record<
+          Phase,
+          { it: ChecklistItem; idx: number; isCustom: boolean }[]
+        > = {
           before: [],
           day: [],
           after: [],
           reference: [],
         };
-        result.items.forEach((it, idx) => groups[classify(it)].push({ it, idx }));
+        result.items.forEach((it, idx) =>
+          groups[classify(it)].push({ it, idx, isCustom: false }),
+        );
+        // 커스텀 항목은 시점(d_day_offset) 으로만 배치 — 사용자가 제목/카테고리에
+        // "주의사항" 같은 단어를 넣어도 reference(기본 접힘) 로 숨겨지지 않게.
+        // 본인이 고른 날짜 기준 phase 에 항상 노출.
+        customItems.forEach((it, cIdx) => {
+          const phase: Phase =
+            it.d_day_offset < 0
+              ? 'before'
+              : it.d_day_offset === 0
+                ? 'day'
+                : 'after';
+          groups[phase].push({
+            it,
+            idx: aiCount + cIdx,
+            isCustom: true,
+          });
+        });
         const phaseMeta: {
           key: Phase;
           label: string;
@@ -1451,14 +1584,17 @@ function ResultView({
                 />
               </Pressable>
               {!collapsed &&
-                list.map(({ it, idx }) => (
+                list.map(({ it, idx, isCustom }) => (
                   <ChecklistCard
-                    key={`${it.category}-${idx}`}
+                    key={`${isCustom ? 'custom-' : ''}${it.category}-${idx}`}
                     item={it}
                     index={idx}
                     done={!!completions[itemKey(it)]}
                     onToggle={() => onToggle(it)}
                     onPress={() => onItemPress(it, idx)}
+                    onRemove={
+                      isCustom ? () => onRemoveCustomItem(it) : undefined
+                    }
                   />
                 ))}
             </View>
@@ -1466,27 +1602,8 @@ function ResultView({
         });
       })()}
 
-      {/* 내가 추가한 항목 섹션 */}
-      {customItems.length > 0 && (
-        <View style={styles.customSectionHeader}>
-          <Ionicons name="person-circle" size={16} color={colors.accent} />
-          <Text style={styles.customSectionTitle}>내가 추가한 항목</Text>
-        </View>
-      )}
-      {customItems.map((it, cIdx) => {
-        const combinedIdx = aiCount + cIdx;
-        return (
-          <ChecklistCard
-            key={`custom-${it.category}-${cIdx}`}
-            item={it}
-            index={combinedIdx}
-            done={!!completions[itemKey(it)]}
-            onToggle={() => onToggle(it)}
-            onPress={() => onItemPress(it, combinedIdx)}
-            onRemove={() => onRemoveCustomItem(it)}
-          />
-        );
-      })}
+      {/* 커스텀 항목은 위 phase IIFE 에서 해당 시점(이사 전/당일/후) 에 함께 렌더됨.
+          별도 섹션을 유지하면 같은 항목이 두 번 표시되므로 제거. */}
 
       {/* 항목 추가 버튼 */}
       <Pressable style={styles.addItemBtn} onPress={onAddCustomItem}>
@@ -1514,26 +1631,27 @@ function ChecklistCard({
 }) {
   const legal = item.has_legal_deadline;
   // D-day 배지는 "이사일 기준" offset 으로 통일 (각 카드마다 고정 값)
-  // 예: d_day_offset=-7 → "이사 7일 전", 0 → "이사 당일", +1 → "이사 1일 후"
   const dDay = formatMoveOffsetLabel(item.d_day_offset);
-  // 3단계 우선순위 (2026-04-21 직관 단순화):
-  //   🔴 필수 — 법정기한 있음 (과태료·페널티 위험)
-  //   🟠 중요 — 법정기한 없지만 이사일 ±7일 임박
-  //   🔷 참고 — 그 외 (법적 권리 안내 / 장기 준비 / 사후)
   const urgencyColor = legal
     ? colors.danger
     : item.d_day_offset >= -7 && item.d_day_offset <= 7
       ? colors.warning
       : colors.primaryLight;
+  // AI 특이사항(free_text) 키워드로 자동 추가된 항목 → 보라색 강조
+  const isFreetext = !!item.from_freetext;
+  const PURPLE = '#6C5CE7';
+  const PURPLE_BG = '#F3EEFF';
+  const effectiveBorder = isFreetext ? PURPLE : urgencyColor;
   return (
     <Pressable
       onPress={onPress}
       android_ripple={{ color: colors.primaryBg }}
       accessibilityRole="button"
-      accessibilityLabel={`${item.title} 상세 보기`}
+      accessibilityLabel={`${item.title} 상세 보기${isFreetext ? ' · AI 특이사항 관련 자동 추가' : ''}`}
       style={({ pressed }) => [
         styles.itemCard,
-        { borderLeftColor: urgencyColor },
+        { borderLeftColor: effectiveBorder },
+        isFreetext && { backgroundColor: PURPLE_BG, borderLeftWidth: 5 },
         done && styles.itemCardDone,
         pressed && { opacity: 0.7 },
       ]}
@@ -1557,6 +1675,21 @@ function ChecklistCard({
               <Text style={styles.dDayText}>{dDay}</Text>
             </View>
           ) : null}
+          {isFreetext && (
+            <View
+              style={{
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 4,
+                backgroundColor: PURPLE,
+                marginLeft: 4,
+              }}
+            >
+              <Text style={{ fontSize: 9, fontWeight: '800', color: '#fff' }}>
+                AI
+              </Text>
+            </View>
+          )}
           <Text
             style={[
               styles.itemTitle,
@@ -1689,7 +1822,8 @@ function ToggleChip({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  // 하단 padding 크게 — freeText 등 입력창이 키보드에 가리지 않게 스크롤 여유 확보
+  container: { padding: spacing.lg, paddingBottom: 320 },
   editingBanner: {
     flexDirection: 'row',
     alignItems: 'center',

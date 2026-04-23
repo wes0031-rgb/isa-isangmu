@@ -91,6 +91,10 @@ class ChecklistItem(BaseModel):
     contact: Optional[str] = None
     region_hint: Optional[str] = None
     citations: list[ChecklistCitation] = Field(default_factory=list)
+    from_freetext: bool = Field(
+        default=False,
+        description="기타 특이사항(free_text) 키워드로 인해 자동 추가된 항목 표시용 플래그",
+    )
 
 
 class ChecklistResponse(BaseModel):

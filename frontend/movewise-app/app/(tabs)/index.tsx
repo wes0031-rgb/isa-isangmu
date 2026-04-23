@@ -45,6 +45,9 @@ export default function Home() {
   const [healthError, setHealthError] = useState<string | null>(null);
   const [saved, setSaved] = useState<StoredChecklist | null>(null);
   const [completions, setCompletions] = useState<CompletionMap>({});
+  // 홈 섹션 드롭다운 — 기본은 3건 초과 시 자동 접힘, 사용자가 수동 토글하면 override.
+  const [todayOverride, setTodayOverride] = useState<boolean | null>(null);
+  const [deadlineOverride, setDeadlineOverride] = useState<boolean | null>(null);
 
   // health 체크는 mount 시 1회만 (탭 전환마다 X). 실패해도 앱 다른 기능은 정상이면
   // UI 경고 띄우지 않고 조용히 재시도. 실제 API 호출 실패는 해당 화면(체크리스트/챗봇/
@@ -136,6 +139,9 @@ export default function Home() {
         .slice(0, 3)
     : [];
 
+  const todayCollapsed = todayOverride ?? (todayTasks.length > 3);
+  const deadlineCollapsed = deadlineOverride ?? (upcomingDeadlines.length > 3);
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -217,13 +223,26 @@ export default function Home() {
             밀린 것(overdue)까지 포함해 리마인드. 배지로 "오늘 시작 / N일 지남" 구분. */}
         {todayTasks.length > 0 && (
           <View style={styles.sectionBlock}>
-            <View style={styles.sectionTitleRow}>
+            <Pressable
+              style={styles.sectionTitleRow}
+              onPress={() => setTodayOverride(!todayCollapsed)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`지금 할 일 ${todayTasks.length}건, ${todayCollapsed ? '펼치기' : '접기'}`}
+              accessibilityState={{ expanded: !todayCollapsed }}
+            >
               <Ionicons name="today" size={18} color={colors.accent} />
               <Text style={styles.sectionTitle}>
                 지금 할 일 · {todayTasks.length}건
               </Text>
-            </View>
-            {todayTasks.map((it, idx) => {
+              <View style={{ flex: 1 }} />
+              <Ionicons
+                name={todayCollapsed ? 'chevron-down' : 'chevron-up'}
+                size={18}
+                color={colors.textMute}
+              />
+            </Pressable>
+            {!todayCollapsed && todayTasks.map((it, idx) => {
               const startDiff = daysUntil(it.start_date!);
               // 0 = 오늘, 음수 = 지남. 시각적으로 지남/오늘/곧 구분.
               const overdue = startDiff < 0;
@@ -285,11 +304,26 @@ export default function Home() {
         {/* Upcoming deadlines */}
         {upcomingDeadlines.length > 0 && (
           <View style={styles.sectionBlock}>
-            <View style={styles.sectionTitleRow}>
+            <Pressable
+              style={styles.sectionTitleRow}
+              onPress={() => setDeadlineOverride(!deadlineCollapsed)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`임박한 마감일 ${upcomingDeadlines.length}건, ${deadlineCollapsed ? '펼치기' : '접기'}`}
+              accessibilityState={{ expanded: !deadlineCollapsed }}
+            >
               <Ionicons name="alarm" size={18} color={colors.warning} />
-              <Text style={styles.sectionTitle}>임박한 마감일</Text>
-            </View>
-            {upcomingDeadlines.map((it, idx) => {
+              <Text style={styles.sectionTitle}>
+                임박한 마감일 · {upcomingDeadlines.length}건
+              </Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons
+                name={deadlineCollapsed ? 'chevron-down' : 'chevron-up'}
+                size={18}
+                color={colors.textMute}
+              />
+            </Pressable>
+            {!deadlineCollapsed && upcomingDeadlines.map((it, idx) => {
               const days = daysUntil(it.deadline_date!);
               const severity = days <= 3 ? 'danger' : days <= 7 ? 'warning' : 'ok';
               return (

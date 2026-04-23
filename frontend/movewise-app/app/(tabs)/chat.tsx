@@ -118,6 +118,7 @@ export default function ChatScreen() {
   // STT 녹음 상태 — Azure Speech-to-Text (ko-KR)
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [sttLoading, setSttLoading] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const recordingStartRef = useRef<number | null>(null);
   // prepareToRecordAsync 진행 중 다시 탭하면 두 Recording 이 동시 진행되는 race 방지.
@@ -306,6 +307,15 @@ export default function ChatScreen() {
           citations: res.citations,
         },
       ]);
+      // inverted FlatList: viewPosition 1 = 최신 아이템의 top 을 viewport end(시각적 화면 상단)에 정렬
+      // → 출처 말고 답변 첫 줄부터 눈에 들어오게
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: 0,
+          viewPosition: 1,
+          animated: true,
+        });
+      }, 100);
     } catch (e: any) {
       setMessages((prev) => [
         ...prev,
@@ -344,6 +354,7 @@ export default function ChatScreen() {
         </View>
 
         <FlatList
+          ref={flatListRef}
           style={{ flex: 1 }}
           data={invertedData}
           inverted
@@ -361,6 +372,16 @@ export default function ChatScreen() {
           contentContainerStyle={styles.messages}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onScrollToIndexFailed={() => {
+            // 레이아웃 미완료 시 다음 프레임에 재시도
+            setTimeout(() => {
+              flatListRef.current?.scrollToIndex({
+                index: 0,
+                viewPosition: 1,
+                animated: true,
+              });
+            }, 80);
+          }}
         />
 
         {/* 프리셋 질문 */}
@@ -481,10 +502,11 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-/** source_type 별 그룹핑된 출처 목록. 아이콘/색/한글 라벨로 구분. */
+/** source_type 별 그룹핑된 출처 목록. 기본 접힘, 헤더 탭으로 펼침. */
 function CitationsGrouped({ citations }: { citations: ChatCitation[] }) {
   // backend source_type: 'law' | 'procedure' | 'youtube'
   // UI: law / procedure / video (youtube 를 video 로 매핑)
+  const [expanded, setExpanded] = useState(false);
   const groups: Record<SourceKind, ChatCitation[]> = {
     law: [],
     procedure: [],
@@ -496,10 +518,31 @@ function CitationsGrouped({ citations }: { citations: ChatCitation[] }) {
     else if (c.source_type === 'youtube') groups.video.push(c);
   }
   const order: SourceKind[] = ['law', 'procedure', 'video'];
+  const summary = order
+    .filter((k) => groups[k].length > 0)
+    .map((k) => `${SOURCE_META[k].label} ${groups[k].length}`)
+    .join(' · ');
+  const totalCount = citations.length;
   return (
     <View style={styles.citationsBox}>
-      <Text style={styles.citationsLabel}>출처</Text>
-      {order.map((kind) => {
+      <Pressable
+        onPress={() => setExpanded((v) => !v)}
+        style={styles.citationsHeader}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? '출처 접기' : '출처 펼치기'}
+        hitSlop={8}
+      >
+        <Ionicons name="document-attach-outline" size={12} color={colors.textSub} />
+        <Text style={styles.citationsLabel}>
+          출처 {totalCount}건{summary ? `  ·  ${summary}` : ''}
+        </Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={14}
+          color={colors.textSub}
+        />
+      </Pressable>
+      {expanded && order.map((kind) => {
         const items = groups[kind];
         if (items.length === 0) return null;
         const meta = SOURCE_META[kind];
@@ -622,11 +665,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     gap: 4,
   },
+  citationsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
   citationsLabel: {
+    flex: 1,
     fontSize: 11,
     fontWeight: '700',
     color: colors.textSub,
-    marginBottom: 3,
   },
   citationChip: {
     flexDirection: 'row',
