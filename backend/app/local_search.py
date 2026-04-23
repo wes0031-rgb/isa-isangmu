@@ -1,8 +1,8 @@
 """Local chunk search — used as fallback when Azure AI Search is not configured.
 
-Loads `index_b_chunks_curated.jsonl` (행정 절차) and `index_a_chunks.jsonl`
-(법률 조문) once, and performs simple keyword scoring. This keeps `/checklist`
-and `/safecontract` functional during local development before Azure setup.
+Loads `guide_chunks.jsonl` (행정 절차) and `law_chunks.jsonl` (법률 조문) once,
+and performs simple keyword scoring. This keeps `/checklist` and `/safecontract`
+functional during local development before Azure setup.
 
 모든 데이터는 로드 시점에 한자 병기 제거(clean_hanja)를 거침.
 """
@@ -65,10 +65,9 @@ _INDEX_DIR = (
 )
 # 통합 인덱스 (Option B) — source_type 으로 구분
 UNIFIED_FILE = _INDEX_DIR / "index_unified.jsonl"
-# 레거시 3 인덱스 (unified 가 없을 때 fallback)
-CHUNKS_FILE = _INDEX_DIR / "index_b_chunks_curated.jsonl"
-LAW_FILE = _INDEX_DIR / "index_a_chunks.jsonl"
-YOUTUBE_FILE = _INDEX_DIR / "index_c_youtube_chunks.jsonl"
+# 레거시 2 인덱스 (unified 가 없을 때 fallback)
+CHUNKS_FILE = _INDEX_DIR / "guide_chunks.jsonl"
+LAW_FILE = _INDEX_DIR / "law_chunks.jsonl"
 
 
 # ---------- 통합 인덱스 로더 ----------
@@ -99,7 +98,7 @@ def load_chunks() -> list[dict]:
     """행정절차(Index B) 청크 로드.
 
     통합 인덱스(`index_unified.jsonl`) 가 있으면 거기서 source_type=procedure
-    필터해서 반환. 없으면 레거시 `index_b_chunks_curated.jsonl` 로 fallback.
+    필터해서 반환. 없으면 `guide_chunks.jsonl` 로 fallback.
     """
     unified = load_unified()
     if unified:

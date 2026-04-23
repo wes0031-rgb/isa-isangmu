@@ -10,12 +10,9 @@ venv/
 !.env.example
 
 # Raw scraped data (not needed at runtime, only curated chunks matter)
-backend/data/procedures/easylaw/
-backend/data/procedures/gov24/
-backend/data/procedures/telecom/
-backend/data/procedures/utility/
+backend/data/guide/
 backend/data/mapping/
-backend/data/laws/
+backend/data/law/
 backend/data/samples/
 
 .DS_Store

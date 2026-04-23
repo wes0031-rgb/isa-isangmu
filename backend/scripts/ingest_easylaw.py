@@ -14,35 +14,134 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
+from annotate_sources import get_source_metadata
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+OUT_DIR = ROOT / "backend" / "data" / "guide"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
 BASE = "https://easylaw.go.kr/CSP/CnpClsMain.laf"
 HEADERS = {"User-Agent": "Mozilla/5.0 (isa-isangmu RAG data collector)"}
 OUT_DIR = Path("/Users/sa/Desktop/2차프로젝트/backend/data/procedures/easylaw")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# csmSeq=666 = 이사 카테고리. ccfNo/cciNo/cnpClsNo는 소분류 계층 식별자.
-TARGETS = [
-    (1, 1, 1),  # 집 구하기 > 집 구하기 > 집 구하기
-    (1, 1, 2),
-    (1, 1, 3),
-    (1, 2, 1),
-    (1, 3, 1),
-    (2, 1, 1),  # 집 계약하기 > 계약서
-    (2, 1, 2),
-    (2, 1, 3),
-    (2, 2, 1),  # 잔금정산·등기
-    (2, 2, 2),
-    (2, 2, 3),
-    (2, 2, 4),
-    (2, 2, 5),
-    (2, 3, 1),
-    (2, 3, 2),
-    (3, 1, 1),  # 이사하기 > 체크리스트
-    (3, 2, 1),  # 이사업체
-    (3, 2, 2),
-    (3, 3, 1),  # 요금 정산
-    (3, 3, 2),
-    (4, 1, 1),  # 이사 후 > 전입신고
-    (4, 2, 1),  # 이사 후 > 아이 전학
+# 단일 출처: annotate_sources.SOURCES ["guide/*.json" 엔트리]
+_SOURCE_METADATA = get_source_metadata("guide/*.json")
+
+
+# 카테고리별 수집 설정
+CATEGORIES: dict[int, dict] = {
+    666: {
+        "name": "이사",
+        "targets": [
+            (1, 1, 1), (1, 1, 2), (1, 1, 3), (1, 2, 1), (1, 3, 1),
+            (2, 1, 1), (2, 1, 2), (2, 1, 3),
+            (2, 2, 1), (2, 2, 2), (2, 2, 3), (2, 2, 4), (2, 2, 5),
+            (2, 3, 1), (2, 3, 2),
+            (3, 1, 1), (3, 2, 1), (3, 2, 2), (3, 3, 1), (3, 3, 2),
+            (4, 1, 1), (4, 2, 1),
+        ],
+    },
+    629: {
+        "name": "주택임대차",
+        "targets": [
+            (1, 1, 1), (1, 2, 1),
+            (2, 1, 1), (2, 2, 1), (2, 2, 2), (2, 2, 3), (2, 2, 4), (2, 2, 5),
+            (2, 3, 1), (2, 3, 2),
+            (3, 1, 1), (3, 2, 1),
+            (4, 1, 1), (4, 1, 2), (4, 2, 1), (4, 2, 2),
+            (4, 3, 1), (4, 3, 2), (4, 3, 3), (4, 3, 4), (4, 4, 1),
+            (5, 1, 1),
+            (5, 2, 1), (5, 2, 2), (5, 2, 3), (5, 2, 4), (5, 2, 5), (5, 2, 6),
+            (5, 3, 1), (5, 3, 2), (5, 3, 3),
+        ],
+    },
+}
+
+
+def build_url(csm_seq: int, ccf: int, cci: int, cnp: int) -> str:
+    return f"{BASE}?popMenu=ov&csmSeq={csm_seq}&ccfNo={ccf}&cciNo={cci}&cnpClsNo={cnp}"
+
+
+def extract_breadcrumb(soup: BeautifulSoup) -> str:
+    """현재위치(location > fL) div에서 breadcrumb 추출.
+
+    구조:
+      <div class="location">
+        <div class="fL">홈 > 책자형 > 주택임대차</div>
+        <div class="fR">...검색/공유/저장 UI...</div>
+      </div>
+    """
+    loc = soup.select_one("div.location div.fL")
+    if loc is None:
+        # fallback
+        loc = soup.find("div", class_="location")
+    if loc is None:
+        return ""
+    text = loc.get_text(" ", strip=True)
+    # 아이콘·이미지 alt 텍스트 정리
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:200]
+
+def extract_title(soup: BeautifulSoup, breadcrumb: str) -> str:
+    """페이지 타이틀 추출.
+    
+    <title> 태그 예시:
+      "주택임대차 > ... > 「주택임대차보호법」의 적용 (본문) |  찾기쉬운 생활법령정보"
+    
+    파싱:
+      1. " | " 앞까지만 (사이트명 제거)
+      2. " > "로 split 후 마지막 segment
+      3. "(본문)" suffix 제거
+    """
+    title_tag = soup.find("title")
+    if title_tag:
+        t = title_tag.get_text(strip=True)
+        # 사이트명 제거: "... | 찾기쉬운 생활법령정보" → "..."
+        if "|" in t:
+            t = t.split("|")[0].strip()
+        # "(본문)" suffix 제거
+        t = re.sub(r"\s*\(본문\)\s*$", "", t).strip()
+        # breadcrumb 구조면 마지막 segment만
+        if ">" in t:
+            segs = [s.strip() for s in t.split(">") if s.strip()]
+            if segs:
+                return segs[-1]
+        # 구조 없으면 그대로 반환
+        if t:
+            return t
+    
+    # fallback: breadcrumb 마지막 segment
+    if breadcrumb:
+        segs = [s.strip() for s in breadcrumb.split(">") if s.strip()]
+        for seg in reversed(segs):
+            if any(skip in seg for skip in ("검색", "공유", "저장", "인쇄", "즐겨찾기")):
+                continue
+            if seg and len(seg) < 80:
+                return seg
+    
+    return "제목 없음"
+
+
+# 제거 대상 selector — UI 요소, 공유/저장 버튼, 접근성 라벨 등
+NOISE_SELECTORS = [
+    # 문서 구조 관련
+    "nav", "footer", "header", "script", "style", "noscript",
+    # 사이드바/메뉴
+    ".lnb", ".gnb", ".sub_menu", ".lnb_wrap", ".nav_wrap", ".allMenu",
+    ".quickmenu_wrap", ".topLnb", ".top_header_srchBox",
+    # 공유/저장/인쇄 UI
+    ".sns_pop", ".save_pop", ".srch_box", ".share_area",
+    ".btn_area", ".foot_cont", ".print_area", ".btns",
+    ".pop_article",
+    # 페이지 메타 영역
+    ".location", ".tab_menu",
+    # 접근성/스크린리더용 숨김 요소
+    ".labelnone", "#skipnav",
+    # 하단 안내 (법적 기준일·설문 등)
+    ".info_box", ".copy_bot",
+    # iframe/이미지만 있는 영역
+    ".view_banner_area", ".box_but2",
 ]
 
 
@@ -137,6 +236,7 @@ def scrape_one(ccf: int, cci: int, cnp: int) -> dict | None:
         "content_length": len(text),
         "law_citations": extract_law_citations(text),
         "fetched_at": date.today().isoformat(),
+        "_source_metadata": _SOURCE_METADATA,
     }
 
 

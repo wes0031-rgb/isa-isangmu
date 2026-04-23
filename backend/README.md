@@ -22,9 +22,9 @@ backend/
 │   └── local_search.py        # Azure 미연결 시 로컬 키워드 검색 폴백
 ├── data/                   # 인덱스·매핑·법령 원본 JSON/JSONL
 │   ├── indexes/               # 통합 인덱스 JSONL + 평가 보고서
-│   ├── laws/                  # 법령 원본 JSON (주택임대차보호법 등)
+│   ├── law/                   # 법령 원본 JSON (주택임대차보호법 등)
+│   ├── guide/                 # 행정 절차 JSON (easylaw 크롤링, 53건)
 │   ├── mapping/               # 지역별 기관 매핑 (수도·가스·전기…)
-│   ├── procedures/            # 행정 절차 JSON (easylaw 크롤링)
 │   └── raw/                   # 유튜브 스크립트·공휴일 원본
 ├── scripts/                # 데이터 수집·전처리·인덱싱 스크립트 (19개)
 │   └── README.md              # 스크립트 용도별 분류
