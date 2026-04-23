@@ -677,6 +677,8 @@ function ResultView({
     jeonse_right_registered?: boolean;
     non_residential_use?: boolean;
     owner_change_within_2_years?: number;
+    caution_notes?: string[];
+    raw_notes?: string[];
   };
   const coOwnersList =
     ext.co_owners && ext.co_owners.length > 0
@@ -743,8 +745,18 @@ function ResultView({
         title: `${ext.building_use} 시세 주의`,
         sub: '아파트 실거래가보다 낮음 — 직접 확인 권장',
       });
+    // LLM 이 작성한 caution_notes (YELLOW 단계 조치 안내) — 누락 방지
+    (ext.caution_notes ?? []).forEach((note) => {
+      if (note && typeof note === 'string')
+        cs.push({ icon: 'information-circle', title: 'AI 안내', sub: note });
+    });
+    // raw_notes (대지권 미등기 등 기타 특이사항)
+    (ext.raw_notes ?? []).forEach((note) => {
+      if (note && typeof note === 'string')
+        cs.push({ icon: 'document-text-outline', title: '기타 특이사항', sub: note });
+    });
     return { hardHazards: hh, cautions: cs, riskCount: hh.length + cs.length };
-  }, [result, ext, mortgagePct, coOwnersList]);
+  }, [result, ext, mortgagePct, jeontsePct, coOwnersList]);
 
   // 스크린리더용 통합 라벨 (Hero 카드 한 번에 읽힘)
   const heroA11yLabel = `${headline.tag}. ${headline.headline}.${

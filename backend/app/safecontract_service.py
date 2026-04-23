@@ -1059,14 +1059,34 @@ def analyze_safecontract(
         f"[safecontract] address={extraction.address!r} → inferred_region={inferred_region!r}"
     )
 
-    # 시세 자동 조회: 사용자 입력 0 이면 inferred_region 으로 국토부 API fetch
+    # 시세 자동 조회: 사용자 입력 0 이면 inferred_region 으로 국토부 API fetch.
+    # 단, 국토부 API 는 아파트 전용 (RTMSDataSvcAptTradeDev) — 다세대/빌라/오피스텔에
+    # 아파트 시세를 적용하면 시세 인플레이션 → jeontse_ratio 가 실제보다 낮아져
+    # 깡통전세인데 GREEN 으로 잘못 분류됨. 비아파트면 자동 조회 차단 + 사용자에게
+    # 직접 입력 안내 (시세 미입력 카드 활용).
     market = None
     effective_market_price = req.expected_market_price_krw
     if effective_market_price <= 0:
-        auto_region = req.region or inferred_region
-        market = _fetch_market_estimate(auto_region)
-        if market and market.median_price_krw:
-            effective_market_price = market.median_price_krw
+        non_apt_keywords = ("다세대", "빌라", "연립", "오피스텔", "단독")
+        is_non_apt = bool(extraction.building_use) and any(
+            k in extraction.building_use for k in non_apt_keywords
+        )
+        if is_non_apt:
+            market = MarketEstimate(
+                source="국토교통부 아파트 매매 실거래가 API",
+                region=req.region or inferred_region or "",
+                query_ym="",
+                error=(
+                    f"건물 용도가 '{extraction.building_use}' — 국토부 아파트 API 적용 시 "
+                    f"시세가 부풀려져 깡통전세 위험을 놓칠 수 있어 자동 조회를 생략했습니다. "
+                    f"네이버부동산·KB부동산 등에서 같은 단지·평형 시세를 확인 후 직접 입력하세요."
+                ),
+            )
+        else:
+            auto_region = req.region or inferred_region
+            market = _fetch_market_estimate(auto_region)
+            if market and market.median_price_krw:
+                effective_market_price = market.median_price_krw
 
     jeontse_ratio, mortgage_ratio, risk_level = _compute_ratios(
         extraction, req.deposit_krw, effective_market_price
