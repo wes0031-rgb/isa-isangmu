@@ -285,6 +285,24 @@ def search_procedures(queries: list[str], req: ChecklistRequest) -> list[dict]:
             merged.append(hit)
             guide_count += 1
 
+    # Relevance 정렬 — chunks[:40] cap 후에도 진짜 상위 hit 가 살아남도록.
+    # 이전엔 query 순서대로 dedupe → 첫 쿼리 결과가 우선이라 다른 쿼리의 더 좋은
+    # hit 가 cap 으로 밀려나는 케이스 발생. semantic reranker_score (0~4) 우선,
+    # 없으면 search.score 차순.
+    def _hit_rank(h: dict) -> float:
+        rerank = h.get("@search.reranker_score")
+        if rerank is not None:
+            try:
+                return float(rerank) + 100  # reranker 가 있으면 무조건 우선
+            except (TypeError, ValueError):
+                pass
+        try:
+            return float(h.get("@search.score") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    merged.sort(key=_hit_rank, reverse=True)
+
     _logger.info(
         f"search_procedures: queries={len(queries)} workers={max_workers} "
         f"merged={len(merged)} (law={law_count} guide={guide_count}) "
@@ -371,7 +389,9 @@ def structure_checklist_llm(
     def _format_chunk(c: dict) -> str:
         source = c.get("_source_type") or "guide"
         cid = c.get("id", "?")
-        content = (c.get("content") or "")[:600]
+        # content 600 → 1200 — 핵심 정보(법정기한·과태료·신고처 주소 등)가 후반부에
+        # 잘리는 케이스 방지. 법령 조문 본문이 길어 600자로는 ① 본문 첫 부분만 보임.
+        content = (c.get("content") or "")[:1200]
         if source == "law":
             return (
                 f"[law | {cid}]\n"
@@ -389,10 +409,20 @@ def structure_checklist_llm(
             f"content: {content}"
         )
 
-    # 청크 16→32 — 2026-04-23: free_text 검색 활용도 ↑ (이전 16개는 73% 버림 발생).
-    # 입력 토큰 ~22K (GPT-4o 128K context 의 17%) → 응답 시간 +5초, 비용 약 2배.
-    # _ensure_utility/_ensure_conditional 후처리는 그대로 작동.
-    context = "\n\n---\n\n".join(_format_chunk(c) for c in chunks[:32])
+    # 청크 16→40 — 검색 활용도 ↑ + relevance 정렬 후 상위 40 (이전 73% 버림 → ~33%).
+    # 입력 토큰 ~28K (GPT-4o 128K context 의 22%).
+    # search_procedures 가 reranker_score / @search.score 기준 정렬 후 dedupe 한 결과
+    # 상위가 들어옴 → 같은 cap 이라도 중요 hit 가 살아남는다.
+    context = "\n\n---\n\n".join(_format_chunk(c) for c in chunks[:40])
+    # free_text 원문을 system 분리해서 명시 — LLM 이 chunks 를 user 의도에 맞춰
+    # 해석하도록 강제. "검색 결과의 핵심 내용을 빠짐없이 반영" 시킴.
+    free_text_hint = ""
+    if (req.free_text or "").strip():
+        free_text_hint = (
+            f"\n\n[사용자 자유 텍스트 — 이 내용에 직접 응답하는 항목을 반드시 포함]:\n"
+            f"{req.free_text.strip()}\n"
+            f"검색 결과 chunks 에 위 텍스트 관련 내용이 있으면 우선적으로 항목화."
+        )
 
     import logging as _log
     _logger = _log.getLogger("movewise")
@@ -410,7 +440,7 @@ def structure_checklist_llm(
             seed=42,
             messages=[
                 {"role": "system", "content": STRUCTURE_SYSTEM_PROMPT},
-                {"role": "user", "content": f"조건:\n{req.model_dump_json()}\n\n검색결과:\n{context}"},
+                {"role": "user", "content": f"조건:\n{req.model_dump_json()}{free_text_hint}\n\n검색결과:\n{context}"},
             ],
             response_format={"type": "json_object"},
             max_tokens=3000,
@@ -2109,6 +2139,11 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
         # "멍멍이" → has_pet, "내 차로 출근" → has_car / is_employed 같이 키워드
         # 매칭으로 못 잡는 자유 표현도 정확히 플래그 승격 + 보라색 마킹.
         queries, llm_flags = build_queries_freetext_llm(req)
+        # free_text 원문 자체도 첫 쿼리로 prepend → 사용자가 Azure Search 포털에서
+        # 직접 친 검색 결과가 항상 컨텍스트에 포함됨. LLM 변환 쿼리(의역) 와 별개로
+        # raw expression 검색을 보장해 "포털엔 있는데 앱엔 안 보임" 격차 해소.
+        if original_ft and original_ft not in queries:
+            queries = [original_ft] + queries
         if llm_flags:
             updates_from_llm: dict = {}
             for f in llm_flags:
