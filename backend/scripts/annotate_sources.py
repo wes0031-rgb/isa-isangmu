@@ -24,7 +24,7 @@ TODAY = date.today().isoformat()
 SOURCES: list[dict] = [
     # ----- Index A (법률 원본) -----
     {
-        "pattern": "laws/*.json",
+        "pattern": "law/*.json",
         "category": "법률 원본",
         "authority": "법제처",
         "source_url": "https://www.law.go.kr/DRF/lawService.do",
@@ -80,7 +80,7 @@ SOURCES: list[dict] = [
     },
     # ----- 행정 절차 easylaw raw -----
     {
-        "pattern": "procedures/easylaw/*.json",
+        "pattern": "guide/*.json",
         "category": "행정 절차 원본 스크랩",
         "authority": "법제처 (찾기쉬운 생활법령정보)",
         "source_url": "https://easylaw.go.kr",
@@ -448,16 +448,11 @@ def find_source_entry(file_path: Path) -> dict | None:
 # ============================================================
 
 
-def annotate_json_file(path: Path, source: dict) -> bool:
-    """JSON 파일 상단에 _source_metadata 필드 주입. 이미 있으면 업데이트."""
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return False
+def build_source_metadata(source: dict) -> dict:
+    """SOURCES 항목 하나를 `_source_metadata` 필드로 변환.
 
-    if not isinstance(data, dict):
-        return False  # jsonl 은 별도 처리 안 함 (로드 시점 오버헤드)
-
+    내부 사용 (annotate_json_file) + 외부 ingest 스크립트 재사용용.
+    """
     meta = {
         "category": source["category"],
         "authority": source.get("authority"),
@@ -468,9 +463,35 @@ def annotate_json_file(path: Path, source: dict) -> bool:
         "how_collected": source.get("how_collected"),
         "last_annotated": TODAY,
     }
-    meta = {k: v for k, v in meta.items() if v is not None}
+    return {k: v for k, v in meta.items() if v is not None}
 
-    data["_source_metadata"] = meta
+
+def get_source_metadata(pattern: str) -> dict:
+    """SOURCES 패턴 키로 `_source_metadata` 블록 조회.
+
+    ingest 스크립트에서 재ingest 시점에 직접 주입할 수 있게 하는 공개 API.
+    카탈로그 정의는 이 파일의 SOURCES 리스트가 단일 출처(single source of truth).
+
+    Raises:
+        KeyError: SOURCES 에 해당 pattern 키 없을 때.
+    """
+    for src in SOURCES:
+        if src["pattern"] == pattern:
+            return build_source_metadata(src)
+    raise KeyError(f"SOURCES 에 pattern={pattern!r} 항목 없음")
+
+
+def annotate_json_file(path: Path, source: dict) -> bool:
+    """JSON 파일 상단에 _source_metadata 필드 주입. 이미 있으면 업데이트."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+
+    if not isinstance(data, dict):
+        return False  # jsonl 은 별도 처리 안 함 (로드 시점 오버헤드)
+
+    data["_source_metadata"] = build_source_metadata(source)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     return True
 

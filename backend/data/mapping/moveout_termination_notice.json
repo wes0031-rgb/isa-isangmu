@@ -55,6 +55,6 @@
     "license": "표준 양식 재배포 가능",
     "update_cycle": "수동",
     "how_collected": "ingest_moveout.py",
-    "last_annotated": "2026-04-14"
+    "last_annotated": "2026-04-24"
   }
 }
