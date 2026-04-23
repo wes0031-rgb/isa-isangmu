@@ -579,26 +579,23 @@ function calcTopReasons(result: SafeContractResponse): TopReason[] {
 function buildHeadline(result: SafeContractResponse): {
   tag: string;
   headline: string;
-  conclusion: string;
 } {
+  // 판단·권유 문구 제거 — 사실 요약만 제공하고 판단은 사용자가 함.
   if (result.risk_level === 'red') {
     return {
-      tag: '🔴 위험 · 계약 비권장',
-      headline: '보증금 돌려받기 어려워요',
-      conclusion: '계약하지 마세요',
+      tag: '🔴 위험 요소 발견',
+      headline: '아래 위험 항목을 확인하세요',
     };
   }
   if (result.risk_level === 'yellow') {
     return {
-      tag: '🟡 주의 · 추가 확인 필수',
-      headline: '확인할 게 있어요',
-      conclusion: '추가 확인 후 진행',
+      tag: '🟡 주의 항목 발견',
+      headline: '아래 주의 항목을 확인하세요',
     };
   }
   return {
-    tag: '🟢 안전 · 정상 매물',
-    headline: '안전한 계약이에요',
-    conclusion: '대항력 확보만 하세요',
+    tag: '🟢 등기부 위험 요소 미발견',
+    headline: '추출된 위험 항목이 없습니다',
   };
 }
 
@@ -745,7 +742,7 @@ function ResultView({
   // 스크린리더용 통합 라벨 (Hero 카드 한 번에 읽힘)
   const heroA11yLabel = `${headline.tag}. ${headline.headline}.${
     propOneLine ? ' ' + propOneLine + '.' : ''
-  } 결론: ${headline.conclusion}.`;
+  }`;
 
   return (
     <View style={styles.resultSection}>
@@ -778,12 +775,6 @@ function ResultView({
           </View>
         )}
 
-        {/* 결론 단어 */}
-        <View style={styles.conclusionBox}>
-          <Text style={styles.conclusionLabel}>💡 결론</Text>
-          <Text style={[styles.conclusionText, { color }]}>{headline.conclusion}</Text>
-        </View>
-
         {/* 다음 액션 체크 */}
         <View style={styles.actionChecksBox}>
           <Text style={styles.actionChecksTitle}>📋 다음 액션</Text>
@@ -811,8 +802,8 @@ function ResultView({
         </Text>
       </View>
 
-      {/* ====== 숫자로 한눈에 ====== */}
-      {(result.jeontse_ratio > 0 || result.mortgage_ratio > 0) && (
+      {/* ====== 숫자로 한눈에 / 시세 미입력 안내 ====== */}
+      {(result.jeontse_ratio > 0 || result.mortgage_ratio > 0) ? (
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>📊 숫자로 한눈에</Text>
           <View style={styles.statsGrid}>
@@ -858,6 +849,31 @@ function ResultView({
               {result.market_estimate.total_count}건 평균)
             </Text>
           )}
+        </View>
+      ) : (
+        <View style={styles.marketMissingCard}>
+          <Text style={styles.marketMissingTitle}>📊 시세 평가 제외</Text>
+          <Text style={styles.marketMissingBody}>
+            실거래가가 입력되지 않아 깡통전세 위험(전세가율·근저당비율)은 평가하지 못했어요.
+            아래 등기부 위험만 분석한 결과입니다.
+          </Text>
+          {result.market_estimate?.error ? (
+            <Text style={styles.marketMissingReason}>
+              🔍 국토부 자동 조회: {result.market_estimate.error}
+            </Text>
+          ) : !result.market_estimate ? (
+            <Text style={styles.marketMissingReason}>
+              🔍 국토부 자동 조회: 주소가 인식되지 않아 자동 조회를 시도하지 못했습니다.
+            </Text>
+          ) : (
+            <Text style={styles.marketMissingReason}>
+              🔍 국토부 자동 조회: 해당 지역·기간 거래 내역이 없어 시세를 확인하지 못했습니다.
+            </Text>
+          )}
+          <Text style={styles.marketMissingAction}>
+            💡 네이버부동산·KB부동산 등에서 같은 단지·평형의 최근 시세를 확인해 위
+            "예상 시세" 칸에 입력하고 다시 분석하면 깡통전세 위험까지 정확히 평가됩니다.
+          </Text>
         </View>
       )}
 
@@ -1703,28 +1719,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 2,
   },
-  conclusionBox: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: radius.md,
-    padding: spacing.md - 2,
-    marginVertical: spacing.sm,
-  },
-  conclusionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textSub,
-    letterSpacing: 0.3,
-  },
-  conclusionText: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-    lineHeight: 24,
-  },
   actionChecksBox: {
     backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: radius.md,
@@ -1826,6 +1820,38 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
     lineHeight: 19,
+  },
+  marketMissingCard: {
+    backgroundColor: colors.warningBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.warning,
+  },
+  marketMissingTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.warning,
+    marginBottom: spacing.sm,
+  },
+  marketMissingBody: {
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+  },
+  marketMissingReason: {
+    fontSize: 12,
+    color: colors.textSub,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
+  },
+  marketMissingAction: {
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 20,
+    fontWeight: '600',
   },
 
   // ============ 신규: Accordion ============

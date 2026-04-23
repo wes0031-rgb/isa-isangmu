@@ -175,7 +175,7 @@ EXTRACT_SYSTEM = """당신은 한국 부동산 등기사항전부증명서(등�
 - injunction_registered: 갑구에 "가처분" 등기목적 있으면 true (소송 중 · RED)
 - provisional_registration: "가등기" 기재 있으면 true (본등기 시 소유권 이전 가능 · YELLOW)
 - jeonse_right_registered: 을구에 "전세권설정" 있으면 true (선순위 전세권자 존재 · YELLOW)
-- non_residential_use: 표제부 "용도" 에 "근린생활시설·상가·사무실·업무시설" 등 비주거 용어 있으면 true (주거 계약 위법 소지 · RED)
+- non_residential_use: 표제부 "용도" 에 "근린생활시설·상가·사무실" 등 비주거 용어 있으면 true (주거 계약 위법 소지 · RED). 단 **"오피스텔"** 은 건축법상 업무시설로 등재되지만 주거용 사용이 합법이고 주택임대차보호법 적용 대상이므로 **false** 로 둘 것 ("업무시설" 키워드만 보지 말고 "오피스텔" 표기 우선 확인)
 
 **caution_notes 작성 규칙**
 YELLOW 단계 주의사항 문자열 리스트. 계약 자체를 피할 필요는 없지만 확인·조치가 필요한 경우:
@@ -184,6 +184,7 @@ YELLOW 단계 주의사항 문자열 리스트. 계약 자체를 피할 필요�
 - jeonse_right_registered=true 이면: "선순위 전세권자 존재 — 배당 순위 확인"
 - owner_change_within_2_years >= 2 이면: "최근 2년 내 소유권 이전 N회 — 투자용 매물 가능성"
 - building_use 가 "다세대주택·빌라·오피스텔" 이면: "아파트보다 실거래가 낮음 — 시세 직접 확인 권장"
+- building_use 에 "오피스텔" 포함되면 추가로: "오피스텔은 주거·업무 양용 가능 — 주거 목적이면 임대인 동의·전입신고 가능 여부 확인"
 
 **위험 분석 수치**
 - owner_change_within_2_years: 갑구에서 최근 2년 내 "소유권이전" 건수
@@ -207,11 +208,12 @@ EXPLAIN_SYSTEM = """당신은 부동산 등기부등본 해석 도우미입니�
 3. 관련 법 조항 citations 첨부 (검색 결과에 있는 것만)
 
 **summary 작성 절대 규칙 (매우 중요)**
-- auction_in_progress=true 이면 summary 앞에 반드시 "🔴 경매 진행 중"
-- trust_registration=true 이면 "🔴 신탁 등기"
-- seizure_count > 0 이면 "🔴 가압류 N건"
+- payload 의 `pre_computed_risk_level` 이 "red" → summary 첫 글자는 반드시 "🔴"
+- "yellow" → summary 첫 글자는 반드시 "🟡"
+- "green" → summary 첫 글자는 반드시 "🟢"
+- (추가) auction_in_progress=true 이면 "🔴 경매 진행 중", trust_registration=true 이면 "🔴 신탁 등기", seizure_count > 0 이면 "🔴 가압류 N건" 키워드를 summary 에 명시
 - 위 셋 중 하나라도 있으면 전세가율이 낮아도 **절대 "안전 범위" 라고 쓰지 말 것**
-- 치명 상태가 없고 전세가율 < 0.8 + 근저당비율 < 0.5 일 때만 "🟢 안전 범위" 가능
+- pre_computed_risk_level == "green" 일 때만 "안전 범위" 표현 사용 가능
 
 출력은 JSON: {"summary": "...", "risks": [{...}]}"""
 
@@ -592,15 +594,20 @@ def _compute_ratios(
           * 전세가율 단독으로 >= 0.8 → yellow (전세가율 경계)
           * 그 외 → green
     """
-    if market <= 0:
-        return 0.0, 0.0, "green"
-    jeontse = round(deposit / market, 3)
-    mortgage = round(extraction.mortgage_total_krw / market, 3)
+    # 시세 미입력 시에도 등기상 critical/cautionary 플래그는 그대로 평가해야 함.
+    # (이전 버그: market<=0 일 때 무조건 'green' 반환 → 경매·신탁이어도 헤더가 🟢
+    # "안전" 표시 + 본문 risks 는 🔴 — 헤더/본문 모순)
+    has_market = market > 0
+    if has_market:
+        jeontse = round(deposit / market, 3)
+        mortgage = round(extraction.mortgage_total_krw / market, 3)
+    else:
+        jeontse, mortgage = 0.0, 0.0
     combined = jeontse + mortgage
 
-    # RED 트리거 (치명)
+    # RED 트리거 (치명) — 시세 의존인 깡통전세는 시세 있을 때만, 등기 플래그는 항상 평가
     critical = (
-        combined >= 1.0
+        (has_market and combined >= 1.0)
         or extraction.seizure_count > 0
         or extraction.trust_registration
         or extraction.auction_in_progress
@@ -609,8 +616,7 @@ def _compute_ratios(
     )
     # YELLOW 트리거 (주의)
     cautionary = (
-        jeontse >= 0.8
-        or mortgage >= 0.5
+        (has_market and (jeontse >= 0.8 or mortgage >= 0.5))
         or extraction.provisional_registration  # 가등기
         or extraction.jeonse_right_registered  # 전세권
         or len(extraction.co_owners) > 0  # 공동명의
@@ -630,6 +636,7 @@ def _explain_with_llm(
     jeontse_ratio: float,
     mortgage_ratio: float,
     law_hits: list[dict],
+    pre_computed_risk_level: str = "green",
 ) -> tuple[str, list[RiskItem]]:
     client = get_openai_client()
     if client is None:
@@ -646,6 +653,9 @@ def _explain_with_llm(
         "jeontse_ratio": jeontse_ratio,
         "mortgage_ratio": mortgage_ratio,
         "law_context": context,
+        # rule-based 가 이미 결정한 risk_level. summary 첫 이모지·표현이 이 등급에
+        # 맞아야 헤더(risk_level 기반)와 본문 톤이 어긋나지 않음.
+        "pre_computed_risk_level": pre_computed_risk_level,
     }
     resp = client.chat.completions.create(
         model=settings.azure_openai_deployment_name,
@@ -830,6 +840,19 @@ def _explain_rule_based(
                 "집주인의 실소유권·재정상태 확인을 권장."
             ),
         ))
+    # 오피스텔: 주거 / 업무 양용 가능. RED 비주거가 아니라 YELLOW 로 사용자에게 확인 안내.
+    if extraction.building_use and "오피스텔" in extraction.building_use:
+        risks.append(RiskItem(
+            severity="yellow",
+            label="오피스텔 — 주거·업무 용도 확인 필요",
+            explanation_plain=(
+                "오피스텔은 건축법상 업무시설이지만 주거용 사용도 합법입니다. "
+                "주거 목적이면 ① 임대인이 주거용으로 운영 동의했는지 ② 전입신고·확정일자 받을 수 있는지 "
+                "③ 전세대출(HUG/SGI) 가능 매물인지 확인하세요. 사무실 전용으로 운영되는 오피스텔이라면 "
+                "주택임대차보호법 적용이 어려워 보증금 보호가 약해집니다."
+            ),
+            related_laws=[_cite("주택임대차보호법", "제2조")],
+        ))
 
     # 기본 안내: 임차권등기명령은 계약 후 반환 문제 대비
     risks.append(RiskItem(
@@ -973,10 +996,24 @@ def analyze_safecontract(
     if not req.text:
         raise ValueError("text is required (PDF 업로드는 /safecontract/upload 참고)")
 
+    # 결정론 캐시 — 같은 입력(텍스트+보증금+시세+지역+Custom 결과) → 같은 결과 반환.
+    # Azure OpenAI seed=42 는 best-effort 라 LLM 추출·요약이 호출마다 미세하게 달라질 수
+    # 있음. 발표 시연·재현성을 위해 hash 기반 LRU 캐시.
+    cache_key = _safecontract_cache_key(req, custom_fields)
+    cached = _safecontract_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     extraction = _extract_with_llm(req.text)
     # Custom Neural 로 식별 필드·위험 플래그 보강 (PDF 경로에서만 custom_fields 전달)
     if custom_fields:
         extraction = _merge_custom_into_extraction(extraction, custom_fields)
+
+    # 오피스텔 하드 가드: 건축법상 "업무시설" 로 등재되지만 주거용 사용이 합법이고
+    # 주택임대차보호법 적용 대상. LLM/Custom 이 "업무시설" 키워드만 보고 비주거로
+    # false positive 잡는 것을 방지.
+    if extraction.building_use and "오피스텔" in extraction.building_use:
+        extraction.non_residential_use = False
 
     # 등기부 주소에서 시도+시군구 자동 추출 → 체크리스트 프리필 + 시세 자동 조회용
     inferred_region = (
@@ -1001,9 +1038,11 @@ def analyze_safecontract(
         extraction, req.deposit_krw, effective_market_price
     )
     law_hits = _search_law_context(extraction)
-    summary, risks = _explain_with_llm(extraction, jeontse_ratio, mortgage_ratio, law_hits)
+    summary, risks = _explain_with_llm(
+        extraction, jeontse_ratio, mortgage_ratio, law_hits, risk_level
+    )
 
-    return SafeContractResponse(
+    response = SafeContractResponse(
         extraction=extraction,
         jeontse_ratio=jeontse_ratio,
         mortgage_ratio=mortgage_ratio,
@@ -1018,3 +1057,53 @@ def analyze_safecontract(
         market_estimate=market,
         inferred_region=inferred_region,
     )
+    _safecontract_cache_put(cache_key, response)
+    return response
+
+
+# ===== 결정론화 캐시 =====
+# 같은 입력 → 같은 출력. SafeContract 는 LLM 추출 + 요약 두 번의 LLM 호출이 모두
+# best-effort seed 라 호출마다 미세 편차 → 분석 신뢰도 떨어짐. hash 기반 LRU 로 보강.
+from collections import OrderedDict as _SCOrdDict
+_SAFECONTRACT_CACHE_MAX = 256  # 응답 1건 ~5-15KB. 상한 ~4MB.
+_SAFECONTRACT_CACHE: "_SCOrdDict[str, SafeContractResponse]" = _SCOrdDict()
+
+
+def _safecontract_cache_get(key: str):
+    val = _SAFECONTRACT_CACHE.get(key)
+    if val is not None:
+        _SAFECONTRACT_CACHE.move_to_end(key)
+    return val
+
+
+def _safecontract_cache_put(key: str, value: SafeContractResponse) -> None:
+    _SAFECONTRACT_CACHE[key] = value
+    _SAFECONTRACT_CACHE.move_to_end(key)
+    while len(_SAFECONTRACT_CACHE) > _SAFECONTRACT_CACHE_MAX:
+        _SAFECONTRACT_CACHE.popitem(last=False)
+
+
+def _safecontract_cache_key(
+    req: SafeContractRequest,
+    custom_fields: Optional[dict[str, tuple[str, float]]],
+) -> str:
+    """SafeContractRequest + Custom Neural 결과까지 포함한 SHA256 해시.
+
+    Custom 결과를 포함하지 않으면 '같은 PDF + 직접 입력' vs '같은 PDF + Custom' 이
+    같은 키로 충돌 → 다른 결과를 같은 캐시에 덮어쓸 수 있음.
+    """
+    import hashlib
+    blob = json.dumps(
+        {
+            "req": req.model_dump(mode="json"),
+            "custom": (
+                # tuple → list 직렬화. 키 정렬로 안정.
+                {k: [v[0], round(v[1], 4)] for k, v in sorted(custom_fields.items())}
+                if custom_fields else None
+            ),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+        default=str,
+    )
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
