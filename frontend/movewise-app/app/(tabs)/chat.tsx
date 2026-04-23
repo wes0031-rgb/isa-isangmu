@@ -208,7 +208,7 @@ export default function ChatScreen() {
     } catch (e: any) {
       setMessages((prev) => [
         ...prev,
-        { role: 'bot', text: `녹음 시작 실패: ${e.message}` },
+        { role: 'bot', text: `녹음 시작 실패: ${e?.message ?? '알 수 없는 오류'}` },
       ]);
     } finally {
       startingRef.current = false;
@@ -317,7 +317,7 @@ export default function ChatScreen() {
     } catch (e: any) {
       setMessages((prev) => [
         ...prev,
-        { role: 'bot', text: `오류: ${e.message}` },
+        { role: 'bot', text: `오류: ${e?.message ?? '알 수 없는 오류'}` },
       ]);
     } finally {
       setLoading(false);

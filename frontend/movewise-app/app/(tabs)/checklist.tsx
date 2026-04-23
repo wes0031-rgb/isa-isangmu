@@ -360,7 +360,7 @@ export default function ChecklistScreen() {
       await saveChecklist(payload, res);
       setMode('result');
     } catch (e: any) {
-      setError(e.message);
+      setError(e?.message ?? '알 수 없는 오류');
     } finally {
       setLoading(false);
     }
@@ -399,7 +399,7 @@ export default function ChecklistScreen() {
     try {
       await Share.share({ message: lines.join('\n') });
     } catch (e: any) {
-      alertAsync('공유 실패', e.message);
+      alertAsync('공유 실패', e?.message ?? '알 수 없는 오류');
     }
   }
 

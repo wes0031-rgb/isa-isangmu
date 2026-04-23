@@ -140,7 +140,7 @@ export default function SafeContractScreen() {
         }
         setResult(res);
       } catch (e: any) {
-        setError(e.message);
+        setError(e?.message ?? '알 수 없는 오류');
       } finally {
         setLoading(false);
       }
@@ -166,7 +166,7 @@ export default function SafeContractScreen() {
         }
         setResult(res);
       } catch (e: any) {
-        setError(e.message);
+        setError(e?.message ?? '알 수 없는 오류');
       } finally {
         setLoading(false);
       }
@@ -194,7 +194,7 @@ export default function SafeContractScreen() {
       });
       setError(null);
     } catch (e: any) {
-      setError(`파일 선택 실패: ${e.message}`);
+      setError(`파일 선택 실패: ${e?.message ?? '알 수 없는 오류'}`);
     }
   }
 

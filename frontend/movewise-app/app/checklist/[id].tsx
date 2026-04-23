@@ -158,7 +158,7 @@ export default function TaskDetail() {
     try {
       await Share.share({ message: lines.join('\n') });
     } catch (e: any) {
-      alertAsync('공유 실패', e.message);
+      alertAsync('공유 실패', e?.message ?? '알 수 없는 오류');
     }
   }
 
