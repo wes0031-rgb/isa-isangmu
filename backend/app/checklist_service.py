@@ -359,9 +359,10 @@ def structure_checklist_llm(
             f"content: {content}"
         )
 
-    # 청크 24→16 — 입력 토큰 33%↓ → LLM 응답 시간 비례 감소.
-    # 16개도 _ensure_utility/_ensure_conditional 후처리로 누락 항목 보강되어 안전.
-    context = "\n\n---\n\n".join(_format_chunk(c) for c in chunks[:16])
+    # 청크 16→32 — 2026-04-23: free_text 검색 활용도 ↑ (이전 16개는 73% 버림 발생).
+    # 입력 토큰 ~22K (GPT-4o 128K context 의 17%) → 응답 시간 +5초, 비용 약 2배.
+    # _ensure_utility/_ensure_conditional 후처리는 그대로 작동.
+    context = "\n\n---\n\n".join(_format_chunk(c) for c in chunks[:32])
 
     import logging as _log
     _logger = _log.getLogger("movewise")
@@ -2100,12 +2101,16 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     items.sort(key=lambda x: (x.d_day_offset, x.category or "", x.title or ""))
 
     # free_text 반영 여부 사용자 피드백 메시지 — warning 필드 재활용.
+    # 우선순위: 키워드 매칭 > LLM 분석 성공 > LLM 실패 (정적 fallback) > 입력 없음
+    llm_used = has_free_text and not (locals().get("used_fallback", False))
     if matched_keywords:
         unique_kws = list(dict.fromkeys(matched_keywords))  # 순서 유지 dedupe
         warning = (
             f"입력하신 \"{', '.join(unique_kws[:3])}\" 키워드로 관련 체크 항목이 "
             f"자동 추가되었습니다."
         )
+    elif llm_used:
+        warning = "AI 가 입력하신 자유 텍스트를 분석해 관련 항목을 추가로 반영했습니다."
     elif original_ft:
         warning = (
             "입력하신 내용에 해당하는 추가 항목이 없어요. "

@@ -61,9 +61,10 @@ def _is_semantic_quota_error(exc: Exception) -> bool:
 DEFAULT_TOP_LAW_CHAT = 6
 DEFAULT_TOP_GUIDE_CHAT = 4
 
-# checklist 용 기본 top-k — 인덱스 커버리지 확대를 위해 5/5 로 상향
-DEFAULT_TOP_LAW_CHECKLIST = 5
-DEFAULT_TOP_GUIDE_CHECKLIST = 5
+# checklist 용 기본 top-k — 2026-04-23: 5→7 추가 상향. free_text 검색 다양성 ↑
+# (recall 강화, 응답 시간 +1~2s, 비용 +40%).
+DEFAULT_TOP_LAW_CHECKLIST = 7
+DEFAULT_TOP_GUIDE_CHECKLIST = 7
 
 # ThreadPoolExecutor 풀 타임아웃
 PARALLEL_TIMEOUT_SEC = 30.0
