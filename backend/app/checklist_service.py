@@ -2071,7 +2071,15 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     # 못 잡는 엣지케이스(예: "신축 입주 하자 점검", "조부모 동거") 까지 커버.
     # 결정론은 _request_cache_key 캐시 (위) 가 담당 — 같은 input → 같은 output.
     has_free_text = bool(original_ft)
+    # LLM 경로에서 "free_text 영향 받은 항목" 식별을 위해 정적 base 카테고리 미리 계산.
+    # 이 차집합 = LLM 이 free_text 분석으로 추가한 항목들 → from_freetext=True 마킹.
+    static_base_cats: set[str] = set()
     if has_free_text:
+        _base_items = structure_checklist_fallback(req, chunks=[])
+        _base_items = _ensure_utility_items(_base_items, req)
+        _base_items = _ensure_conditional_items(_base_items, req)
+        static_base_cats = {it.category for it in _base_items}
+
         queries = build_queries_freetext_llm(req)
         chunks = search_procedures(queries, req)
         items, used_fallback = structure_checklist_llm(req, chunks)
@@ -2087,14 +2095,21 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     items = _ensure_utility_items(items, req)
     items = _ensure_conditional_items(items, req)
 
-    # free_text 승격된 플래그로 인해 등장한 항목에 from_freetext=True 마킹
-    # 프론트에서 해당 item 보라색 표시용.
+    # from_freetext 마킹 (프론트 보라색 카드 + AI 배지) 우선순위:
+    #  (1) 키워드 자동 승격된 플래그 → _FLAG_TO_CATEGORIES 매핑 카테고리만 정확 마킹
+    #  (2) (1) 매칭 0건이고 LLM 경로 → 정적 base 에 없던 카테고리 차집합 마킹
+    #      (= LLM 이 free_text 해석으로 새로 만든 항목들. over-mark 가능하나
+    #       "AI 가 자유 텍스트 반영" 표시 자체는 정확.)
     if promoted_flags:
         freetext_cats: set[str] = set()
         for flag in promoted_flags:
             freetext_cats.update(_FLAG_TO_CATEGORIES.get(flag, ()))
         for it in items:
             if it.category in freetext_cats:
+                it.from_freetext = True
+    elif has_free_text and static_base_cats:
+        for it in items:
+            if it.category not in static_base_cats:
                 it.from_freetext = True
 
     # 결정론적 정렬: d_day_offset → category → title (tie-break 안정화)
