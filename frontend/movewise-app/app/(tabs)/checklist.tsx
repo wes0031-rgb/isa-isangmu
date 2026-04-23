@@ -295,6 +295,7 @@ export default function ChecklistScreen() {
   }
 
   async function submit() {
+    if (loading) return; // 더블 탭 race 가드
     if (contracts.length === 0) {
       setError('계약 유형을 하나 이상 선택하세요');
       return;
@@ -380,11 +381,13 @@ export default function ChecklistScreen() {
 
   async function handleShare() {
     if (!result) return;
+    // AI 생성 항목 + 사용자 추가 customItems 모두 포함 (이전엔 customItems 누락)
+    const allItems = [...result.items, ...customItems];
     const lines = [
       `[이사이상무 이사 체크리스트]`,
       `이사일: ${moveDate} · ${region} · ${household} · ${contracts.join('/')}`,
       '',
-      ...result.items.map((it, idx) => {
+      ...allItems.map((it, idx) => {
         const done = completions[itemKey(it)] ? '[✔]' : '[ ]';
         const dl = it.deadline_date ? ` ⚠ 마감 ${it.deadline_date}` : '';
         const dday = formatMoveOffsetLabel(it.d_day_offset);

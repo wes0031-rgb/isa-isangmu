@@ -112,6 +112,9 @@ export default function SafeContractScreen() {
   );
 
   async function submit() {
+    // 빠른 더블 탭 race 가드 — disabled prop 만으론 setLoading(true) 직전 두 번째 탭이
+    // 들어와 동시 호출 가능. 함수 진입 시 명시적으로 차단.
+    if (loading) return;
     setError(null);
     const depositN = parseInt(deposit.replace(/\D/g, ''), 10) || 0;
     const marketN = parseInt(market.replace(/\D/g, ''), 10) || 0;
