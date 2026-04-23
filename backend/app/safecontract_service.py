@@ -463,11 +463,13 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
         return _extract_rule_based(text)
     settings = get_settings()
 
+    truncated_from = 0
     if len(text) > _EXTRACT_INPUT_CHAR_CAP:
         import logging as _log
         _log.getLogger("movewise").info(
             f"_extract_with_llm: text {len(text)}→{_EXTRACT_INPUT_CHAR_CAP} chars (truncated)"
         )
+        truncated_from = len(text)
         text = text[:_EXTRACT_INPUT_CHAR_CAP]
 
     # json_schema strict 모드 — additionalProperties: false 필수
@@ -498,7 +500,14 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
             timeout=20,
         )
         raw = resp.choices[0].message.content or "{}"
-        return RegistryExtraction(**json.loads(raw))
+        ext = RegistryExtraction(**json.loads(raw))
+        if truncated_from:
+            ext.raw_notes = [
+                *ext.raw_notes,
+                f"⚠ 등기부 본문이 길어({truncated_from:,}자) 앞 {_EXTRACT_INPUT_CHAR_CAP:,}자만 분석 — "
+                "후반부 갑구·을구 항목(잦은 소유권 이전·다건 근저당 등) 일부 누락 가능. 등기부 직접 검토 권장.",
+            ]
+        return ext
     except Exception as exc:
         import logging
         logging.getLogger("movewise").warning(
@@ -519,9 +528,21 @@ def _extract_with_llm(text: str) -> RegistryExtraction:
                 timeout=20,
             )
             raw = resp.choices[0].message.content or "{}"
-            return RegistryExtraction(**json.loads(raw))
+            ext = RegistryExtraction(**json.loads(raw))
+            if truncated_from:
+                ext.raw_notes = [
+                    *ext.raw_notes,
+                    f"⚠ 등기부 본문이 길어({truncated_from:,}자) 앞 {_EXTRACT_INPUT_CHAR_CAP:,}자만 분석 — "
+                    "등기부 직접 검토 권장.",
+                ]
+            return ext
         except Exception:
-            return _extract_rule_based(text)
+            ext = _extract_rule_based(text)
+            ext.raw_notes = [
+                *ext.raw_notes,
+                "⚠ LLM 분석 실패 — 룰베이스 폴백으로 일부 위험(가처분·전세권·비주거 등) 누락 가능. 직접 검토 필수.",
+            ]
+            return ext
 
 
 def _extract_rule_based(text: str) -> RegistryExtraction:

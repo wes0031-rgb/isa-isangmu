@@ -15,7 +15,15 @@ Fallback:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
+
+# 백엔드가 UTC tz 로 실행되는 환경(Render/Docker) 에서 date.today() 가 한국 새벽
+# 시간에 어제 날짜를 반환 → 매월 1일 한국 시간 0~9시 호출 시 직전 달 계산 어긋남.
+_KST = timezone(timedelta(hours=9))
+
+
+def _today_kst() -> date:
+    return datetime.now(_KST).date()
 from typing import Optional
 from xml.etree import ElementTree as ET
 
@@ -267,11 +275,18 @@ def get_region_price_summary(region: str) -> RealtyPriceSummary:
     Safe: 모든 예외를 잡아 error 필드에 기록. 호출자는 error 확인만 하면 됨.
     """
     lawd_cd = lookup_lawd_cd(region)
-    today = date.today()
-    # 이전 달 기준 (당월은 데이터 미확정)
-    last_month = today.month - 1 or 12
-    last_year = today.year if today.month > 1 else today.year - 1
-    ym = f"{last_year}{last_month:02d}"
+    today = _today_kst()
+    # 직전 달 → 두 달 전 → 세 달 전 순으로 fallback (작은 지역구는 한 달 거래 0건 가능).
+    # 당월은 데이터 미확정이라 제외.
+    candidate_yms: list[str] = []
+    for back in (1, 2, 3):
+        m = today.month - back
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        candidate_yms.append(f"{y}{m:02d}")
+    ym = candidate_yms[0]
 
     summary = RealtyPriceSummary(
         region=region,
@@ -288,13 +303,24 @@ def get_region_price_summary(region: str) -> RealtyPriceSummary:
         summary.error = f"지역 '{region}' 에 해당하는 법정동코드 없음. 주요 시·군·구만 지원."
         return summary
 
-    try:
-        items = fetch_recent_deals(lawd_cd, ym)
-    except RealtyApiNotAuthorized as exc:
-        summary.error = f"API 미승인: {exc}"
-        return summary
-    except Exception as exc:
-        summary.error = f"API 호출 실패: {exc}"
+    items: list[dict] = []
+    last_error: Optional[str] = None
+    for cand in candidate_yms:
+        try:
+            items = fetch_recent_deals(lawd_cd, cand)
+        except RealtyApiNotAuthorized as exc:
+            # 키 미승인은 fallback 으로도 안 풀리니 즉시 종료
+            summary.error = f"API 미승인: {exc}"
+            return summary
+        except Exception as exc:
+            last_error = f"API 호출 실패: {exc}"
+            continue
+        if items:
+            ym = cand
+            summary.query_ym = cand
+            break
+    if not items:
+        summary.error = last_error or f"최근 3개월 거래 내역 없음 (지역: {region})"
         return summary
 
     deals: list[RealtyPrice] = []
