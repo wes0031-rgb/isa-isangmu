@@ -82,11 +82,21 @@ const EXTRA_KEYS = Object.keys(EXTRA_LABELS) as (keyof typeof EXTRA_LABELS)[];
 function todayPlus(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  // 로컬 시간대 YYYY-MM-DD (toISOString 은 UTC 라 한국 새벽엔 어제 날짜)
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  // toISOString() 은 항상 UTC 기준 → 한국(UTC+9) 자정~오전 9시에 호출하면 어제 날짜.
+  // 로컬 시간대 기준 YYYY-MM-DD 로 직접 조립.
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 /** 이사일 기준 오프셋 → 사용자 친화적 라벨 ("이사 14일 전" / "이사 당일" / "이사 3일 후"). */

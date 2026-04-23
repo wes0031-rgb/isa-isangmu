@@ -7,6 +7,7 @@ from backend.app.date_utils import (
     is_business_day,
     load_holidays,
     next_business_day,
+    prev_business_day,
 )
 
 
@@ -52,6 +53,26 @@ def test_compute_start_date_pushes_past_weekend():
     move = date(2026, 5, 1)  # Friday
     start = compute_start_date(move, 1)
     assert start.weekday() < 5  # 평일
+
+
+def test_compute_start_date_negative_offset_shifts_past():
+    """이사 전(음수 offset) 항목이 주말이면 이전 평일로 밀려야 함.
+
+    이전엔 next_business_day(이사일 방향) 로 잘못 밀어서 '이사 2일 전' 항목이
+    이사 당일에 표시되는 버그. 이제 prev_business_day(과거 방향) 로 정정.
+    """
+    # 이사일 월요일(5/4) - 2일 = 토(5/2) → 금(5/1) 이어야 함 (이전 평일)
+    move = date(2026, 5, 4)
+    start = compute_start_date(move, -2)
+    assert start == date(2026, 5, 1)
+    # 이사일 월요일 - 1일 = 일 → 금(5/1)
+    assert compute_start_date(move, -1) == date(2026, 5, 1)
+
+
+def test_prev_business_day_skips_weekend():
+    """일요일(5/3)에서 이전 평일 → 금요일(5/1)."""
+    sun = date(2026, 5, 3)
+    assert prev_business_day(sun) == date(2026, 5, 1)
 
 
 def test_compute_deadline_no_shift():

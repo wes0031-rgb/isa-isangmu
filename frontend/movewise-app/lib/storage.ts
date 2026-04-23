@@ -75,8 +75,9 @@ export async function loadCustomItems(): Promise<ChecklistItem[]> {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // 마이그레이션: 빈 start_date 를 오늘 날짜로 채움
-    const today = new Date().toISOString().slice(0, 10);
+    // 마이그레이션: 빈 start_date 를 오늘 날짜로 채움 (로컬 시간대 기준)
+    const _now = new Date();
+    const today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
     let migrated = false;
     for (const item of parsed) {
       if (!item.start_date) {

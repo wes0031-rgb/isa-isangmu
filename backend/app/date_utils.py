@@ -38,16 +38,29 @@ def next_business_day(d: date) -> date:
     return cur
 
 
-def compute_start_date(move_date: date, d_day_offset: int) -> date:
-    """이사일 기준 오프셋만큼 이동. 공휴일/주말이면 다음 평일로 밀어줌.
+def prev_business_day(d: date) -> date:
+    cur = d
+    while not is_business_day(cur):
+        cur -= timedelta(days=1)
+    return cur
 
-    단, d_day_offset == 0 (이사 당일)은 주말/공휴일이어도 밀지 않음.
-    실제 이사일은 사용자가 정한 날짜 그대로여야 함.
+
+def compute_start_date(move_date: date, d_day_offset: int) -> date:
+    """이사일 기준 오프셋만큼 이동. 공휴일/주말이면 평일로 밀어줌.
+
+    이동 방향:
+      - 양수 offset (이사 후): 다음 평일 (예: 이사 2일 후가 일요일이면 월요일)
+      - 음수 offset (이사 전): 이전 평일 (예: 이사 2일 전이 토요일이면 금요일).
+        next_business_day 로 밀면 이사일 방향으로 가서 항목이 이사 당일·이후에
+        표시되어 사용자 혼란 + 실효성 0.
+      - 0 (이사 당일): 주말/공휴일이어도 그대로 (사용자가 정한 날짜 유지).
     """
     raw = move_date + timedelta(days=d_day_offset)
     if d_day_offset == 0:
         return raw
-    return next_business_day(raw)
+    if d_day_offset > 0:
+        return next_business_day(raw)
+    return prev_business_day(raw)
 
 
 def compute_deadline(move_date: date, deadline_days: int) -> date:
