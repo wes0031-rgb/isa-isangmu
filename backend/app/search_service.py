@@ -1,17 +1,16 @@
-"""3-index 하이브리드 검색 서비스.
+"""2-index 하이브리드 검색 서비스 (영상 인덱스 제거됨, 2026-04-23).
 
 검증된 쿼리 패턴 (세션 4):
   semantic (BM25 + semantic re-rank) + vectorQueries (content_vector)
 
-3-index 체제에서 서비스별로 다른 인덱스 조합을 쓴다:
-  - chat      : law + guide + video (3개 전부)
-  - checklist : law + guide         (법정 기한·citation 근거 때문에 law 필수)
-  - safecontract: law 단독          (등기부 → 조문 매칭)
+서비스별 인덱스 조합:
+  - chat      : law + guide
+  - checklist : law + guide  (법정 기한·citation 근거 때문에 law 필수)
+  - safecontract: law 단독   (등기부 → 조문 매칭)
 
 아키텍처:
   parallel_search()         ← 범용 병렬 엔진 (임의의 인덱스 조합)
-  ├─ parallel_search_3()    ← chat 용 얇은 wrapper
-  └─ parallel_search_law_guide() ← checklist 용 얇은 wrapper
+  └─ parallel_search_law_guide() ← chat/checklist 공용 wrapper
 
 단일 인덱스 호출은 hybrid_search() 를 직접 사용 (safecontract).
 
@@ -27,7 +26,6 @@ from .azure_clients import (
     get_openai_client,
     get_search_client_guide,
     get_search_client_law,
-    get_search_client_video,
 )
 from .config import get_settings
 
@@ -62,7 +60,6 @@ def _is_semantic_quota_error(exc: Exception) -> bool:
 # chat 용 기본 top-k (컨텍스트 배분)
 DEFAULT_TOP_LAW_CHAT = 6
 DEFAULT_TOP_GUIDE_CHAT = 4
-DEFAULT_TOP_VIDEO_CHAT = 3
 
 # checklist 용 기본 top-k — 인덱스 커버리지 확대를 위해 5/5 로 상향
 DEFAULT_TOP_LAW_CHECKLIST = 5
@@ -268,38 +265,6 @@ def parallel_search(
 # ============================================================
 # 4. 서비스별 Wrapper
 # ============================================================
-
-
-def parallel_search_3(
-    query: str,
-    top_law: int = DEFAULT_TOP_LAW_CHAT,
-    top_guide: int = DEFAULT_TOP_GUIDE_CHAT,
-    top_video: int = DEFAULT_TOP_VIDEO_CHAT,
-) -> tuple[list[dict], list[dict], list[dict]]:
-    """챗봇용 — law/guide/video 3개 인덱스 병렬 하이브리드 쿼리.
-
-    반환: (law_hits, guide_hits, video_hits)
-    """
-    settings = get_settings()
-    targets = {
-        "law": (
-            get_search_client_law(),
-            top_law,
-            settings.azure_search_law_semantic_config,
-        ),
-        "guide": (
-            get_search_client_guide(),
-            top_guide,
-            settings.azure_search_guide_semantic_config,
-        ),
-        "video": (
-            get_search_client_video(),
-            top_video,
-            settings.azure_search_video_semantic_config,
-        ),
-    }
-    results = parallel_search(query, targets)
-    return results["law"], results["guide"], results["video"]
 
 
 def parallel_search_law_guide(

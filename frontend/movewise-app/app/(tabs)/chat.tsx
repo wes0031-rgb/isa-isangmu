@@ -38,23 +38,21 @@ function resolveCitationUrl(c: ChatCitation): string | null {
   return c.url || null;
 }
 
-type SourceKind = 'law' | 'procedure' | 'video';
+type SourceKind = 'law' | 'procedure';
 
 const SOURCE_META: Record<SourceKind, { label: string; color: string; bg: string }> = {
   law: { label: '법률', color: '#003A75', bg: '#E6EEF8' },
   procedure: { label: '절차', color: '#4A5568', bg: '#EDF2F7' },
-  video: { label: '영상', color: '#C53030', bg: '#FFF5F5' },
 };
 
-/** 본문의 [법률]/[절차]/[영상] 태그 → 컬러 배지, http(s) URL → 탭 가능한 링크. */
+/** 본문의 [법률]/[절차] 태그 → 컬러 배지, http(s) URL → 탭 가능한 링크. */
 function renderAnswerWithTags(text: string, textColor: string) {
   // 태그 + URL 을 한 split 에서 함께 처리 (URL 은 마지막 구두점 제외)
-  const parts = text.split(/(\[법률\]|\[절차\]|\[영상\]|https?:\/\/[^\s)]+[^\s.,!?)\]])/g);
+  const parts = text.split(/(\[법률\]|\[절차\]|https?:\/\/[^\s)]+[^\s.,!?)\]])/g);
   return parts.map((p, i) => {
     let kind: SourceKind | null = null;
     if (p === '[법률]') kind = 'law';
     else if (p === '[절차]') kind = 'procedure';
-    else if (p === '[영상]') kind = 'video';
     if (kind) {
       const meta = SOURCE_META[kind];
       return (
@@ -80,7 +78,7 @@ function renderAnswerWithTags(text: string, textColor: string) {
         <Text
           key={i}
           style={{
-            color: SOURCE_META.video.color,
+            color: SOURCE_META.law.color,
             textDecorationLine: 'underline',
             fontWeight: '600',
           }}
@@ -504,20 +502,18 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
 /** source_type 별 그룹핑된 출처 목록. 기본 접힘, 헤더 탭으로 펼침. */
 function CitationsGrouped({ citations }: { citations: ChatCitation[] }) {
-  // backend source_type: 'law' | 'procedure' | 'youtube'
-  // UI: law / procedure / video (youtube 를 video 로 매핑)
+  // backend source_type: 'law' | 'procedure' (영상 인덱스 제거됨)
   const [expanded, setExpanded] = useState(false);
   const groups: Record<SourceKind, ChatCitation[]> = {
     law: [],
     procedure: [],
-    video: [],
   };
   for (const c of citations) {
     if (c.source_type === 'law') groups.law.push(c);
     else if (c.source_type === 'procedure') groups.procedure.push(c);
-    else if (c.source_type === 'youtube') groups.video.push(c);
+    // 그 외 source_type (legacy youtube 등) 무시
   }
-  const order: SourceKind[] = ['law', 'procedure', 'video'];
+  const order: SourceKind[] = ['law', 'procedure'];
   const summary = order
     .filter((k) => groups[k].length > 0)
     .map((k) => `${SOURCE_META[k].label} ${groups[k].length}`)
@@ -557,13 +553,7 @@ function CitationsGrouped({ citations }: { citations: ChatCitation[] }) {
               }}
             >
               <Ionicons
-                name={
-                  kind === 'law'
-                    ? 'library'
-                    : kind === 'video'
-                    ? 'logo-youtube'
-                    : 'document-text'
-                }
+                name={kind === 'law' ? 'library' : 'document-text'}
                 size={12}
                 color={meta.color}
               />

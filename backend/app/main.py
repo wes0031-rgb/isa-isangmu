@@ -29,7 +29,7 @@ except ImportError:
 from .chat_service import generate_chat_reply, get_preset_questions
 from .checklist_service import generate_checklist
 from .config import get_settings
-from .local_search import load_chunks, load_laws, load_youtube
+from .local_search import load_chunks, load_laws
 from .models import (
     ChatRequest,
     ChatResponse,
@@ -184,7 +184,7 @@ def api_info() -> dict:
 def health() -> dict:
     """얕은 헬스체크 — 로드밸런서/모니터링 용. 내부 구조 노출 금지."""
     settings = get_settings()
-    indexes_ok = bool(load_laws()) and bool(load_chunks()) and bool(load_youtube())
+    indexes_ok = bool(load_laws()) and bool(load_chunks())
     return {
         "status": "ok" if (indexes_ok and settings.azure_ready) else "degraded",
         "version": "0.2.0",
@@ -207,7 +207,6 @@ def health_deep(request: Request) -> dict:
         "indexes": {
             "index_a_law_chunks": len(load_laws()),
             "index_b_procedure_chunks": len(load_chunks()),
-            "index_c_youtube_chunks": len(load_youtube()),
         },
         "azure": {
             "openai": bool(settings.azure_openai_api_key and settings.azure_openai_endpoint),

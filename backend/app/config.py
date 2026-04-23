@@ -27,14 +27,13 @@ class Settings(BaseSettings):
         default="text-embedding-3-small", alias="AZURE_OPENAI_EMBED_DEPLOYMENT"
     )
 
-    # ===== Azure AI Search (3-index 체제) =====
+    # ===== Azure AI Search (2-index 체제, 영상 제거됨) =====
     azure_search_endpoint: str = Field(default="", alias="AZURE_SEARCH_ENDPOINT")
     azure_search_api_key: str = Field(default="", alias="AZURE_SEARCH_API_KEY", repr=False)
 
     # 인덱스 이름
     azure_search_law_index: str = Field(default="law-index", alias="AZURE_SEARCH_LAW_INDEX")
     azure_search_guide_index: str = Field(default="guide-index", alias="AZURE_SEARCH_GUIDE_INDEX")
-    azure_search_video_index: str = Field(default="video-index", alias="AZURE_SEARCH_VIDEO_INDEX")
 
     # 각 인덱스의 semantic config 이름
     azure_search_law_semantic_config: str = Field(
@@ -42,9 +41,6 @@ class Settings(BaseSettings):
     )
     azure_search_guide_semantic_config: str = Field(
         default="guide-semantic-config", alias="AZURE_SEARCH_GUIDE_SEMANTIC_CONFIG"
-    )
-    azure_search_video_semantic_config: str = Field(
-        default="video-semantic-config", alias="AZURE_SEARCH_VIDEO_SEMANTIC_CONFIG"
     )
 
     # ===== Azure Document Intelligence =====

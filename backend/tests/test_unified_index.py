@@ -1,13 +1,13 @@
 """통합 인덱스(`index_unified.jsonl`) 회귀 테스트.
 
 검증 항목:
-  1. 총 개수 = A + B + C
+  1. 총 개수 = A + B (영상 인덱스 C 는 2026-04-23 저작권 우려로 제거)
   2. source_type 분포 일치
   3. ID 중복 없음 (Azure Search key 규칙)
   4. ID 형식 안전성 (영숫자/언더스코어만)
   5. 필드 매핑 정확성 (샘플 확인)
-  6. 크로스 링크 무결성 (related_procedures/videos 가 실제 존재하는 ID)
-  7. 타입별 필수 필드 존재 (law → law_name/article, procedure → parent_doc, video → video_id)
+  6. 크로스 링크 무결성 (related_procedures 가 실제 존재하는 ID)
+  7. 타입별 필수 필드 존재 (law → law_name/article, procedure → parent_doc)
 """
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ from backend.schemas.unified_index import UnifiedChunk, make_safe_id
 ROOT = Path(__file__).resolve().parents[2]
 INDEX_DIR = ROOT / "backend" / "data" / "indexes"
 UNIFIED = INDEX_DIR / "index_unified.jsonl"
-SRC_A = INDEX_DIR / "index_a_chunks.jsonl"
+# 3-index 전환 후 파일명 변경됨 — 호환 위해 둘 다 후보로 두고 첫 번째 존재하는 것 사용
+SRC_A = next(
+    p for p in (INDEX_DIR / "law_chunks.jsonl", INDEX_DIR / "index_a_chunks.jsonl") if p.exists()
+)
 SRC_B = INDEX_DIR / "index_b_chunks_curated.jsonl"
-SRC_C = INDEX_DIR / "index_c_youtube_chunks.jsonl"
 
 
 def _load(path: Path) -> list[dict]:
@@ -42,7 +44,6 @@ def source_counts() -> dict[str, int]:
     return {
         "A": len(_load(SRC_A)),
         "B": len(_load(SRC_B)),
-        "C": len(_load(SRC_C)),
     }
 
 
@@ -50,19 +51,20 @@ def source_counts() -> dict[str, int]:
 
 
 def test_total_count_matches_sources(unified, source_counts):
-    """통합 인덱스 총 개수 = A + B + C."""
-    expected = source_counts["A"] + source_counts["B"] + source_counts["C"]
+    """통합 인덱스 총 개수 = A + B."""
+    expected = source_counts["A"] + source_counts["B"]
     assert len(unified) == expected, f"expected {expected}, got {len(unified)}"
 
 
 def test_source_type_distribution(unified, source_counts):
-    """source_type 별 개수가 원본과 일치."""
-    by_type = {"law": 0, "procedure": 0, "video": 0}
+    """source_type 별 개수가 원본과 일치 (video 제거됨)."""
+    by_type = {"law": 0, "procedure": 0}
     for u in unified:
-        by_type[u["source_type"]] += 1
+        st = u["source_type"]
+        assert st in by_type, f"unexpected source_type: {st!r}"
+        by_type[st] += 1
     assert by_type["law"] == source_counts["A"]
     assert by_type["procedure"] == source_counts["B"]
-    assert by_type["video"] == source_counts["C"]
 
 
 # ===== ID 무결성 =====
@@ -82,7 +84,7 @@ def test_ids_are_azure_safe(unified):
 
 def test_id_prefix_matches_source_type(unified):
     for u in unified:
-        expected_prefix = {"law": "law_", "procedure": "proc_", "video": "yt_"}[u["source_type"]]
+        expected_prefix = {"law": "law_", "procedure": "proc_"}[u["source_type"]]
         assert u["id"].startswith(expected_prefix), (
             f"prefix mismatch: {u['id']} should start with {expected_prefix}"
         )
@@ -116,7 +118,6 @@ def test_law_chunks_have_required_fields(unified):
     for u in laws[:50]:
         assert u.get("law_name"), f"missing law_name: {u['source_id']}"
         assert u.get("article"), f"missing article: {u['source_id']}"
-        assert u.get("video_id") is None, "law chunks must not have video_id"
 
 
 def test_procedure_chunks_have_required_fields(unified):
@@ -127,38 +128,25 @@ def test_procedure_chunks_have_required_fields(unified):
         assert u.get("law_name") is None, "procedure chunks must not have law_name"
 
 
-def test_video_chunks_have_required_fields(unified):
-    """유튜브 청크는 video_id·deep_link·timecode 필수."""
+def test_no_video_chunks_remain(unified):
+    """영상 인덱스 제거 후 video source_type 청크가 남아있지 않은지."""
     vids = [u for u in unified if u["source_type"] == "video"]
-    for u in vids[:20]:
-        assert u.get("video_id"), f"missing video_id: {u['source_id']}"
-        assert u.get("deep_link"), f"missing deep_link: {u['source_id']}"
-        assert u.get("law_name") is None
+    assert not vids, f"{len(vids)} video chunks should have been removed"
 
 
 # ===== 크로스 링크 무결성 =====
 
 
 def test_cross_links_reference_valid_ids(unified):
-    """related_procedures / related_videos 에 있는 ID 가 실제 존재하는지."""
+    """related_procedures 에 있는 ID 가 실제 존재하는지 (related_videos 는 dead 링크
+    가능 — 영상 제거됨, 검사에서 제외)."""
     all_ids = {u["id"] for u in unified}
     dangling = []
     for u in unified:
         for pid in u.get("related_procedures") or []:
             if pid not in all_ids:
                 dangling.append(("proc", u["source_id"], pid))
-        for vid in u.get("related_videos") or []:
-            if vid not in all_ids:
-                dangling.append(("yt", u["source_id"], vid))
     assert not dangling, f"dangling cross-links (first 5): {dangling[:5]}"
-
-
-def test_at_least_some_cross_links_exist(unified):
-    """전체적으로 크로스 링크가 0 은 아닌지 (있어야 통합 가치가 있음)."""
-    total_proc = sum(len(u.get("related_procedures") or []) for u in unified)
-    total_video = sum(len(u.get("related_videos") or []) for u in unified)
-    assert total_proc > 0, "no related_procedures cross-links"
-    assert total_video > 0, "no related_videos cross-links"
 
 
 # ===== 유저 프로필 필터 =====

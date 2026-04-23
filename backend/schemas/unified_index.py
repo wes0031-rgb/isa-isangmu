@@ -1,8 +1,12 @@
 """단일 통합 인덱스 스키마 (Option B).
 
-A (법률) / B (행정절차) / C (유튜브) 를 하나의 Azure AI Search 인덱스로
-업로드하기 위한 Pydantic 모델. `source_type` 디스크리미네이터로 타입을 구분하고,
-타입별 특화 필드는 nullable 로 유지.
+A (법률) / B (행정절차) 를 하나의 Azure AI Search 인덱스로 업로드하기 위한
+Pydantic 모델. `source_type` 디스크리미네이터로 타입을 구분하고, 타입별 특화
+필드는 nullable 로 유지.
+
+NOTE: C (유튜브) 영상 인덱스는 저작권 우려로 2026-04-23 제거됨.
+관련 필드(`deep_link`, `related_videos`)는 호환성 위해 남겨두지만 새 청크에는
+사용하지 않음.
 
 Usage:
     from backend.schemas.unified_index import UnifiedChunk, SourceType
@@ -25,7 +29,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-SourceType = Literal["law", "procedure", "video"]
+SourceType = Literal["law", "procedure"]  # video 제거됨 (2026-04-23, 저작권 우려)
 
 
 def make_safe_id(prefix: str, source_id: str) -> str:

@@ -2,10 +2,11 @@
 
 흐름:
   1. 사용자 질문 → 도메인/인사 필터 → 키워드 추출
-  2. Azure AI Search 통합 인덱스 (semantic + 벡터) 단일 호출
-     → source_type 별로 law / procedure / video 분리
+  2. Azure AI Search law + guide 2개 인덱스 병렬 하이브리드 쿼리
   3. Azure OpenAI 가 검색 컨텍스트로 자연어 답변 생성
   4. Azure 미설정 시 로컬 키워드 검색 + 룰베이스 답변 fallback
+
+NOTE: 유튜브 영상 인용은 저작권 우려로 전면 제거 (2026-04-23).
 """
 from __future__ import annotations
 
@@ -19,16 +20,15 @@ from .local_search import (
     clean_hanja,
     search as search_procedures_local,
     search_laws as search_laws_local,
-    search_youtube as search_youtube_local,
 )
-from .search_service import parallel_search_3
+from .search_service import parallel_search_law_guide
 
 logger = logging.getLogger("movewise")
 
 
 @dataclass
 class ChatCitation:
-    source_type: str  # "law" | "procedure" | "youtube"
+    source_type: str  # "law" | "procedure"
     title: str
     content_snippet: str
     url: Optional[str] = None
@@ -56,22 +56,15 @@ CHAT_SYSTEM_PROMPT = """당신은 한국 이사·전월세 절차 전문 도우�
 
 규칙:
 1. 답변은 한국어로 2~5문장, 쉬운 말로 작성
-2. 검색 결과는 세 종류로 구분되어 있습니다 — 본문을 쓸 때 각 문장이 어느 출처에서 왔는지 반드시 표시합니다:
+2. 검색 결과는 두 종류로 구분되어 있습니다 — 본문을 쓸 때 각 문장이 어느 출처에서 왔는지 반드시 표시합니다:
    - [법률] 섹션에서 가져온 내용 → 문장 끝에 `[법률]` 태그
    - [절차] 섹션에서 가져온 내용 → 문장 끝에 `[절차]` 태그
-   - [영상] 섹션에서 가져온 내용 → 문장 끝에 `[영상]` 태그
-   태그는 반드시 위 세 가지만 사용하고, 마침표 앞에 붙입니다. 예:
-   "확정일자는 주민센터에서 받을 수 있습니다 [법률]. 방문 견적을 받으면 비용을 아낄 수 있어요 [영상]."
+   태그는 반드시 위 두 가지만 사용하고, 마침표 앞에 붙입니다. 예:
+   "확정일자는 주민센터에서 받을 수 있습니다 [법률]. 전입신고는 정부24·주민센터 양쪽에서 가능합니다 [절차]."
 3. 검색 결과에 실제로 존재하는 섹션만 인용. 없는 섹션의 태그는 사용 금지.
-   예: 검색 결과에 [영상] 섹션이 하나도 없으면 본문에 [영상] 태그 사용 금지.
 4. 법 조항 인용 시 `[주택임대차보호법 제3조의2]` 같은 법 이름+조항은 본문 안에 자연스럽게 쓰되, 그 문장 끝에도 `[법률]` 태그를 별도로 붙입니다.
-5. ⚠️ '참고 영상' 줄은 오직 검색 결과 [영상] 섹션이 실제로 존재할 때만 추가:
-   - 검색 결과에 [영상] 항목이 하나라도 있으면 본문 뒤에 줄을 바꿔
-     `🎥 참고 영상: 채널명 - 영상제목` 형식으로 1건 추가 (검색 결과의 실제 제목/채널 그대로 복사).
-   - 검색 결과에 [영상] 항목이 0건이면 '참고 영상' 줄을 절대 추가하지 말 것.
-   - 영상 제목·채널명은 검색 결과에 있는 그대로 사용하고 절대 지어내지 말 것.
-6. 검색 결과에 없는 내용은 절대 지어내지 말 것. 지어낸 내용이 발견되면 서비스 신뢰도가 치명적으로 손상됩니다.
-7. 맨 마지막 줄에 `더 자세한 내용은 관련 기관에 확인하세요` 추가.
+5. 검색 결과에 없는 내용은 절대 지어내지 말 것. 지어낸 내용이 발견되면 서비스 신뢰도가 치명적으로 손상됩니다.
+6. 맨 마지막 줄에 `더 자세한 내용은 관련 기관에 확인하세요` 추가.
 """
 
 
@@ -83,7 +76,6 @@ PRESET_QUESTIONS = [
     "전세사기 피하려면 뭘 확인해야 해요?",
     "반려동물 주소변경은 어떻게 해요?",
     "장기수선충당금 돌려받을 수 있어요?",
-    "이사 비용 줄이는 꿀팁 알려주세요",
     "원상회복 범위는 어디까지예요?",
 ]
 
@@ -139,8 +131,8 @@ DOMAIN_KEYWORDS = [
     "대출", "디딤돌", "버팀목", "월세지원", "청년", "신혼",
     # 분쟁
     "분쟁", "조정", "소송", "법률", "변호사", "하자", "수선",
-    # 비용·돈·꿀팁
-    "비용", "가격", "요금", "돈", "절약", "꿀팁", "팁", "할인",
+    # 비용·돈
+    "비용", "가격", "요금", "돈", "절약", "할인",
     "지원금", "지원", "보조금", "감면",
     # 일반 동작 어휘
     "체크", "준비", "목록", "리스트", "체크리스트", "확인", "신청",
@@ -234,33 +226,12 @@ def _proc_title(h: dict) -> str:
     )
 
 
-def _yt_title(h: dict) -> str:
-    return clean_hanja(h.get("title") or h.get("video_title") or "유튜브 영상")
-
-
-def _format_timestamp(seconds) -> str:
-    """초 단위 → '1분 26초' 같은 사람 친화 라벨. 0이면 빈 문자열."""
-    try:
-        s = int(seconds or 0)
-    except (TypeError, ValueError):
-        return ""
-    if s <= 0:
-        return ""
-    minutes = s // 60
-    secs = s % 60
-    if minutes == 0:
-        return f"{secs}초"
-    if secs == 0:
-        return f"{minutes}분"
-    return f"{minutes}분 {secs}초"
-
-
 def _law_ref(h: dict) -> str:
     return f"{h.get('law_name', '')} {h.get('article', '')}".strip()
 
 
 def _build_fallback_answer(
-    question: str, law_hits: list[dict], proc_hits: list[dict], yt_hits: list[dict]
+    question: str, law_hits: list[dict], proc_hits: list[dict]
 ) -> str:
     """검색 결과만으로 간단한 답변 생성 (Azure OpenAI 미사용 시)."""
     parts: list[str] = []
@@ -280,13 +251,6 @@ def _build_fallback_answer(
         if content:
             parts.append(content)
 
-    if yt_hits:
-        top_yt = yt_hits[0]
-        title = _yt_title(top_yt)
-        channel = top_yt.get("channel", "")
-        prefix = f"{channel} - " if channel else ""
-        parts.append(f"🎥 참고 영상: {prefix}{title}")
-
     if not parts:
         return (
             "질문에 대한 정확한 정보를 찾지 못했습니다. "
@@ -299,7 +263,7 @@ def _build_fallback_answer(
 
 
 def _build_citations(
-    law_hits: list[dict], proc_hits: list[dict], yt_hits: list[dict]
+    law_hits: list[dict], proc_hits: list[dict]
 ) -> list[ChatCitation]:
     cits: list[ChatCitation] = []
     for h in law_hits[:3]:
@@ -322,18 +286,6 @@ def _build_citations(
                 url=h.get("source_url"),
             )
         )
-    for h in yt_hits[:3]:
-        channel = h.get("channel", "")
-        title = _yt_title(h)
-        cits.append(
-            ChatCitation(
-                source_type="youtube",
-                title=f"{channel}: {title}" if channel else title,
-                content_snippet=clean_hanja((h.get("content") or "")[:200]),
-                url=h.get("deep_link") or h.get("source_url"),
-                meta={"timecode": h.get("timecode", "")},
-            )
-        )
     return cits
 
 
@@ -341,60 +293,19 @@ def _sanitize_answer(
     answer: str,
     law_hits: list[dict],
     proc_hits: list[dict],
-    yt_hits: list[dict],
 ) -> str:
-    """LLM halluclination 방어 후처리 + 유튜브 블록 표준화.
+    """LLM hallucination 방어 후처리.
 
-    - 검색 결과에 유튜브가 0건이면 '🎥 참고 영상:' 줄 제거 + 본문 [영상] 태그도 제거
-    - 유튜브 1건 이상이면 LLM 이 쓴 🎥 줄을 backend 가 만든 정확한 블록으로 교체
-      (제목·채널명 정확성 보장 + 실제 URL 포함 + 안내 문구)
     - 법률/절차 0건이면 각 태그도 제거
+    - 유튜브 [영상] 태그·🎥 참고 영상 줄은 항상 제거 (저작권상 영상 인용 폐지)
     """
     import re
 
     out = answer
-    yt_line_pat = re.compile(r"^\s*🎥\s*참고 영상[:：].*$", re.MULTILINE)
-
-    if not yt_hits:
-        out = yt_line_pat.sub("", out)
-        out = out.replace("[영상]", "")
-    else:
-        # backend 가 직접 만든 정확한 유튜브 블록.
-        # timestamp > 0 인 chunk 를 우선 선택 — 0초(인트로) 보다 의미 있는 부분 권장.
-        top = next(
-            (h for h in yt_hits if int(h.get("start_seconds") or 0) > 0),
-            yt_hits[0],
-        )
-        title = _yt_title(top)
-        channel = top.get("channel", "")
-        # deep_link 우선 — 타임스탬프 포함 URL → 클릭 시 해당 시점부터 자동 재생
-        url = top.get("deep_link") or top.get("source_url") or ""
-        ts_label = _format_timestamp(top.get("start_seconds"))
-        prefix = f"{channel} - " if channel else ""
-        ts_suffix = f" ({ts_label}부터)" if ts_label else ""
-        block_lines = [f"🎥 참고 영상: {prefix}{title}{ts_suffix}"]
-        if url:
-            block_lines.append(f"👉 영상 보기: {url}")
-            if ts_label:
-                block_lines.append(
-                    f"링크를 누르면 해당 부분({ts_label})부터 자동 재생돼요."
-                )
-            else:
-                block_lines.append("더 궁금한 내용은 영상을 확인해보세요.")
-        replacement = "\n".join(block_lines)
-
-        # LLM 이 쓴 🎥 줄이 있으면 교체, 없으면 "더 자세한 내용은" 앞에 삽입
-        if yt_line_pat.search(out):
-            # callable 로 넘겨서 replacement 내 특수문자(&, ?) 가 backreference 로 오해되지 않게
-            out = yt_line_pat.sub(lambda _m: replacement, out, count=1)
-        elif "더 자세한 내용은" in out:
-            out = out.replace(
-                "더 자세한 내용은",
-                replacement + "\n\n더 자세한 내용은",
-                1,
-            )
-        else:
-            out = out.rstrip() + "\n\n" + replacement
+    # 안전망: LLM 이 (지시 무시하고) [영상] / 🎥 참고 영상 줄을 만들면 모두 제거
+    out = re.sub(r"^\s*🎥\s*참고 영상[:：].*$", "", out, flags=re.MULTILINE)
+    out = re.sub(r"^\s*👉\s*영상 보기[:：].*$", "", out, flags=re.MULTILINE)
+    out = out.replace("[영상]", "")
 
     if not law_hits:
         out = out.replace("[법률]", "")
@@ -407,13 +318,12 @@ def _sanitize_answer(
     return out.strip()
 
 
-def _search_unified(query: str) -> tuple[list[dict], list[dict], list[dict]]:
-    """3-index 병렬 하이브리드 검색 (law + guide + video).
+def _search_unified(query: str) -> tuple[list[dict], list[dict]]:
+    """law + guide 2개 인덱스 병렬 하이브리드 검색 (영상 인덱스 제거됨).
 
-    레거시 이름 유지 — call site 호환성. 내부적으로는 3개 인덱스 각각 호출.
-    반환 tuple 순서: (law_hits, guide_hits, video_hits) — 호출자 가정과 동일.
+    반환 tuple 순서: (law_hits, guide_hits)
     """
-    return parallel_search_3(query)
+    return parallel_search_law_guide(query)
 
 
 def generate_chat_reply(
@@ -487,41 +397,21 @@ def generate_chat_reply(
 
     # 5. 검색 — Azure unified index 우선, 실패 시 로컬 키워드 검색
     query_joined = " ".join(keywords)
-    law_hits, proc_hits, yt_hits = _search_unified(query_joined)
-    if not (law_hits or proc_hits or yt_hits):
+    law_hits, proc_hits = _search_unified(query_joined)
+    if not (law_hits or proc_hits):
         # Azure 미설정 또는 호출 실패 시 로컬 폴백
         law_hits = search_laws_local([query_joined], top_k_per_query=3)
         proc_hits = search_procedures_local([query_joined], top_k_per_query=3)
-        yt_hits = search_youtube_local([query_joined], top_k_per_query=3)
         logger.info(
-            f"chat local fallback: law={len(law_hits)} proc={len(proc_hits)} video={len(yt_hits)}"
+            f"chat local fallback: law={len(law_hits)} proc={len(proc_hits)}"
         )
 
-    # 유튜브 관련도 필터 — 질문과 거의 무관한 영상이 "참고 영상" 으로 붙는 현상 방어.
-    # semantic reranker score 는 0~4 범위. 1.5 이상만 유지 (관련 있음 판정 보수선).
-    # reranker 점수가 없는 케이스 (로컬 폴백 / vector-only) 는 통과 (하위호환).
-    _YT_RERANKER_MIN = 1.5
-
-    def _yt_relevant(h: dict) -> bool:
-        rerank = h.get("@search.reranker_score")
-        if rerank is None:
-            return True  # 점수 없으면 판단 불가 → 통과 (로컬 폴백 대응)
-        return float(rerank) >= _YT_RERANKER_MIN
-
-    yt_hits_before = len(yt_hits)
-    yt_hits = [h for h in yt_hits if _yt_relevant(h)]
-    if yt_hits_before and yt_hits_before != len(yt_hits):
-        logger.info(
-            f"chat: video hits filtered {yt_hits_before} → {len(yt_hits)} "
-            f"(reranker < {_YT_RERANKER_MIN})"
-        )
-
-    citations = _build_citations(law_hits, proc_hits, yt_hits)
+    citations = _build_citations(law_hits, proc_hits)
 
     client = get_openai_client()
     if client is None:
         # Fallback 모드
-        answer = _build_fallback_answer(question, law_hits, proc_hits, yt_hits)
+        answer = _build_fallback_answer(question, law_hits, proc_hits)
         return ChatReply(
             answer=answer,
             mode="fallback",
@@ -542,13 +432,6 @@ def generate_chat_reply(
         context_parts.append(
             f"[절차] {_proc_title(h)}: "
             f"{clean_hanja((h.get('content') or '')[:400])}"
-        )
-    for h in yt_hits[:3]:
-        ts = _format_timestamp(h.get("start_seconds"))
-        ts_tag = f" @ {ts}" if ts else ""
-        context_parts.append(
-            f"[영상{ts_tag}] {h.get('channel', '')} - {_yt_title(h)}: "
-            f"{clean_hanja((h.get('content') or '')[:300])}"
         )
     context = "\n\n".join(context_parts)
 
@@ -583,8 +466,8 @@ def generate_chat_reply(
         )
         answer = (resp.choices[0].message.content or "").strip()
         if not answer:
-            answer = _build_fallback_answer(question, law_hits, proc_hits, yt_hits)
-        answer = _sanitize_answer(answer, law_hits, proc_hits, yt_hits)
+            answer = _build_fallback_answer(question, law_hits, proc_hits)
+        answer = _sanitize_answer(answer, law_hits, proc_hits)
         return ChatReply(
             answer=answer,
             mode="azure",
@@ -594,7 +477,7 @@ def generate_chat_reply(
     except Exception as exc:
         logger.warning(f"chat LLM failed ({type(exc).__name__}): {exc} — fallback")
         return ChatReply(
-            answer=_build_fallback_answer(question, law_hits, proc_hits, yt_hits),
+            answer=_build_fallback_answer(question, law_hits, proc_hits),
             mode="fallback",
             citations=citations,
             used_queries=[query_joined],

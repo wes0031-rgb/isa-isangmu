@@ -136,7 +136,7 @@ export interface ServiceReferral {
 }
 
 export interface ChatCitation {
-  source_type: 'law' | 'procedure' | 'youtube';
+  source_type: 'law' | 'procedure';
   title: string;
   content_snippet: string;
   url?: string | null;

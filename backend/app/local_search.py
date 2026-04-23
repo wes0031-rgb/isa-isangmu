@@ -47,7 +47,6 @@ def _scrub_record(rec: dict) -> dict:
     TEXT_FIELDS = (
         "content", "title", "doc_title", "breadcrumb",
         "description", "method", "law_name",
-        "video_title", "channel",
     )
     out = dict(rec)
     for f in TEXT_FIELDS:
@@ -63,12 +62,11 @@ def _scrub_record(rec: dict) -> dict:
 _INDEX_DIR = (
     Path(__file__).resolve().parent.parent / "data" / "indexes"
 )
-# 통합 인덱스 (Option B) — source_type 으로 구분
+# 통합 인덱스 (Option B) — source_type 으로 구분 (영상 인덱스 제거됨, 2026-04-23)
 UNIFIED_FILE = _INDEX_DIR / "index_unified.jsonl"
-# 레거시 3 인덱스 (unified 가 없을 때 fallback)
+# 레거시 2 인덱스 (unified 가 없을 때 fallback)
 CHUNKS_FILE = _INDEX_DIR / "index_b_chunks_curated.jsonl"
 LAW_FILE = _INDEX_DIR / "index_a_chunks.jsonl"
-YOUTUBE_FILE = _INDEX_DIR / "index_c_youtube_chunks.jsonl"
 
 
 # ---------- 통합 인덱스 로더 ----------
@@ -268,77 +266,6 @@ def search_laws(queries: list[str], top_k_per_query: int = 2) -> list[dict]:
     return results
 
 
-# ---------- Index C (유튜브 자막) ----------
-
-
-@lru_cache(maxsize=1)
-def load_youtube() -> list[dict]:
-    """유튜브 자막(Index C) 로드. 통합 인덱스 우선, 레거시 fallback.
-
-    통합 인덱스 레코드는 video_title 대신 title 필드를 쓰므로
-    호환성을 위해 video_title 도 함께 채워줌.
-    """
-    unified = load_unified()
-    if unified:
-        vids = _filter_by_source_type(unified, "video")
-        return [
-            {**c, "video_title": c.get("title") or c.get("video_title") or ""}
-            for c in vids
-        ]
-    if not YOUTUBE_FILE.exists():
-        return []
-    out = []
-    with YOUTUBE_FILE.open(encoding="utf-8") as fp:
-        for line in fp:
-            if line.strip():
-                out.append(_scrub_record(json.loads(line)))
-    return out
-
-
-def score_youtube(chunk: dict, query_tokens: list[str]) -> float:
-    haystack = " ".join(
-        [
-            chunk.get("video_title") or "",
-            chunk.get("channel") or "",
-            chunk.get("content") or "",
-            " ".join(chunk.get("category") or []),
-        ]
-    )
-    hay_tokens = Counter(_tokenize(haystack))
-    score = 0.0
-    for q in query_tokens:
-        if q in hay_tokens:
-            score += 1 + 0.2 * hay_tokens[q]
-    # 제목 히트에 보너스
-    title_tokens = set(_tokenize(chunk.get("video_title") or ""))
-    for q in query_tokens:
-        if q in title_tokens:
-            score += 0.5
-    return score
-
-
-def search_youtube(queries: list[str], top_k_per_query: int = 2) -> list[dict]:
-    """유튜브 자막 청크에서 키워드 검색.
-
-    반환 dict 에는 원본 메타데이터 (video_title, channel, deep_link, timecode)가 포함되어
-    챗봇에서 "이 질문은 <채널명>의 <영상제목> [MM:SS]를 참고하세요" 같은 인용 생성 가능.
-    """
-    vids = load_youtube()
-    if not vids:
-        return []
-    seen: set[str] = set()
-    results: list[dict] = []
-    for q in queries:
-        q_tokens = _tokenize(q)
-        if not q_tokens:
-            continue
-        scored = [(score_youtube(c, q_tokens), c) for c in vids]
-        scored.sort(key=lambda x: x[0], reverse=True)
-        for s, c in scored[:top_k_per_query]:
-            if s <= 0:
-                continue
-            if c["id"] in seen:
-                continue
-            seen.add(c["id"])
-            results.append({**c, "_local_score": round(s, 2), "_query": q})
-    return results
+# Index C (유튜브 자막) — 저작권 우려로 2026-04-23 제거. load_youtube/score_youtube/
+# search_youtube 함수 모두 삭제. unified index 의 source_type=video 청크도 ingest
+# 단계에서 제외 (video_chunks.jsonl · index_c_youtube_chunks.jsonl 도 git rm 대상).

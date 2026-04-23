@@ -4,10 +4,9 @@ Clients are lazily constructed so the app can boot without Azure credentials
 (useful for local dev). When credentials are missing, services fall back to
 deterministic mock responses — see `checklist_service.py` and `safecontract_service.py`.
 
-3-index 체제 (experiment/schema-refactor):
+2-index 체제 (영상 인덱스 제거됨, 2026-04-23):
   - get_search_client_law()    → law-index
   - get_search_client_guide()  → guide-index
-  - get_search_client_video()  → video-index
   - get_search_client_procedure() → guide-index alias (레거시 호환)
 """
 from __future__ import annotations
@@ -54,11 +53,6 @@ def get_search_client_law():
 @lru_cache(maxsize=1)
 def get_search_client_guide():
     return _build_search_client(get_settings().azure_search_guide_index)
-
-
-@lru_cache(maxsize=1)
-def get_search_client_video():
-    return _build_search_client(get_settings().azure_search_video_index)
 
 
 def get_search_client_procedure():
