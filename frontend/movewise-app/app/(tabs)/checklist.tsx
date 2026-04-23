@@ -414,6 +414,9 @@ export default function ChecklistScreen() {
       largeWaste: false,
       internet: false,
       tvTransfer: false,
+      applianceInstall: false,
+      onlineShopping: false,
+      insurance: false,
     });
     setConcernLabels([]);
     setFreeText('');

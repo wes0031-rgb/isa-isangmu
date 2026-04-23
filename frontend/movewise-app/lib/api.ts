@@ -251,11 +251,20 @@ export const api = {
     }
   },
   async realtySummary(region: string): Promise<MarketEstimate> {
-    const res = await fetch(
-      `${getApiUrl()}/realty/summary?region=${encodeURIComponent(region)}`,
-    );
-    if (!res.ok) throw new Error(`realty ${res.status}`);
-    const d = await res.json();
+    const { signal, clear } = withTimeout(15000);
+    let d: any;
+    try {
+      const res = await fetch(
+        `${getApiUrl()}/realty/summary?region=${encodeURIComponent(region)}`,
+        { signal },
+      );
+      if (!res.ok) throw new Error(`realty ${res.status}`);
+      d = await res.json();
+    } catch (e) {
+      wrapAbort(e);
+    } finally {
+      clear();
+    }
     return {
       source: '국토교통부 실거래가',
       region: d.region,
@@ -295,10 +304,17 @@ export const api = {
     >('/chat', { question, history });
   },
   async chatPresets(): Promise<string[]> {
-    const res = await fetch(`${getApiUrl()}/chat/presets`);
-    if (!res.ok) throw new Error(`chat presets ${res.status}`);
-    const d = await res.json();
-    return d.questions || [];
+    const { signal, clear } = withTimeout(10000);
+    try {
+      const res = await fetch(`${getApiUrl()}/chat/presets`, { signal });
+      if (!res.ok) throw new Error(`chat presets ${res.status}`);
+      const d = await res.json();
+      return d.questions || [];
+    } catch (e) {
+      wrapAbort(e);
+    } finally {
+      clear();
+    }
   },
   /** 음성 파일 업로드 → Azure Speech-to-Text → {text, status} (ko-KR).
    *  status: "Success" / "NoMatch" / "InitialSilenceTimeout" / "BabbleTimeout" 등.

@@ -264,7 +264,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatCitationModel(BaseModel):
-    source_type: Literal["law", "procedure", "youtube"]
+    source_type: Literal["law", "procedure"]  # video 인덱스 제거됨 (2026-04-23)
     title: str
     content_snippet: str
     url: Optional[str] = None
