@@ -80,19 +80,37 @@ PRESET_QUESTIONS = [
 ]
 
 
+# 한글 조사 — 검색 키워드 토큰 끝에서 제거. 길이 내림차순 정렬해서 긴 조사부터 매칭.
+_KOREAN_PARTICLES = sorted(
+    ("에서", "까지", "부터", "에게", "한테", "이라", "라고", "으로", "이나", "라도",
+     "이며", "이고", "이지만", "이라고",
+     "은", "는", "이", "가", "을", "를", "에", "와", "과", "도", "만", "야", "여"),
+    key=len, reverse=True,
+)
+
+
+def _strip_particle(token: str) -> str:
+    """토큰 끝의 한글 조사 1개 제거 — 어간이 2자 이상 남는 경우만."""
+    for p in _KOREAN_PARTICLES:
+        if token.endswith(p) and len(token) - len(p) >= 2:
+            return token[: -len(p)]
+    return token
+
+
 def _extract_query_keywords(question: str) -> list[str]:
     """질문에서 검색 쿼리로 사용할 구문 추출."""
-    # 조사·어미 제거 후 2글자 이상 한글/영문
     import re
 
     tokens = re.findall(r"[가-힣]{2,}|[A-Za-z]{3,}", question)
-    # 의미 없는 한글 토큰 제거
+    # 한글 조사 제거 (전입신고는 → 전입신고, 보증금이 → 보증금, 언제까지 → 언제)
+    tokens = [_strip_particle(t) for t in tokens]
+    # 의미 없는 한글 토큰 제거 (조사 떼고 난 후 stop 체크)
     stop = {
-        "언제", "어디", "어떻게", "뭐", "무엇", "왜", "까지", "에서", "합니까",
+        "언제", "어디", "어떻게", "뭐", "무엇", "왜", "합니까",
         "해야", "하나요", "있어요", "이에요", "인가요", "이나요", "되나요",
         "알려", "주세요", "그게", "이게", "저게", "그런", "이런", "그거",
     }
-    return [t for t in tokens if t not in stop][:10]
+    return [t for t in tokens if t not in stop and len(t) >= 2][:10]
 
 
 # ---------- 입력 필터 ----------

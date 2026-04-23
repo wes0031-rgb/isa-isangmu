@@ -579,6 +579,16 @@ def _search_law_context(extraction: RegistryExtraction) -> list[dict]:
         queries.append("신탁등기 임차인")
     if extraction.auction_in_progress:
         queries.append("임의경매 배당 순위")
+    if extraction.injunction_registered:
+        queries.append("가처분 소송 임차인")
+    if extraction.non_residential_use:
+        queries.append("주택임대차보호법 적용 범위 비주거")
+    if extraction.provisional_registration:
+        queries.append("가등기 본등기 소유권 이전")
+    if extraction.jeonse_right_registered:
+        queries.append("선순위 전세권 배당")
+    if len(extraction.co_owners) > 0:
+        queries.append("공유 부동산 임대 동의 민법 제265조")
 
     seen_ids: set[str] = set()
     hits: list[dict] = []
