@@ -288,7 +288,11 @@ export const api = {
     };
   },
   checklist(req: ChecklistRequest) {
-    return post<ChecklistRequest, ChecklistResponse>('/checklist', req, 45000);
+    // free_text 있으면 LLM 경로 (Azure Search 4호출 + GPT-4o 2회) — cache miss 첫
+    // 호출 25~30s + cloudflared 터널 overhead + Azure 변동 spike 마진까지 75s.
+    // 정형 토글만(free_text 빈) 케이스는 정적 fallback 으로 100ms 미만 — 이 timeout
+    // 은 worst case 안전 마진. 캐시 hit 은 9ms.
+    return post<ChecklistRequest, ChecklistResponse>('/checklist', req, 75000);
   },
   safecontract(req: SafeContractRequest) {
     return post<SafeContractRequest, SafeContractResponse>('/safecontract', req);

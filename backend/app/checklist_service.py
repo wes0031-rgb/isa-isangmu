@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 
 from .azure_clients import get_openai_client
@@ -154,7 +155,13 @@ def build_queries_freetext_llm(req: ChecklistRequest) -> tuple[list[str], list[s
         "    토글로 이미 처리되는 건(전입신고·확정일자·반려동물·자동차·외국인·전기수도가스 등)은 중복 금지.\n\n"
         "(2) 자유 텍스트의 의미상 사용자에게 해당하는 플래그 list — 의미 이해 기반 (단순 키워드 매칭 X).\n"
         "    이미 사용자가 체크박스로 켠 플래그는 자동 유지되니 새로 추출되지 않은 것만 신경.\n"
-        "    부정·과거·타인 지칭 (예: '강아지 못 키움', '예전엔 자동차 있었음') 은 제외.\n\n"
+        "    부정·과거·타인 지칭 (예: '강아지 못 키움', '예전엔 자동차 있었음') 은 제외.\n"
+        "    **이사·주거·임대차·계약·행정 영역과 무관한 입력은 promoted_flags=[]**:\n"
+        "    예) '오리'·'역삼'·'강남'·'음악'·'영화'·'요리' 같은 지명·사물·취미 단어.\n"
+        "    has_pet 은 반려·애완 목적이 명시되거나 강아지·고양이·반려동물·반려견·반려묘\n"
+        "    단어가 있을 때만. 오리·새·물고기·곤충·가축 단어 단독으로는 has_pet 추출 X.\n"
+        "    단, 주거·생활 관련 단일 단어 (층간소음·결로·곰팡이·하자·도배·장판·소음·\n"
+        "    누수·결빙) 는 의도가 명확하므로 queries 는 정상 생성 (flag 와는 별개).\n\n"
         f"플래그 정의:\n{flag_doc}\n\n"
         f"세대유형: {req.household}\n"
         f"계약유형: {', '.join(_effective_contracts(req))}\n"
@@ -199,7 +206,6 @@ def build_queries_freetext_llm(req: ChecklistRequest) -> tuple[list[str], list[s
     except json.JSONDecodeError:
         pass
     return queries, flags
-    return []
 
 
 # ---------- Step 2: AI Search 하이브리드 검색 ----------
@@ -349,6 +355,30 @@ STRUCTURE_SYSTEM_PROMPT = """당신은 이사 전·당일·후의 행정 절차 
    - is_foreigner=false → 외국인등록 항목 0개
 4. 확신 없는 법정 기한·과태료는 has_legal_deadline=false 로 두고 숫자를 지어내지 말 것.
 
+**일반 안내(Advisory) 항목 허용 — chunks 부족 시 free_text 응답용:**
+사용자 자유 텍스트가 chunks 에서 잘 다뤄지지 않는 **구체적 우려** (예: "층간소음 분쟁", "결혼해서 동거",
+"신축 입주 하자 점검", "이전 집주인 보증금 지연") 면 법령 인용 없이 절차 안내 항목으로 응답 가능.
+**엄격한 조건** (위반 시 항목 폐기):
+- `citations: []` (빈 배열 필수, 가짜 법령 절대 금지)
+- `has_legal_deadline: false`, `deadline_days: null`, `penalty: null` (법정 기한·과태료 숫자 만들지 말 것)
+- description 에 "정확한 절차·기한은 관할 기관 문의 권장" 같은 disclaimer 명시
+- method 에 실제 존재하는 contact point 만 ("주민센터", "법무사 상담", "소비자상담센터 1372",
+  "대한법률구조공단 132", "주택도시보증공사 1566-9009" 등 — 가짜 번호·기관 금지)
+- 항목 수: 자유 텍스트 의도 1건당 1~2개 advisory 까지. 4개+는 과잉.
+- chunks 에 관련 법령이 1건이라도 있으면 advisory 대신 법령-grounded 항목 우선.
+- **이사·주거·임대차 관련성 필터** — 다음 기준으로 advisory 생성 여부 판단:
+  · 입력이 새 거주지·이사 절차·임대차·계약·행정과 관련 있으면 단일 단어라도 advisory 1~2개 생성:
+    예) "층간소음" → "층간소음 분쟁 예방·대응 안내" advisory ✓
+        "결로" → "결로·곰팡이 점검 및 임대인 통지" advisory ✓
+        "하자" → "신축·기존 주택 하자 점검 절차" advisory ✓
+        "이전 세입자 짐" → "퇴실 잔여물 처리 안내" advisory ✓
+  · 입력이 이사·주거와 무관 (지명·사물·취미·동물·음식 단독) 이면 advisory 0개 — free_text 무시:
+    예) "오리"·"음악"·"강남"·"영화"·"요리" 단독 → 항목 X
+- **placeholder 절대 금지** — 다음 패턴은 모두 폐기:
+  · "기타 | XX 관련 사항", "별도 확인 필요", "추가 검토 필요" 류 의미 없는 채우기
+  · 입력 단어를 그대로 끼워넣은 generic 제목 ("오리 관련 이사 걱정", "강남 관련 안내" 등)
+  · advisory 는 사용자 입력 의도를 구체적 행동 (점검·통지·신고·상담) 으로 변환할 때만 만들 것.
+
 **커버리지 규칙 (빠뜨리지 말 것):**
 - 검색 결과에 등장한 **실질 행정·법적 의무와 생활 행정 절차는 빠뜨리지 말고 항목화**.
   예: 전입신고, 확정일자, 임대차 신고, 주소이전(우편·운전면허·건강보험·국민연금·주민등록증 재발급·은행·카드), 공과금 명의변경(전기·수도·도시가스), 인터넷·TV 이전, 쓰레기 종량제봉투·분리배출, 도어락 교체, 보증금 반환, 주택임대차 분쟁해결, 소방안전·가스점검 등.
@@ -373,7 +403,9 @@ STRUCTURE_SYSTEM_PROMPT = """당신은 이사 전·당일·후의 행정 절차 
   · 자녀 전학 신청: +1 ~ +3
   · 운전면허 주소변경·건강보험·국민연금: +7 ~ +14
 
-검색 결과의 content 에 있는 내용만 근거로 사용. 없는 정보는 만들지 말 것."""
+법령 인용(citations)은 반드시 검색 결과 content 의 [law | ...] 태그/related_laws 만 사용.
+없는 법령·조문 절대 만들지 말 것. 단, 위 "Advisory 항목 허용" 조건을 만족하면 citations=[]
+형태의 일반 안내는 free_text 의도 응답용으로 추가 가능."""
 
 
 def structure_checklist_llm(
@@ -409,11 +441,10 @@ def structure_checklist_llm(
             f"content: {content}"
         )
 
-    # 청크 16→40 — 검색 활용도 ↑ + relevance 정렬 후 상위 40 (이전 73% 버림 → ~33%).
-    # 입력 토큰 ~28K (GPT-4o 128K context 의 22%).
-    # search_procedures 가 reranker_score / @search.score 기준 정렬 후 dedupe 한 결과
-    # 상위가 들어옴 → 같은 cap 이라도 중요 hit 가 살아남는다.
-    context = "\n\n---\n\n".join(_format_chunk(c) for c in chunks[:40])
+    # 청크 cap 30 — 40 → 30 으로 축소 (응답 시간 -3~5s, 입력 토큰 ~21K).
+    # search_procedures 가 reranker_score 기준 정렬 후 dedupe → 상위 30 만으로도
+    # 핵심 법령·절차 충분히 커버. cache miss 첫 호출 latency 단축이 더 중요.
+    context = "\n\n---\n\n".join(_format_chunk(c) for c in chunks[:30])
     # free_text 원문을 system 분리해서 명시 — LLM 이 chunks 를 user 의도에 맞춰
     # 해석하도록 강제. "검색 결과의 핵심 내용을 빠짐없이 반영" 시킴.
     free_text_hint = ""
@@ -444,7 +475,10 @@ def structure_checklist_llm(
             ],
             response_format={"type": "json_object"},
             max_tokens=3000,
-            timeout=20,
+            # 20s → 30s — Azure OpenAI 가 가끔 spike 함. 20s 에서 timeout 타면
+            # fallback 으로 빠져 LLM 결과 유실. 30s 면 worst case 도 흡수.
+            # 프론트 timeout 75s 대비 충분한 마진 (build_queries 10s + search 8s + 30s).
+            timeout=30,
         )
     except Exception as exc:
         _logger.warning(
@@ -480,6 +514,9 @@ def structure_checklist_llm(
                 _logger.warning(
                     f"_item_from_dict failed on {d.get('title', d)}: {type(exc).__name__}: {exc}"
                 )
+        # Placeholder advisory 차단 — LLM 이 prompt 무시하고 "오리 관련 사항" 같은
+        # 의미 없는 advisory 만드는 케이스 후처리. citations 비고 + 패턴 매칭.
+        items = _filter_placeholder_advisory(items)
         _logger.info(
             f"structure_checklist_llm: chunks={len(chunks)} parsed_items={len(items_data)} built_items={len(items)}"
         )
@@ -492,6 +529,67 @@ def structure_checklist_llm(
     except (json.JSONDecodeError, ValueError) as exc:
         _logger.warning(f"structure LLM parse error: {exc} — falling back")
         return structure_checklist_fallback(req, chunks), True
+
+
+# LLM 이 prompt 의 "placeholder 금지" 지시를 무시하고 만드는 의미 없는 advisory 패턴.
+# title/category 에 이 표현 들어가면서 citations 비어있으면 폐기 (길이 무관).
+# 정상 advisory ("층간소음 분쟁 예방 및 대응", "결로·곰팡이 점검 절차") 는 이런 generic
+# 표현 안 씀 → false positive 거의 없음.
+_PLACEHOLDER_TITLE_PATTERNS = (
+    "관련 사항",
+    "관련 이사",
+    "관련 안내",
+    "관련 걱정",
+    "관련 절차 안내",
+    "별도 확인",
+    "별도 안내",
+    "추가 검토",
+    "확인 필요",
+    "검토 필요",
+)
+
+# Description 이 actionable 한 안내 없이 disclaimer/회피 문구만 있으면 폐기.
+# LLM 이 입력 의도 모를 때 "관련이 없습니다", "사용자 자유 텍스트" 같이 메타 발화함.
+_PLACEHOLDER_DESC_PATTERNS = (
+    "관련된 구체적 행정 절차와 연관이 없",
+    "이사와 관련이 없",
+    "이사와 직접적인 관련이 없",
+    "별도 정보가 없",
+    "추가 정보가 없",
+    "사용자 자유 텍스트",
+    "사용자가 입력한",
+    "구체적인 정보가 부족",
+)
+
+
+def _filter_placeholder_advisory(items: list[ChecklistItem]) -> list[ChecklistItem]:
+    """LLM 이 free_text 단어 들고 placeholder advisory 만든 것 폐기.
+
+    조건 (citations 비어있고 + 아래 중 하나 매칭 시 폐기):
+    1. title/category 에 _PLACEHOLDER_TITLE_PATTERNS 매칭 (generic 제목)
+    2. description 에 _PLACEHOLDER_DESC_PATTERNS 매칭 (disclaimer-only)
+
+    legitimate advisory ("층간소음 분쟁 대처 방법" 등) 는 두 패턴 다 안 가짐 → 통과.
+    """
+    filtered: list[ChecklistItem] = []
+    import logging as _log
+    _logger_local = _log.getLogger("movewise")
+    for it in items:
+        if it.citations:
+            filtered.append(it)
+            continue
+        haystack_title = f"{it.category} {it.title}"
+        desc = it.description or ""
+        title_bad = any(p in haystack_title for p in _PLACEHOLDER_TITLE_PATTERNS)
+        desc_bad = any(p in desc for p in _PLACEHOLDER_DESC_PATTERNS)
+        if title_bad or desc_bad:
+            _logger_local.info(
+                f"[checklist] dropped placeholder advisory: {it.category} | {it.title} "
+                f"(title_bad={title_bad} desc_bad={desc_bad})"
+            )
+            continue
+        filtered.append(it)
+    return filtered
 
 
 def _item_from_dict(d: dict, move_date: date) -> ChecklistItem:
@@ -2034,6 +2132,102 @@ _FLAG_TO_CATEGORIES: dict[str, tuple[str, ...]] = {
 }
 
 
+# free_text 의 의미 단어가 항목 본문(category + title + description)에 literal
+# 포함되면 보라색 마킹. promoted_flags(_FLAG_TO_CATEGORIES) 매칭이 안 되는
+# generic 표현("전세금"·"임차권") 도 관련 항목에 약한 신호로 표시.
+# stopword 는 너무 흔해서 마킹 신호가 안 되는 단어 — 마킹 대상에서 제외.
+_FREETEXT_STOPWORDS = frozenset([
+    "이사", "걱정", "필요", "관련", "관해", "예정", "있어", "있는", "있음",
+    "없어", "없는", "없음", "되고", "되는", "되었", "그리고", "그래서",
+    "하지만", "그런데", "정도", "조금", "많이", "대부분", "전체",
+    "준비", "완료", "확인", "여부", "사항", "해주", "주세", "해요",
+    "합니다", "습니다", "이고", "이며", "인데", "라고", "라서",
+])
+
+# 한글 조사 (어미 후미). "전세금으로", "강아지를" 같은 형태에서 떼어내기 위함.
+_PARTICLE_RE = re.compile(
+    r"(은|는|이|가|을|를|으로|로|에서|에게|만|도|와|과|의|에|으로서|로서|보다|"
+    r"이며|이고|이라|이라서|이라고|입니다|이에요|예요)$"
+)
+
+
+def _extract_freetext_keywords(text: str) -> list[str]:
+    """free_text 에서 마킹용 의미 단어 추출.
+
+    공백·구두점 분리 → 한글 조사 제거 → stopword/짧은 토큰 제외.
+    "전세금으로 미반환 걱정" → ["전세금", "미반환"] (걱정은 stopword).
+
+    조사 제거 적용 규칙:
+    - 길이 4+ 토큰만 조사 제거 시도 ("강아지를"→"강아지", "전세금으로"→"전세금")
+    - 길이 2~3 토큰은 통째 유지 ("결로"·"곰팡이"·"오리"·"이사" 의 끝글자가 조사
+      패턴과 우연 일치하는 false positive 방지)
+    - 자른 후 너무 짧아져도 (1자 이하) 원본 유지
+    """
+    if not text:
+        return []
+    raw_tokens = re.split(r"[\s,.、，·/]+", text.strip())
+    keywords: list[str] = []
+    for tok in raw_tokens:
+        tok = tok.strip()
+        if len(tok) >= 4:
+            cleaned = _PARTICLE_RE.sub("", tok).strip()
+            if len(cleaned) < 2:
+                cleaned = tok
+        else:
+            cleaned = tok
+        if len(cleaned) >= 2 and cleaned not in _FREETEXT_STOPWORDS:
+            keywords.append(cleaned)
+    return list(dict.fromkeys(keywords))
+
+
+# 자유 표현 ↔ 항목/법령 본문에 쓰이는 공식 용어 매핑.
+# 사용자는 "전세금" 이라 쳐도 항목 본문은 "보증금" 으로 쓰여서 literal 매칭 0건 →
+# 동의어 확장으로 보라색 표시. 일반 단어 (이사·계약·집) 는 over-mark 위험 큼 → 제외,
+# 부동산/임대차 도메인 핵심 용어만 등록.
+_FREETEXT_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "전세금": ("보증금", "임대보증금", "전세보증금"),
+    "전세보증금": ("보증금", "전세금", "임대보증금"),
+    "보증금": ("보증금", "전세금", "임대보증금"),
+    "월세": ("월세", "차임", "월차임"),
+    "차임": ("차임", "월세", "월차임"),
+    "집주인": ("임대인", "집주인"),
+    "임대인": ("임대인", "집주인"),
+    "세입자": ("임차인", "세입자"),
+    "임차인": ("임차인", "세입자"),
+    "등기부": ("등기부", "등기", "등기사항"),
+    "전세보증보험": ("전세보증보험", "전세금반환보증", "HUG", "SGI", "보증보험"),
+    "임차권": ("임차권", "임차권등기", "임차권등기명령"),
+    "임차권등기": ("임차권등기", "임차권등기명령", "임차권"),
+    "하자": ("하자", "결로", "곰팡이", "파손", "수선", "누수"),
+    "결로": ("결로", "곰팡이", "수선", "하자", "누수"),
+    "곰팡이": ("곰팡이", "결로", "수선", "하자"),
+    "누수": ("누수", "수선", "하자", "결로"),
+    "수선": ("수선", "수선의무", "하자", "수리"),
+    "층간소음": ("층간소음", "공동주택", "관리주체", "분쟁조정"),
+    "소음": ("소음", "층간소음", "분쟁조정"),
+    "분쟁": ("분쟁", "조정", "분쟁조정"),
+    "갱신": ("갱신", "갱신요구권", "재계약"),
+    "재계약": ("재계약", "갱신", "갱신요구권"),
+    "도배": ("도배", "벽지"),
+    "장판": ("장판", "바닥"),
+    "이사업체": ("이사업체", "이삿짐", "포장이사", "운송"),
+    "관리비": ("관리비", "관리비예치금", "장기수선충당금"),
+}
+
+
+def _expand_keywords(keywords: list[str]) -> set[str]:
+    """키워드를 부동산/임대차 도메인 동의어로 확장.
+
+    '전세금' → {'전세금', '보증금', '임대보증금', '전세보증금'} 같이 항목 본문이
+    공식 용어를 쓰는 경우에도 매칭되도록.
+    """
+    expanded: set[str] = set(keywords)
+    for kw in keywords:
+        if kw in _FREETEXT_SYNONYMS:
+            expanded.update(_FREETEXT_SYNONYMS[kw])
+    return expanded
+
+
 # 키워드 매칭 후 같은 컨텍스트 윈도우 안에 있으면 false positive 로 판정해 skip 하는 패턴.
 # - 부정: "강아지 키우고 싶지만 못", "직장이 없어서", "회사 안 다녀요"
 # - 과거: "아파트 살았는데", "고등학교 다닐 때"
@@ -2131,9 +2325,6 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     # 못 잡는 엣지케이스(예: "신축 입주 하자 점검", "조부모 동거") 까지 커버.
     # 결정론은 _request_cache_key 캐시 (위) 가 담당 — 같은 input → 같은 output.
     has_free_text = bool(original_ft)
-    # LLM 경로에서 "free_text 영향 받은 항목" 식별을 위해 정적 base 카테고리 미리 계산.
-    # 이 차집합 = LLM 이 free_text 분석으로 추가한 항목들 → from_freetext=True 마킹.
-    static_base_cats: set[str] = set()
     if has_free_text:
         # LLM 호출 — 검색 쿼리 + 의미 기반 플래그 추출 동시 수행.
         # "멍멍이" → has_pet, "내 차로 출근" → has_car / is_employed 같이 키워드
@@ -2156,12 +2347,6 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
                 req = req.model_copy(update=updates_from_llm)
                 _logger.info(f"[checklist] llm→flags promoted: {list(updates_from_llm.keys())}")
 
-        # 정적 base 계산은 LLM 플래그 갱신 후에 — 새 플래그가 ensure 에서 canonical 주입함
-        _base_items = structure_checklist_fallback(req, chunks=[])
-        _base_items = _ensure_utility_items(_base_items, req)
-        _base_items = _ensure_conditional_items(_base_items, req)
-        static_base_cats = {it.category for it in _base_items}
-
         chunks = search_procedures(queries, req)
         items, used_fallback = structure_checklist_llm(req, chunks)
         _logger.info(
@@ -2176,11 +2361,20 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
     items = _ensure_utility_items(items, req)
     items = _ensure_conditional_items(items, req)
 
-    # from_freetext 마킹 (프론트 보라색 카드 + AI 배지) 우선순위:
-    #  (1) 키워드 자동 승격된 플래그 → _FLAG_TO_CATEGORIES 매핑 카테고리만 정확 마킹
-    #  (2) (1) 매칭 0건이고 LLM 경로 → 정적 base 에 없던 카테고리 차집합 마킹
-    #      (= LLM 이 free_text 해석으로 새로 만든 항목들. over-mark 가능하나
-    #       "AI 가 자유 텍스트 반영" 표시 자체는 정확.)
+    # from_freetext 마킹 — 2단계 누적 (set True 는 idempotent):
+    #
+    # (1) 강한 신호: 키워드 매칭 OR LLM 의미 추출로 승격된 플래그 →
+    #     _FLAG_TO_CATEGORIES 정확 매핑된 canonical 카테고리만 마킹.
+    #     예: "강아지" → has_pet → "반려동물 등록 주소변경" 1건.
+    #
+    # (2) 약한 신호: free_text 의 의미 단어가 항목 본문(category+title+description)에
+    #     literal 포함되면 추가 마킹. flag 매핑 안 되는 generic 표현 ("전세금"·
+    #     "임차권"·"하자점검") 도 관련 항목에 표시.
+    #     stopword/짧은 토큰 제외 → 종량제봉투·도어락 같은 무관 항목엔 매칭 0.
+    #
+    # 이전 버그 (2026-04-23 fix): "정적 base 와의 카테고리 차집합" 방식은 LLM 의
+    # 카테고리 명명 drift 만으로도 차집합이 거의 비지 않아 over-mark 발생.
+    # 이제는 (1) 정확 flag 매칭 + (2) literal 본문 매칭 — 둘 다 의미 있는 신호.
     if promoted_flags:
         freetext_cats: set[str] = set()
         for flag in promoted_flags:
@@ -2188,30 +2382,46 @@ def generate_checklist(req: ChecklistRequest) -> ChecklistResponse:
         for it in items:
             if it.category in freetext_cats:
                 it.from_freetext = True
-    elif has_free_text and static_base_cats:
-        for it in items:
-            if it.category not in static_base_cats:
-                it.from_freetext = True
+
+    if has_free_text:
+        ft_keywords = _extract_freetext_keywords(original_ft)
+        if ft_keywords:
+            expanded_kws = _expand_keywords(ft_keywords)
+            for it in items:
+                if it.from_freetext:
+                    continue
+                haystack = f"{it.category} {it.title} {it.description or ''}"
+                if any(kw in haystack for kw in expanded_kws):
+                    it.from_freetext = True
 
     # 결정론적 정렬: d_day_offset → category → title (tie-break 안정화)
     items.sort(key=lambda x: (x.d_day_offset, x.category or "", x.title or ""))
 
     # free_text 반영 여부 사용자 피드백 메시지 — warning 필드 재활용.
-    # 우선순위:
+    # 우선순위 (보라색 마킹 결과와 정확히 일치하도록):
     #  (1) 키워드 자동 매칭 → "키워드로 추가됨"
-    #  (2) LLM 분석 성공 OR LLM 플래그 추출됨 → "AI 분석"
-    #      (LLM 항목 생성이 fallback 처리 됐어도 플래그 추출만 성공했으면 의미 있음)
-    #  (3) 입력 있지만 위 둘 다 실패 → "해당 항목 없어요"
-    llm_items_used = has_free_text and not (locals().get("used_fallback", False))
+    #  (2) LLM 의미 분석으로 플래그 추출 성공 → "AI 분석"
+    #  (3) (1)(2) 둘 다 실패하지만 본문 literal 매칭으로 마킹된 항목 있음 → "AI 검색·표시"
+    #  (4) free_text 입력 있지만 마킹 0건 → "해당 항목 없어요" hint
     llm_flags_used = bool(promoted_flags)
+    overlap_marked_count = sum(1 for it in items if it.from_freetext) - sum(
+        1 for it in items if it.from_freetext and (
+            it.category in {c for f in promoted_flags for c in _FLAG_TO_CATEGORIES.get(f, ())}
+        )
+    )
     if matched_keywords:
         unique_kws = list(dict.fromkeys(matched_keywords))
         warning = (
             f"입력하신 \"{', '.join(unique_kws[:3])}\" 키워드로 관련 체크 항목이 "
             f"자동 추가되었습니다."
         )
-    elif llm_items_used or llm_flags_used:
+    elif llm_flags_used:
         warning = "AI 가 입력하신 자유 텍스트를 분석해 관련 항목을 추가로 반영했습니다."
+    elif overlap_marked_count > 0:
+        warning = (
+            "AI 가 입력 내용을 분석해 관련 항목을 보라색으로 표시했어요. "
+            "체크리스트에서 확인해주세요."
+        )
     elif original_ft:
         warning = (
             "입력하신 내용에 해당하는 추가 항목이 없어요. "
