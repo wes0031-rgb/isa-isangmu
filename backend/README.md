@@ -92,21 +92,20 @@ PDF 업로드
   └─ _explain_with_llm → 위험 항목별 쉬운 설명 + citation
 ```
 
-### 3. 챗봇 (단일 인덱스 시맨틱 RAG)
+### 3. 챗봇 (2-index 시맨틱 RAG · 영상 인덱스 제거됨 2026-04-23)
 
 ```
 사용자 질문 + 멀티턴 history
   │
   ├─ 도메인 필터 → 인사/오프토픽 거절
   │
-  ├─ Azure AI Search `moving-unified-index` 단일 호출
-  │     · semantic config: movewise-semantic
-  │     · source_type 필터 (law / procedure / video)
+  ├─ Azure AI Search law-index + guide-index 병렬 하이브리드 쿼리
+  │     · semantic + vector
   │
   ├─ GPT-4o 답변 생성 (system + history + hits)
-  │     · 문장별 [법률]/[절차]/[영상] 태그 부착
+  │     · 문장별 [법률]/[절차] 태그 부착
   │
-  └─ _sanitize_answer → hallucination 방어 (출처에 없는 영상·법률 제거)
+  └─ _sanitize_answer → hallucination 방어 (출처에 없는 법률·잔존 [영상] 태그 제거)
 ```
 
 ---

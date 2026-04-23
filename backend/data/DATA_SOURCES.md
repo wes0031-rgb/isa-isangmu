@@ -54,7 +54,9 @@
 |---|---|---|---|
 | `indexes/index_a_chunks.jsonl` | 법률 청크 | 1,950 | 국가법령정보 Open API |
 | `indexes/index_b_chunks_curated.jsonl` | 행정 절차 청크 | 200 | 찾기쉬운 생활법령정보 |
-| `indexes/index_c_youtube_chunks.jsonl` | 유튜브 자막 청크 | 147 | YouTube (12 영상) |
+
+> NOTE: `index_c_youtube_chunks.jsonl` (유튜브 자막 147 청크 / 12 영상) 은 저작권
+> 우려로 2026-04-23 제거됨. 챗봇 RAG 는 law + procedure 2 인덱스만 사용.
 
 ---
 
@@ -951,136 +953,8 @@
 
 ### 📁 `backend/data/raw/`
 
-**`raw\youtube_transcripts\4i-e1OmEGCQ.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\BtbnY7enQMQ.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\Ej8MDFj37zg.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\Gpf8slBLVe4.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\MIEObuovrSc.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\OCtjQJqtYyc.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\PamLLxiCPqo.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\aw-cvULahyA.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\dFCz_ONk86o.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\gkeglF2m_WA.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\holidays_2026.json`**
-
-- **카테고리**: 공휴일
-- **담당 기관**: 한국천문연구원
-- **출처 URL**: http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService
-- **API**: 특일정보 API
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 연 1회 (연말)
-- **수집 방법**: ingest_holidays.py (2026년 22건)
-
-**`raw\youtube_transcripts\iY3d1JAQsKY.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw\youtube_transcripts\oYt9Xv3d2Wo.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
+> NOTE: 유튜브 자막 원본 12개 (`raw/youtube_transcripts/*.json`) 는 저작권
+> 우려로 2026-04-23 git rm. 챗봇 RAG 에서 영상 인덱스 전면 제거됨.
 
 ---
 

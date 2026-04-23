@@ -21,8 +21,10 @@
 | `ingest_services_v2.py` | `data/mapping/*_v2.json` | services v2 개선본 (구버전 대체) |
 | `ingest_water.py` | `data/mapping/water_region_office.json` | 전국 수도사업소 세분화 |
 | `ingest_citygas.py` | `data/mapping/gas_region_company.json` | 도시가스 회사 지역 매핑 |
-| `ingest_youtube.py` | `data/raw/youtube_transcripts/*.json` | 유튜브 이사 팁 영상 자막 |
 | `ingest_holidays.py` | `data/raw/holidays_2026.json` | 공공데이터 공휴일 (D-day 계산용) |
+
+> NOTE: `ingest_youtube.py` 와 `data/raw/youtube_transcripts/*.json` 은 저작권 우려로
+> 2026-04-23 제거됨. 챗봇은 law + guide 2개 인덱스만 사용.
 
 ### 2. Preprocess — 청킹·큐레이션·메타 주입
 
@@ -40,7 +42,7 @@
 
 | 스크립트 | 설명 |
 |---------|------|
-| `unify_indexes.py` | law + procedure + video 청크 → 단일 `index_unified.jsonl` (source_type 필드 포함) |
+| `unify_indexes.py` | law + procedure 청크 → 단일 `index_unified.jsonl` (source_type 필드 포함). 영상 인덱스 제거됨 |
 | `upload_to_search.py` | unified JSONL + 임베딩 → Azure AI Search 인덱스에 업로드 |
 
 ### 4. Util — 관리·평가·검증
@@ -65,7 +67,6 @@
    python scripts/ingest_services_v2.py
    python scripts/ingest_water.py
    python scripts/ingest_citygas.py
-   python scripts/ingest_youtube.py
    python scripts/ingest_holidays.py
 
 2) Preprocess (청킹·큐레이션, 수분)
@@ -91,7 +92,6 @@
 |------|-----------|
 | 새 법령 추가 | `ingest_laws.py` → `unify_indexes.py` → `upload_to_search.py` |
 | 지역 매핑 보강 (새 시·군) | `ingest_services_v2.py` 수정·재실행 (인덱스 업로드 불필요) |
-| 유튜브 영상 추가 | `ingest_youtube.py` → `unify_indexes.py` → `upload_to_search.py` |
 | 새 공휴일 연도 | `ingest_holidays.py` → 백엔드 재시작 (인덱스 업로드 불필요) |
 
 ---
