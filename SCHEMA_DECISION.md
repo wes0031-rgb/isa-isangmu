@@ -1,6 +1,8 @@
 # SCHEMA_DECISION
 
-3-index의 각 필드별 설계 근거 기록. "왜 이 필드가 존재/제거됐는가?"의 영구 답변.
+3-index 의 각 필드별 설계 근거 기록. "왜 이 필드가 존재/제거됐는가?"의 영구 답변.
+
+**현재 구성**: 3-index — `law-index`, `guide-index`, `mapping-index`. Video 인덱스는 저작권 우려로 2026-04-23 제거됨 (commit `5cb0ec1`).
 
 ---
 
@@ -10,7 +12,7 @@
 
 1. **검색 용도**: 이 필드로 어떤 쿼리를 받을 수 있는가?
 2. **필터 용도**: 이 필드로 어떤 결과를 좁힐 수 있는가?
-3. **표시 용도**: UI에서 어떻게 사용자에게 보여주는가?
+3. **표시 용도**: UI 에서 어떻게 사용자에게 보여주는가?
 4. **추적 용도**: 데이터 품질·신선도를 어떻게 검증하는가?
 
 답할 수 없는 필드는 제거 대상.
@@ -25,19 +27,18 @@
 | ------------ | ---------------------- | ------------------------ | ------------ |
 | 🔴 필수      | 항상 있어야            | ✅ 포함                  | ✅ 포함      |
 | 🟡 유지      | 유용함, 일단 유지      | ✅ 포함                  | ✅ 포함      |
-| 🟢 삭제 OK   | Azure에 안 올려도 됨   | ✅ 포함 (소스 원형 보존) | ❌ 제외      |
+| 🟢 삭제 OK   | Azure 에 안 올려도 됨  | ✅ 포함 (소스 원형 보존) | ❌ 제외      |
 | ⚪ 이미 삭제 | 스크래핑/청킹에서 제외 | ❌ 제외                  | ❌ 제외      |
 
 ### 이름 변경 처리 (Indexer fieldMappings)
 
 일부 필드는 소스 이름과 Azure 이름이 다름:
 
-| 소스 필드     | Azure 필드 | 인덱스 |
-| ------------- | ---------- | ------ |
-| `doc_title`   | `title`    | Guide  |
-| `video_title` | `title`    | Video  |
+| 소스 필드   | Azure 필드 | 인덱스 |
+| ----------- | ---------- | ------ |
+| `doc_title` | `title`    | Guide  |
 
-**처리 방법**: Azure Indexer의 `fieldMappings` 선언.
+**처리 방법**: Azure Indexer 의 `fieldMappings` 선언.
 
 ```json
 "fieldMappings": [
@@ -48,11 +49,11 @@
 ]
 ```
 
-**소스 JSONL은 수정 불필요.** Indexer가 읽을 때 매핑.
+**소스 JSONL 은 수정 불필요.** Indexer 가 읽을 때 매핑.
 
 ### 🟢 필드 제외 방법
 
-Azure 인덱스 스키마에서 해당 필드를 **선언하지 않으면** Indexer가 자동 무시. 별도 drop 처리 불필요.
+Azure 인덱스 스키마에서 해당 필드를 **선언하지 않으면** Indexer 가 자동 무시. 별도 drop 처리 불필요.
 
 ### 로컬 파일 수정이 필요한 경우
 
@@ -61,40 +62,40 @@ Azure 인덱스 스키마에서 해당 필드를 **선언하지 않으면** Inde
 1. Python 코드(예: `unify_indexes.py`)가 JSONL 읽어 필드 참조할 때
 2. 스키마 검증 테스트를 로컬에서 돌릴 때
 
-**원칙**: Azure로 넘기기 전까지 소스 원형 보존 → 재인덱싱 유연성 최대화.
+**원칙**: Azure 로 넘기기 전까지 소스 원형 보존 → 재인덱싱 유연성 최대화.
 
 ---
 
 ## Index A — Law (법령 조문)
 
-**Azure 인덱스명**: `law-index`  
-**소스 필드 수**: 12개  
-**Azure 업로드 필드 수**: 12개 (`fetched_at` 으로 통일, `last_updated` 는 미사용)  
-**청크 수**: 1,635 (2026-04-19 기준)  
-**입력 파일**: `backend/data/law/*.json` (8개 법령)  
+**Azure 인덱스명**: `law-index`
+**소스 필드 수**: 12 개
+**Azure 업로드 필드 수**: 12 개
+**청크 수**: 1,635 (2026-04-19 기준)
+**입력 파일**: `backend/data/law/*.json` (8 개 법령)
 **청크 파일**: `backend/data/indexes/law_chunks.jsonl`
 
-### 팀 회의 확정 필드 (12개)
+### 확정 필드 (12 개)
 
-| 필드                 | 분류          | 역할                            | 근거                                 |
-| -------------------- | ------------- | ------------------------------- | ------------------------------------ |
-| `id`                 | 🔴 필수       | 청크 고유 키 (Azure key)        | ASCII-only, document key 제약        |
-| `title`              | 🔴 필수       | 조문 제목 · semantic 최우선     | 예: "대항력 등"                      |
-| `content`            | 🔴 필수       | 조문 본문                       | 주 검색 대상, 벡터 임베딩            |
-| `source_url`         | 🔴 필수       | law.go.kr 원문 링크             | Citation 클릭 시 이동                |
-| `law_name`           | 🔴 필수       | "주택임대차보호법"              | Semantic keywords                    |
-| `article`            | 🔴 필수       | "제3조의2"                      | Citation 표시                        |
-| `category`           | 🔴 필수       | 분류 태그                       | filter/facet                         |
-| `keywords`           | 🔴 필수       | 자동 추출 키워드                | 검색 부스팅 (4/19 회의 후 유지 결정) |
-| `deadlines`          | 🟡 유지       | "14일 이내"                     | D-day 계산 근거                      |
-| `related_procedures` | 🟡 유지       | 법 ↔ 절차 크로스 링크           | Phase 2 vector similarity            |
-| `related_videos`     | 🟡 유지       | 법 ↔ 영상 크로스 링크           | 법 단위 하드코딩 큐레이션            |
-| `fetched_at`         | 🟡 유지       | 수집 일자 · 신선도              | `last_updated` 는 제거·미사용        |
-| `penalties`          | ⚪ 이미 삭제  | 활용도 0.9%                     | 커밋 bb59244                         |
+| 필드                 | 분류          | 역할                                 | 근거                          |
+| -------------------- | ------------- | ------------------------------------ | ----------------------------- |
+| `id`                 | 🔴 필수       | 청크 고유 키 (Azure key)             | ASCII-only, document key 제약 |
+| `title`              | 🔴 필수       | 조문 제목 · semantic 최우선          | 예: "대항력 등"               |
+| `content`            | 🔴 필수       | 조문 본문                            | 주 검색 대상, 벡터 임베딩     |
+| `source_url`         | 🔴 필수       | law.go.kr 원문 링크                  | Citation 클릭 시 이동         |
+| `law_name`           | 🔴 필수       | "주택임대차보호법"                   | Semantic keywords             |
+| `article`            | 🔴 필수       | "제3조의2"                           | Citation 표시                 |
+| `category`           | 🔴 필수       | 분류 태그                            | filter/facet                  |
+| `keywords`           | 🔴 필수       | 자동 추출 키워드                     | 검색 부스팅                   |
+| `deadlines`          | 🟡 유지       | "14일 이내"                          | D-day 계산 근거               |
+| `related_procedures` | 🟡 유지       | 법 ↔ 절차 크로스 링크                | guide 청크와 연결             |
+| `related_videos`     | ⚠️ orphan     | 영상 인덱스 제거됨, 데이터엔 잔존    | 다음 재생성 시 제거 권장      |
+| `fetched_at`         | 🟡 유지       | 수집 일자 · 신선도                   | `last_updated` 는 미사용      |
+| `penalties`          | ⚪ 이미 삭제  | 활용도 0.9%                          | -                             |
 
-**스크립트 현황 (2026-04-20)**:
+**스크립트 현황**:
 
-- `ingest_laws.py` 는 `keywords` 자동 추출 완료 (세션 3, DOMAIN_KEYWORDS ~60개 whitelist)
+- `ingest_laws.py` 가 `keywords` 자동 추출 (DOMAIN_KEYWORDS ~60 개 whitelist)
 - `fetched_at` 만 생성 (`last_updated` 는 제거됨)
 
 ### 청크 ID 형식
@@ -108,7 +109,7 @@ law_{slug}_art{N}[_{sub}]
   law_civil_code_art618
 ```
 
-**이유**: Azure Search document key는 letters/digits/underscores/dashes/equals만 허용.
+**이유**: Azure Search document key 는 letters/digits/underscores/dashes/equals 만 허용.
 
 ### 카테고리 결정 로직
 
@@ -129,7 +130,7 @@ law_{slug}_art{N}[_{sub}]
 
 - 삭제된 조문: `^제\d+조(?:의\d+)?\s*삭제\s*<`
 - 구조 헤더: `^제\d+\s*[편장절관]\s`
-- Stub: content 길이 40자 미만
+- Stub: content 길이 40 자 미만
 
 ### Azure Field Mapping
 
@@ -139,12 +140,14 @@ law_{slug}_art{N}[_{sub}]
 
 ## Index B — Guide (생활법령 해설)
 
-**Azure 인덱스명**: `guide-index`  
-**소스 필드 수**: 19개  
-**Azure 업로드 필드 수**: 15개 (🟢 3개 제외 + doc_title→title 매핑)  
-**청크 수**: 200 (큐레이션 후, 재청킹 필요)  
-**입력 파일**: `backend/data/guide/*.json` (53개)  
-**청크 파일**: `backend/data/indexes/index_b_chunks_curated.jsonl`
+**Azure 인덱스명**: `guide-index`
+**소스 필드 수**: 19 개
+**Azure 업로드 필드 수**: 15 개 (🟢 3 개 제외 + `doc_title`→`title` 매핑)
+**청크 수**: 340 (raw, 큐레이션 단계 제거됨)
+**입력 파일**: `backend/data/guide/*.json` (53 개)
+**청크 파일**: `backend/data/indexes/guide_chunks.jsonl`
+
+> **큐레이션 제거 (commit `4d0a66c`)**: `curate_chunks.py` 가 EXCLUDE_DOCS 정리 후 pass-through 가 되어 chatbot 용도엔 scope filter 가 불필요. `index_b_chunks_curated.jsonl` 도 함께 제거.
 
 ### 스크래퍼 출력 (원본 JSON, 10 필드)
 
@@ -163,14 +166,14 @@ law_{slug}_art{N}[_{sub}]
 | `law_citations`  | string[] | 법령 인용 (정규식 추출)                |
 | `fetched_at`     | string   | 수집 날짜                              |
 
-### 청킹 후 스키마 (19 필드, 팀 결정)
+### 청킹 후 스키마 (19 필드)
 
 `chunk_easylaw.py` 출력. 청크 단위로 메타데이터 재계산/추가:
 
 | 필드             | 분류          | 역할                                       |
 | ---------------- | ------------- | ------------------------------------------ |
 | `id`             | 🔴 필수       | 청크 고유 키                               |
-| `doc_title`      | 🔴 필수       | 문서 제목 · **Azure에선 `title`로 매핑**   |
+| `doc_title`      | 🔴 필수       | 문서 제목 · **Azure 에선 `title` 로 매핑** |
 | `content`        | 🔴 필수       | 청크 본문                                  |
 | `source_url`     | 🔴 필수       | easylaw 원문 링크                          |
 | `parent_doc`     | 🔴 필수       | 원본 문서 ID (테스트 강제 필수, 중복 제거) |
@@ -184,10 +187,10 @@ law_{slug}_art{N}[_{sub}]
 | `fetched_at`     | 🟡 유지       | 수집 일자 · 신선도                         |
 | `chunk_index`    | 🟡 유지       | 청크 순번                                  |
 | `chunk_total`    | 🟡 유지       | 전체 청크 수                               |
-| `source`         | 🟢 Azure 제외 | 상수 "easylaw". parent_doc으로 식별 가능   |
-| `category_root`  | 🟢 Azure 제외 | breadcrumb 첫 segment로 복원 가능          |
-| `content_length` | 🟢 Azure 제외 | 디버깅용. `len(content)`로 즉석 계산       |
-| `penalties`      | ⚪ 이미 삭제  | 활용도 0.9% (커밋 bb59244)                 |
+| `penalties`      | 🟡 유지       | 위반 시 효과 (데이터엔 살아있음)           |
+| `source`         | 🟢 Azure 제외 | 상수 "easylaw". `parent_doc` 으로 식별 가능 |
+| `category_root`  | 🟢 Azure 제외 | `breadcrumb` 첫 segment 로 복원 가능       |
+| `content_length` | 🟢 Azure 제외 | 디버깅용. `len(content)` 로 즉석 계산      |
 
 ### Azure Field Mapping
 
@@ -200,7 +203,7 @@ law_{slug}_art{N}[_{sub}]
 ]
 ```
 
-소스 19 필드 → Azure 15 필드 (🟢 3개 제외 + `doc_title`→`title` 매핑).
+소스 19 필드 → Azure 15 필드 (🟢 3 개 제외 + `doc_title`→`title` 매핑).
 
 ### 스크래퍼 품질 이슈 해결 (2026-04-19)
 
@@ -219,66 +222,66 @@ law_{slug}_art{N}[_{sub}]
 - 접근성 텍스트 제거
 - breadcrumb/title 추출 개선
 
-**검증**: 7개 노이즈 키워드 grep 전부 0 매칭
+**검증**: 7 개 노이즈 키워드 grep 전부 0 매칭
 
 ---
 
-## Index C — Video (유튜브 자막)
+## Index C — Mapping (기관·실무 정보)
 
-**Azure 인덱스명**: `video-index`  
-**소스 필드 수**: 18개  
-**Azure 업로드 필드 수**: 16개 (🟢 2개 제외 + video_title→title 매핑)  
-**청크 수**: 147 (재검증 필요)  
-**입력 파일**: `backend/data/raw/youtube_transcripts/*.json` (12개)  
-**청크 파일**: `backend/data/indexes/index_c_youtube_chunks.jsonl`
+**Azure 인덱스명**: `mapping-index`
+**소스 필드 수**: 16 개
+**Azure 업로드 필드 수**: 16 개
+**청크 수**: 122 (2026-04-21 기준)
+**입력 파일**: `backend/data/mapping/*.json` (31 개)
+**청크 파일**: `backend/data/indexes/mapping_chunks.jsonl`
+**정규화 스크립트**: `backend/scripts/normalize_mapping_for_rag.py` (994 줄)
 
-### 팀 회의 확정 필드 (18개)
+> **이 인덱스만 정규화가 필수인 이유**: law/guide 와 달리 **다출처** (한전·수도사업소·도시가스·통신사·HUG·등기소·주민센터·법무부 양식 등) 데이터를 한 인덱스에 담기 때문에, 출처마다 다른 필드 형식을 공통 스키마로 맞추는 정규화 단계가 반드시 필요.
 
-| 필드            | 분류          | 역할                  | 근거                             |
-| --------------- | ------------- | --------------------- | -------------------------------- |
-| `id`            | 🔴 필수       | 청크 고유 키          | Azure document key               |
-| `video_id`      | 🔴 필수       | YouTube 영상 고유 ID  | 영상 식별자                      |
-| `video_title`   | 🔴 필수       | 영상 제목             | **Azure에선 `title`로 매핑**     |
-| `content`       | 🔴 필수       | 자막 텍스트           | 주 검색 대상                     |
-| `source_url`    | 🔴 필수       | YouTube 영상 기본 URL | Citation 링크                    |
-| `channel`       | 🔴 필수       | 채널명                | Semantic keywords                |
-| `deep_link`     | 🔴 필수       | 타임스탬프 포함 URL   | 클릭 시 정확 시점 재생           |
-| `category`      | 🔴 필수       | 분류 태그             | filter/facet                     |
-| `start_seconds` | 🟡 유지       | 시작 시점 (초)        | "11분 55초부터" 자연어 표시      |
-| `end_seconds`   | 🟡 유지       | 종료 시점 (초)        | 클립 끝 시간                     |
-| `timecode`      | 🟡 유지       | "11:55-14:23"         | 표시용                           |
-| `applicable_to` | 🟡 유지       | 자취/신혼/가족        | 사용자 프로필 필터               |
-| `contract_type` | 🟡 유지       | 전세/월세/자가        | 계약 유형 필터                   |
-| `region`        | 🟡 유지       | 전국/서울 등          | 지역 필터                        |
-| `related_laws`  | 🟡 유지       | 영상 ↔ 법 연결        | 크로스 링크                      |
-| `fetched_at`    | 🟡 유지       | 수집 일자             | 신선도                           |
-| `channel_url`   | 🟢 Azure 제외 | 채널 홈 URL           | `video_id`로 역추적 가능         |
-| `source_type`   | 🟢 Azure 제외 | 상수 "video"          | Azure unify 시 재설정되므로 중복 |
+### 9 개 패턴별 핸들러
+
+`normalize_mapping_for_rag.py` 가 입력 파일의 구조를 보고 9 개 패턴 중 하나로 분기:
+
+| 패턴            | 청크 수 | 예시 파일                                                          |
+| --------------- | ------- | ------------------------------------------------------------------ |
+| simple          | 18      | hometax_nts, nhis_health_insurance, nps_national_pension 등 (1:1) |
+| regional        | 36      | kepco_electricity (18) · water_region_office (18)                  |
+| mapping_table   | 18      | (지역 ↔ 사업자 매핑류)                                              |
+| multi_level     | 21      | school_transfer (초·중·고 + 시도교육청)                              |
+| multi_provider  | 4       | telecom_internet (KT/SK/LGU+)                                      |
+| categorized_sub | 7       | gov24_services                                                     |
+| guide_phases    | 8       | moveout_timeline                                                   |
+| guide_stages    | 6       | moveout_deposit_return                                              |
+| guide_generic   | 4       | moveout_restoration · waste_disposal · management_refund · termination_notice |
+
+### 확정 필드 (16 개)
+
+| 필드               | 분류    | 역할                                      |
+| ------------------ | ------- | ----------------------------------------- |
+| `id`               | 🔴 필수 | 청크 고유 키 (Azure document key)         |
+| `source_id`        | 🔴 필수 | 사람이 읽는 원본 ID (디버깅·매핑용)       |
+| `title`            | 🔴 필수 | 서비스/항목명 · semantic 최우선           |
+| `content`          | 🔴 필수 | 본문 (벡터 임베딩 대상)                   |
+| `authority`        | 🔴 필수 | 담당 기관 (한전/수도사업소/주민센터 등)   |
+| `service_category` | 🔴 필수 | 분류 태그 (utility/registry/welfare 등)   |
+| `fetched_at`       | 🔴 필수 | 수집 일자 · 신선도                        |
+| `region`           | 🟡 유지 | 관할 지역 (전국/서울/경기 등)             |
+| `region_aliases`   | 🟡 유지 | 지역명 별칭 (검색 매칭용)                 |
+| `phones`           | 🟡 유지 | 연락처 배열 (대표번호·지점별)             |
+| `websites`         | 🟡 유지 | URL 배열 (홈/신청 페이지 등)              |
+| `process_steps`    | 🟡 유지 | 단계별 안내 (체크리스트 항목 분배)        |
+| `deadline_days`    | 🟡 유지 | 기한 (일 단위) · D-day 계산               |
+| `penalty_text`     | 🟡 유지 | 위반 시 효과 (과태료·계약 해지 등)        |
+| `legal_basis`      | 🟡 유지 | 근거 법령 (법 ↔ 매핑 크로스 링크)          |
+| `tips`             | 🟡 유지 | 추가 안내·주의사항                        |
+
+### Azure document key 처리
+
+한글 `source_id` (예: `kepco_electricity__seoul`) 는 그대로 사용 가능하나, 한글이 섞이는 케이스는 `slugify()` + `REGION_SLUG` / `LEVEL_SLUG` 로 ASCII 변환. ID 중복·non-ASCII 검증 로직이 정규화 스크립트에 내장.
 
 ### Azure Field Mapping
 
-```json
-"fieldMappings": [
-  {
-    "sourceFieldName": "video_title",
-    "targetFieldName": "title"
-  }
-]
-```
-
-소스 18 필드 → Azure 16 필드 (🟢 2개 제외 + `video_title`→`title` 매핑).
-
-### 청킹 전략
-
-- 목표 청크 크기: 600자
-- 시간 기반 묶음 (자막 세그먼트 연속)
-- `deep_link` 자동 생성: `https://www.youtube.com/watch?v={video_id}&t={start_seconds}s`
-
-### 다음 세션 검증 필요
-
-- `ingest_youtube.py`에 Mac 하드코딩 경로 있는지
-- 기존 `index_c_youtube_chunks.jsonl`이 18 필드 전부 포함하는지
-- 없다면 스크립트 보강 후 재생성
+특별한 매핑 없음 (소스 필드명 = Azure 필드명).
 
 ---
 
@@ -286,23 +289,18 @@ law_{slug}_art{N}[_{sub}]
 
 ### law ↔ guide
 
-- `related_laws` 필드(guide)가 법령 참조 → Azure Search lookup 쿼리로 law 인덱스 조회 가능
-- Phase 2: guide 청크의 `related_laws` 필드에 law id 역주입
+- `related_laws` 필드(guide) 가 법령 참조 → Azure Search lookup 쿼리로 law 인덱스 조회
+- `related_procedures` 필드(law) → guide 청크와의 역방향 연결
 
-### law ↔ video
+### law ↔ mapping
 
-- `related_videos` 필드(law) 하드코딩 매핑 — 법 단위로 영상 3~4개 큐레이션
-- LAW_TO_VIDEOS 딕셔너리 (`ingest_laws.py`)
+- `legal_basis` 필드(mapping) → 근거 법령 인용으로 law 인덱스 조회 가능
+- 예: `moveout_termination_notice` 의 `legal_basis` → 주택임대차보호법 제6조의2
 
-### video ↔ law
-
-- `related_laws` 필드(video) — 영상이 어떤 법을 다루는지
-- 현재 수동 큐레이션 추정 (다음 세션 검증)
-
-### guide ↔ video
+### guide ↔ mapping
 
 - 현재 직접 관계 없음
-- Phase 2: vector similarity로 자동 매핑 고려
+- 필요 시 vector similarity 로 자동 매핑 가능
 
 ---
 
@@ -314,82 +312,59 @@ law_{slug}_art{N}[_{sub}]
 - `penalties`, `keywords`, `law_slug` 제거 결정 (잠정)
 - `related_videos` 검증: 환각 아니라 수동 큐레이션 확인
 
-### 2026-04-19 (세션 2)
+### 2026-04-19 (세션 2) — 팀 회의
 
-- **팀 회의 결과 반영**:
-  - Law 13 필드 확정 (`keywords` 유지 재결정)
-  - Guide 19 필드 확정
-  - Video 18 필드 확정
-  - 🔴🟡🟢⚪ 분류 체계 도입
-  - 소스 JSONL vs Azure 인덱스 스키마 분리 원칙
-- Guide 스크래퍼 품질 개선 (필드 불변, 추출 로직만)
+- Law 12 필드 확정 (`keywords` 유지 재결정)
+- Guide 19 필드 확정
+- Video 18 필드 확정 (이후 제거)
+- 🔴🟡🟢⚪ 분류 체계 도입
+- 소스 JSONL vs Azure 인덱스 스키마 분리 원칙
 - Indexer fieldMappings 방식 채택 (로컬 JSONL 수정 회피)
+
+### 2026-04-21 (세션 3) — Mapping 인덱스 신설 (commit `089055e`)
+
+- 31 개 매핑 파일을 9 개 패턴별 핸들러로 정규화 → 122 청크
+- Mapping 전용 16 필드 스키마 확정
+- `parent_service` 필드 제거 (`source_id` 와 중복)
+- ID 중복/non-ASCII 검증 로직 추가
+- Azure 리소스 5종 JSON (index/datasource/skillset/indexer + semantic) 정의
+
+### 2026-04-23 — Video 인덱스 제거 (commit `5cb0ec1`)
+
+- 저작권 우려로 유튜브 자막 인덱스 전면 제거
+- Law 의 `related_videos` 필드는 데이터에 잔존 (orphan, 다음 재생성 시 제거 권장)
+
+### 2026-04-24 — 큐레이션 단계 제거 (commit `4d0a66c`)
+
+- `curate_chunks.py` 가 EXCLUDE_DOCS 정리 후 pass-through 화 → 삭제
+- `index_b_chunks_curated.jsonl` (200 청크) 도 함께 제거
+- 이후 Guide 인덱스는 raw 청크 340 개를 그대로 사용
 
 ---
 
-## Azure Search 설정 (다음 세션 확정)
+## Azure Search 설정 (확정)
 
 ### Vector search
 
-- Algorithm: HNSW (기본)
+- Algorithm: HNSW
 - Dimensions: 1536 (text-embedding-3-small)
 - Similarity: cosine
 
 ### Semantic search
 
-- Config name: `iim-{index}-semantic-config`
-- Title field: `title` (law) / `title` (guide, after mapping) / `title` (video, after mapping)
-- Content fields: `content`
-- Keywords fields:
-  - Law: `keywords`, `category`, `law_name`
-  - Guide: `category`, `breadcrumb`
-  - Video: `category`, `channel`
+각 인덱스별 semantic config:
+
+| 인덱스        | Title field | Content field | Keywords fields                  |
+| ------------- | ----------- | ------------- | -------------------------------- |
+| law-index     | `title`     | `content`     | `keywords`, `category`, `law_name` |
+| guide-index   | `title` (← `doc_title` mapped) | `content`, `breadcrumb` | `category` |
+| mapping-index | `title`     | `content`     | `service_category`, `authority`, `region` |
 
 ### Analyzer
 
 - Language: `ko.microsoft` (한국어 최적)
 - 모든 searchable 한글 필드에 적용
 
-### Indexer 파이프라인 (다음 세션)
+### 리소스 정의
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Azure Blob Storage                                          │
-│  └─ iim-data-container/                                     │
-│      ├─ law/index_a_chunks.jsonl                            │
-│      ├─ guide/index_b_chunks_curated.jsonl                  │
-│      └─ video/index_c_youtube_chunks.jsonl                  │
-└───────────────┬─────────────────────────────────────────────┘
-                │
-        ┌───────┴────────┬──────────────┐
-        ▼                ▼              ▼
-    ┌────────┐      ┌────────┐     ┌────────┐
-    │Datasrc │      │Datasrc │     │Datasrc │
-    │ (law)  │      │(guide) │     │(video) │
-    └───┬────┘      └───┬────┘     └───┬────┘
-        │               │              │
-        ▼               ▼              ▼
-    ┌────────┐      ┌────────┐     ┌────────┐
-    │Skillset│      │Skillset│     │Skillset│
-    │(embed) │      │(embed) │     │(embed) │
-    └───┬────┘      └───┬────┘     └───┬────┘
-        │               │              │
-        ▼               ▼              ▼
-    ┌────────┐      ┌────────┐     ┌────────┐
-    │Indexer │      │Indexer │     │Indexer │
-    │+mappings│      │+mappings│    │+mappings│
-    └───┬────┘      └───┬────┘     └───┬────┘
-        │               │              │
-        ▼               ▼              ▼
-    ┌────────┐      ┌────────┐     ┌────────┐
-    │iim-law │      │iim-    │     │iim-    │
-    │-index  │      │guide-  │     │video-  │
-    │        │      │index   │     │index   │
-    └────────┘      └────────┘     └────────┘
-```
-
-각 Indexer에는 `fieldMappings` 선언:
-
-- Guide: `doc_title` → `title`
-- Video: `video_title` → `title`
-- Law: 없음 (이름 일치)
+각 인덱스의 Azure 리소스 JSON (datasource/index/skillset/indexer + semantic) 은 `feat/3-index-rag-transition` 브랜치 (commit `089055e`) 에서 관리.
