@@ -2,8 +2,7 @@
 
 Parses situation.jsp to extract region → company mapping.
 Saves:
-  - backend/data/mapping/gas_region_company.json  (매핑 테이블)
-  - backend/data/procedures/utility/gas_companies.json  (회사 리스트)
+  - backend/data/mapping/gas_region_company.json  (매핑 테이블; 유니크 회사명은 entries에서 파생)
 """
 from __future__ import annotations
 
@@ -15,13 +14,16 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
+from annotate_sources import get_source_metadata
+
 URL = "http://www.citygas.or.kr/company/situation.jsp"
 HEADERS = {"User-Agent": "Mozilla/5.0 (isa-isangmu RAG collector)"}
 
-MAPPING_OUT = Path("/Users/sa/Desktop/2차프로젝트/backend/data/mapping/gas_region_company.json")
-COMPANIES_OUT = Path("/Users/sa/Desktop/2차프로젝트/backend/data/procedures/utility/gas_companies.json")
+ROOT = Path(__file__).resolve().parent.parent.parent
+MAPPING_OUT = ROOT / "backend" / "data" / "mapping" / "gas_region_company.json"
 MAPPING_OUT.parent.mkdir(parents=True, exist_ok=True)
-COMPANIES_OUT.parent.mkdir(parents=True, exist_ok=True)
+
+_SOURCE_METADATA = get_source_metadata("mapping/gas_region_company.json")
 
 
 def clean(name: str) -> str:
@@ -63,32 +65,23 @@ def main() -> None:
     mapping_doc = {
         "source": URL,
         "fetched_at": date.today().isoformat(),
-        "total_entries": len(region_map),
-        "unique_companies": len(all_companies),
-        "entries": region_map,
-    }
-
-    companies_doc = {
-        "source": URL,
-        "fetched_at": date.today().isoformat(),
         "category": "도시가스 공급사",
         "coverage": "전국",
         "note": (
             "각 공급사별 명의변경 절차는 개별 웹사이트 또는 고객센터 문의 필요. "
             "본 데이터는 지역 ↔ 공급사 매핑 용도로 사용."
         ),
-        "companies": sorted(all_companies),
+        "total_entries": len(region_map),
+        "unique_companies": len(all_companies),
+        "entries": region_map,
+        "_source_metadata": _SOURCE_METADATA,
     }
 
     MAPPING_OUT.write_text(
         json.dumps(mapping_doc, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    COMPANIES_OUT.write_text(
-        json.dumps(companies_doc, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
 
-    print(f"✅ 매핑 {len(region_map)}건 → {MAPPING_OUT}")
-    print(f"✅ 고유 회사 {len(all_companies)}개 → {COMPANIES_OUT}")
+    print(f"✅ 매핑 {len(region_map)}건 / 고유 회사 {len(all_companies)}개 → {MAPPING_OUT.relative_to(ROOT)}")
     # 권역별 개수
     by_region: dict[str, int] = {}
     for e in region_map:

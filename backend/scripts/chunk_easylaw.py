@@ -1,8 +1,8 @@
 """Split easylaw JSON docs into RAG-ready chunks with metadata.
 
-Input : backend/data/procedures/easylaw/easylaw-*.json  (53개)
-Output: backend/data/indexes/index_b_chunks.jsonl       (JSONL, 1 chunk/line)
-        backend/data/indexes/index_b_summary.json       (통계)
+Input : backend/data/guide/easylaw-*.json  (53개)
+Output: backend/data/indexes/guide_chunks.jsonl         (JSONL, 1 chunk/line)
+        backend/data/indexes/guide_summary.json         (통계)
 
 Chunking strategy:
 - 문단 단위로 1차 분할 → 800자 넘으면 문장 단위 재분할 → 200자 이하면 인접과 병합
@@ -15,8 +15,9 @@ import re
 from datetime import date
 from pathlib import Path
 
-IN_DIR = Path("/Users/sa/Desktop/2차프로젝트/backend/data/procedures/easylaw")
-OUT_DIR = Path("/Users/sa/Desktop/2차프로젝트/backend/data/indexes")
+ROOT = Path(__file__).resolve().parent.parent.parent  # 2차프로젝트
+IN_DIR = ROOT / "backend" / "data" / "guide"
+OUT_DIR = ROOT / "backend" / "data" / "indexes"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 TARGET_SIZE = 700  # chars
@@ -144,7 +145,7 @@ def process_doc(doc: dict) -> list[dict]:
             chunk_cats = doc_categories
 
         record = {
-            "id": f"{doc['id']}__chunk-{idx:02d}",
+            "id": f"{doc['id']}_c{idx:02d}",
             "parent_doc": doc["id"],
             "source": doc["source"],
             "source_url": doc["url"],

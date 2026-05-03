@@ -1,6 +1,6 @@
 # 이사이상무 데이터 출처 카탈로그
 
-> 2026-04-14 기준 · 총 108 파일 (JSON) + jsonl 인덱스 3종
+> 2026-04-14 기준 · 총 97 파일 (JSON) + jsonl 인덱스 3종
 
 ---
 
@@ -29,7 +29,6 @@
 | 외국인 주소변경 | 1 | 법무부 출입국·외국인청 |
 | 우편물 주소이전 서비스 | 1 | 우정사업본부 |
 | 원상회복 기준 | 1 | 공정거래위원회 · 대법원 판례 · 한국소비자원 |
-| 유튜브 자막 원본 | 12 | 각 채널 귀속 |
 | 인터넷·TV 통신 3사 | 1 | KT, SK브로드밴드, LG U+ |
 | 자녀 전학 | 1 | 교육부 · 시·도 교육청 |
 | 자동차 변경등록 | 1 | 국토교통부 · 시·도청 |
@@ -57,6 +56,495 @@
 
 ## 📄 파일별 상세
 
+### 📁 `backend/data/guide/`
+
+**`guide\_summary.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-1-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-1-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-2-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-2-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-2-4.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-2-5.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-3-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-2-3-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-3-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-3-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-1-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-2-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-3-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-3-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-3-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-3-4.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-4-4-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-2-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-2-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-2-4.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-2-5.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-2-6.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-3-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-3-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-629-5-3-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-1-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-1-1-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-1-1-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-1-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-1-3-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-1-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-1-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-2-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-2-3.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-2-4.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-2-5.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-3-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-2-3-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-3-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-3-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-3-2-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-3-3-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-3-3-2.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-4-1-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+**`guide\easylaw-666-4-2-1.json`**
+
+- **카테고리**: 행정 절차 원본 스크랩
+- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
+- **출처 URL**: https://easylaw.go.kr
+- **라이선스**: 공공누리 제1유형
+- **갱신 주기**: 수동
+- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
+
+
 ### 📁 `backend/data/indexes/`
 
 **`indexes/evaluation_report.json`**
@@ -78,19 +566,9 @@
 - **수집 방법**: 팀 작성 30건
 
 
-### 📁 `backend/data/laws/`
+### 📁 `backend/data/law/`
 
-**`laws/공동주택관리법.json`**
-
-- **카테고리**: 법률 원본
-- **담당 기관**: 법제처
-- **출처 URL**: https://www.law.go.kr/
-- **API**: 국가법령정보 Open API (DRF)
-- **라이선스**: 공공누리 제1유형 (출처 표시)
-- **갱신 주기**: 시행일 기준 즉시 반영
-- **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
-
-**`laws/동물보호법.json`**
+**`law\animal_protection.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -100,7 +578,7 @@
 - **갱신 주기**: 시행일 기준 즉시 반영
 - **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
 
-**`laws/민법.json`**
+**`law\apartment_management.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -110,7 +588,7 @@
 - **갱신 주기**: 시행일 기준 즉시 반영
 - **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
 
-**`laws/부동산등기법.json`**
+**`law\civil_code.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -120,7 +598,7 @@
 - **갱신 주기**: 시행일 기준 즉시 반영
 - **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
 
-**`laws/주민등록법 시행령.json`**
+**`law\housing_lease_enforcement.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -130,7 +608,7 @@
 - **갱신 주기**: 시행일 기준 즉시 반영
 - **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
 
-**`laws/주민등록법.json`**
+**`law\housing_lease_protection.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -140,7 +618,7 @@
 - **갱신 주기**: 시행일 기준 즉시 반영
 - **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
 
-**`laws/주민등록법시행령.json`**
+**`law\real_estate_registration.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -150,7 +628,17 @@
 - **갱신 주기**: 시행일 기준 즉시 반영
 - **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
 
-**`laws/주택임대차보호법 시행령.json`**
+**`law\resident_registration.json`**
+
+- **카테고리**: 법률 원본
+- **담당 기관**: 법제처
+- **출처 URL**: https://www.law.go.kr/
+- **API**: 국가법령정보 Open API (DRF)
+- **라이선스**: 공공누리 제1유형 (출처 표시)
+- **갱신 주기**: 시행일 기준 즉시 반영
+- **수집 방법**: backend/scripts/ingest_laws.py (LAW_OC 인증키)
+
+**`law\resident_registration_enf.json`**
 
 - **카테고리**: 법률 원본
 - **담당 기관**: 법제처
@@ -450,626 +938,17 @@
 - **수집 방법**: ingest_water.py (17 광역 · 63 산하 사업소)
 
 
-### 📁 `backend/data/procedures/`
-
-**`procedures/easylaw/_summary.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-1-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-1-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-2-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-2-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-2-4.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-2-5.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-3-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-2-3-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-3-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-3-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-1-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-2-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-3-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-3-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-3-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-3-4.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-4-4-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-2-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-2-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-2-4.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-2-5.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-2-6.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-3-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-3-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-629-5-3-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-1-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-1-1-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-1-1-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-1-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-1-3-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-1-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-1-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-2-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-2-3.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-2-4.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-2-5.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-3-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-2-3-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-3-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-3-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-3-2-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-3-3-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-3-3-2.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-4-1-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-**`procedures/easylaw/easylaw-666-4-2-1.json`**
-
-- **카테고리**: 행정 절차 원본 스크랩
-- **담당 기관**: 법제처 (찾기쉬운 생활법령정보)
-- **출처 URL**: https://easylaw.go.kr
-- **라이선스**: 공공누리 제1유형
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_easylaw.py (이사 + 주택임대차 카테고리, 53 문서)
-
-
 ### 📁 `backend/data/raw/`
 
-**`raw/youtube_transcripts/4i-e1OmEGCQ.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=4i-e1OmEGCQ
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/BtbnY7enQMQ.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=BtbnY7enQMQ
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/Ej8MDFj37zg.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=Ej8MDFj37zg
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/Gpf8slBLVe4.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=Gpf8slBLVe4
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/MIEObuovrSc.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=MIEObuovrSc
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/OCtjQJqtYyc.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=OCtjQJqtYyc
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/PamLLxiCPqo.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=PamLLxiCPqo
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/aw-cvULahyA.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=aw-cvULahyA
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/dFCz_ONk86o.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=dFCz_ONk86o
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/gkeglF2m_WA.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=gkeglF2m_WA
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/holidays_2026.json`**
+**`raw\holidays_2026.json`**
 
 - **카테고리**: 공휴일
 - **담당 기관**: 한국천문연구원
-- **출처 URL**: https://www.data.go.kr/data/15012690/openapi.do
+- **출처 URL**: http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService
 - **API**: 특일정보 API
 - **라이선스**: 공공누리 제1유형
 - **갱신 주기**: 연 1회 (연말)
 - **수집 방법**: ingest_holidays.py (2026년 22건)
-
-**`raw/youtube_transcripts/iY3d1JAQsKY.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=iY3d1JAQsKY
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
-
-**`raw/youtube_transcripts/oYt9Xv3d2Wo.json`**
-
-- **카테고리**: 유튜브 자막 원본
-- **담당 기관**: 각 채널 귀속
-- **출처 URL**: https://www.youtube.com/watch?v=oYt9Xv3d2Wo
-- **API**: youtube-transcript-api (무료)
-- **라이선스**: 영상별 채널 저작권. 프로젝트 내부용 가공만 허용
-- **갱신 주기**: 수동
-- **수집 방법**: ingest_youtube.py
 
 
 ---
@@ -1120,4 +999,4 @@ python3 backend/scripts/annotate_sources.py
 
 출처 확인·라이선스 검토·갱신 제안은 팀 채널로 연락.
 
-*생성일: 2026-04-14*
+*생성일: 2026-04-24*

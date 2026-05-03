@@ -13,9 +13,8 @@
 
 | 스크립트 | 출력 | 설명 |
 |---------|------|------|
-| `ingest_laws.py` | `data/laws/*.json` | 국가법령정보 Open API (주택임대차보호법 등 핵심 법령) |
-| `ingest_easylaw.py` | `data/procedures/easylaw_moveout.json` | 찾기쉬운 생활법령정보 "이사" 카테고리 크롤링 |
-| `ingest_easylaw_lease.py` | `data/procedures/easylaw_lease.json` | 생활법령정보 "임대차" 카테고리 |
+| `ingest_laws.py` | `data/law/*.json` | 국가법령정보 Open API (주택임대차보호법 등 핵심 법령) |
+| `ingest_easylaw.py` | `data/guide/easylaw-*.json` (53개) | 찾기쉬운 생활법령정보 "이사" + "주택임대차" 카테고리 크롤링 (v2에서 lease 스크립트 통합) |
 | `ingest_moveout.py` | `data/procedures/moveout_*.json` | 이사 관련 행정 절차 통합 수집 |
 | `ingest_services.py` | `data/mapping/*.json` | 지역별 서비스 (수도·가스·전기·통신·우편 등) |
 | `ingest_services_v2.py` | `data/mapping/*_v2.json` | services v2 개선본 (구버전 대체) |
@@ -24,15 +23,17 @@
 | `ingest_youtube.py` | `data/raw/youtube_transcripts/*.json` | 유튜브 이사 팁 영상 자막 |
 | `ingest_holidays.py` | `data/raw/holidays_2026.json` | 공공데이터 공휴일 (D-day 계산용) |
 
-### 2. Preprocess — 청킹·큐레이션·메타 주입
+> NOTE: `ingest_youtube.py` 와 `data/raw/youtube_transcripts/*.json` 은 저작권 우려로
+> 2026-04-23 제거됨. 챗봇은 law + guide 2개 인덱스만 사용.
+
+### 2. Preprocess — 청킹·메타 주입
 
 수집한 raw JSON 을 AI Search 에 넣기 좋은 청크로 가공.
 
 | 스크립트 | 설명 |
 |---------|------|
-| `chunk_easylaw.py` | easylaw JSON → 200자 단위 청크 (`index_b_chunks.jsonl`) |
-| `curate_chunks.py` | index_b 청크 중 저품질(짧거나 중복) 제거 → `index_b_chunks_curated.jsonl` |
-| `annotate_sources.py` | 청크에 source_url·breadcrumb·deadlines 메타 주입 |
+| `chunk_easylaw.py` | guide JSON → 700자 목표 청크 (`guide_chunks.jsonl`) |
+| `annotate_sources.py` | 모든 JSON 에 `_source_metadata` 필드 주입 + DATA_SOURCES.md 카탈로그 생성 |
 
 ### 3. Index — 통합 인덱스 빌드·업로드
 
