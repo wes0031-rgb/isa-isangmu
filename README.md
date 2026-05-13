@@ -100,11 +100,11 @@ PDF를 올리면 위험 요소를 분석해 위험·주의·안전 등급으로 
 
 Microsoft AI School 9기 6인 팀 프로젝트.
 
-| 이름                 | GitHub                                               | 역할                                                                                                                                                 |
-| -------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **조윤재** (팀 리드) | [@liminal-cipher](https://github.com/liminal-cipher) | 기획서, 시스템 아키텍처 및 RAG 파이프라인 설계 / Azure AI Search index 스키마 설계 및 3-index 구축 / 등기부등본 시나리오 작성 / 시스템 아키텍처 발표 |
-| **김시언**           | [@happybluebird](https://github.com/happybluebird)   | 발표 슬라이드 구성 / UI 제작 및 디자인 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 문제 정의 및 서비스 소개 발표                                      |
-| **노지현**           | [@Jihyun-KR](https://github.com/Jihyun-KR)           | 시연 영상 기획, 촬영, 편집 / 서비스 이용자 가상 시나리오 설계 / Azure Document Intelligence 학습 데이터 라벨링 / Azure AI Search 통합 인덱스 구현 / AI 윤리 6대 원칙 정리 / 시연 파트 발표                                                              |
-| **이승아**           | [@wes0031-rgb](https://github.com/wes0031-rgb)       | React Native 앱 개발 및 Azure 서비스 연동 (AI Search, OpenAI, Document Intelligence) / 도메인 리서치 / AI 윤리 6대 원칙 및 성과/한계 발표            |
-| **이재모**           | [@imjml](https://github.com/imjml)                   | Azure Speech Studio 기반 커스텀 음성 모델 학습 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 발표 구성 검토 및 피드백 / 데이터 파이프라인 발표          |
-| **이정우**           | [@jwoo9711-rgb](https://github.com/jwoo9711-rgb)     | 도메인 리서치 및 AI 윤리 6대 원칙 정리 / STT 기능 도입 제안 / 발표 구성 검토 및 피드백 / 수행 과정 및 주요 의사결정 발표                             |
+| 이름 | GitHub | 역할 |
+| --- | --- | --- |
+| **조윤재** (팀 리드) | [@liminal-cipher](https://github.com/liminal-cipher) | 기획서, 시스템 아키텍처 및 RAG 파이프라인 설계 / Azure AI Search index 스키마 설계 및 3-index 구축 / 등기부등본 테스트 시나리오 설계 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 시스템 아키텍처 발표 |
+| **김시언** | [@happybluebird](https://github.com/happybluebird) | 발표 슬라이드 구성 / UI 제작 및 디자인 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 문제 정의 및 서비스 소개 발표 |
+| **노지현** | [@Jihyun-KR](https://github.com/Jihyun-KR) | 시연 영상 기획, 촬영, 편집 / 서비스 이용자 가상 시나리오 설계 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / Azure AI Search 통합 인덱스 구현 / AI 윤리 6대 원칙 정리 / 시연 파트 발표 |
+| **이승아** | [@wes0031-rgb](https://github.com/wes0031-rgb) | React Native 앱 개발 및 Azure 서비스 연동 (AI Search, OpenAI, Document Intelligence) / 도메인 리서치 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / AI 윤리 6대 원칙 및 성과/한계 발표 |
+| **이재모** | [@imjml](https://github.com/imjml) | Azure Speech Studio 기반 커스텀 음성 모델 학습 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 발표 구성 검토 및 피드백 / 데이터 파이프라인 발표 |
+| **이정우** | [@jwoo9711-rgb](https://github.com/jwoo9711-rgb) | 도메인 리서치 및 AI 윤리 6대 원칙 정리 / STT 기능 도입 제안 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 발표 구성 검토 및 피드백 / 수행 과정 및 주요 의사결정 발표 |
