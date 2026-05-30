@@ -30,10 +30,14 @@ Microsoft AI School 9기 2차 프로젝트 · 2026.04.13 ~ 04.26 (약 2주) · 6
 
 ## Architecture
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/overview-dark.png">
   <img src="docs/architecture/overview-light.png" alt="시스템 아키텍처" width="100%">
 </picture>
+
+<br>
 
 | 계층       | 구성                                                           |
 | ---------- | -------------------------------------------------------------- |
@@ -46,10 +50,14 @@ Microsoft AI School 9기 2차 프로젝트 · 2026.04.13 ~ 04.26 (약 2주) · 6
 
 데이터는 법제처 API·easylaw·정부 기관 가이드·공공데이터포털 기반이며 모두 **공공누리 제1유형**(출처 표시) 라이선스를 따른다.
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/data-preprocessing-dark.png">
   <img src="docs/architecture/data-preprocessing-light.png" alt="데이터 전처리 파이프라인" width="100%">
 </picture>
+
+<br>
 
 ---
 
@@ -64,10 +72,14 @@ Microsoft AI School 9기 2차 프로젝트 · 2026.04.13 ~ 04.26 (약 2주) · 6
 - 각 항목은 법적 기한 기준 D-day로 정렬, 공휴일이면 다음 평일로 자동 조정
 - 항목별 상세: 설명·신청 방법·연락처·법적 근거(외부 링크)·내 메모(로컬 저장)
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/checklist-dark.png">
   <img src="docs/architecture/checklist-light.png" alt="체크리스트 아키텍처" width="100%">
 </picture>
+
+<br>
 
 <!-- TODO: 체크리스트 화면 스크린샷 -->
 
@@ -80,10 +92,14 @@ PDF를 올리면 위험 요소를 분석해 위험·주의·안전 등급으로 
 - **해석**: GPT-4o → 사용자가 이해할 수 있게 풀어서 설명
 - 종합 점수는 의도적으로 만들지 않음 → 가중치 책임을 사용자에게 떠넘기지 않기 위해
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/registry-dark.png">
   <img src="docs/architecture/registry-light.png" alt="등기부등본 아키텍처" width="100%">
 </picture>
+
+<br>
 
 <!-- TODO: 등기부등본 해석기 화면 스크린샷 -->
 
@@ -96,10 +112,14 @@ PDF를 올리면 위험 요소를 분석해 위험·주의·안전 등급으로 
 - 인라인 출처 토큰 + 하단 출처 목록 이중 노출
 - 도메인 외 질문은 LLM 호출 전 사전 필터링
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/chatbot-dark.png">
   <img src="docs/architecture/chatbot-light.png" alt="꽉꽉봇 아키텍처" width="100%">
 </picture>
+
+<br>
 
 <!-- TODO: 꽉꽉봇 화면 스크린샷 -->
 
