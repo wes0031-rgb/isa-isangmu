@@ -28,6 +28,31 @@ Microsoft AI School 9기 2차 프로젝트 · 2026.04.13 ~ 04.26 (약 2주) · 6
 
 ---
 
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/overview-dark.png">
+  <img src="docs/architecture/overview-light.png" alt="시스템 아키텍처" width="100%">
+</picture>
+
+| 계층       | 구성                                                           |
+| ---------- | -------------------------------------------------------------- |
+| 프론트엔드 | React Native (Expo)                                            |
+| 백엔드     | FastAPI (Python)                                               |
+| AI/검색    | Azure OpenAI (GPT-4o, text-embedding-3-small), Azure AI Search |
+| 문서 처리  | Azure Document Intelligence (Custom Neural)                    |
+| 음성       | Azure Speech (STT)                                             |
+| 저장       | Azure Blob Storage                                             |
+
+데이터는 법제처 API·easylaw·정부 기관 가이드·공공데이터포털 기반이며 모두 **공공누리 제1유형**(출처 표시) 라이선스를 따른다.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/data-preprocessing-dark.png">
+  <img src="docs/architecture/data-preprocessing-light.png" alt="데이터 전처리 파이프라인" width="100%">
+</picture>
+
+---
+
 ## Features
 
 ### 1. 이사 체크리스트 (핵심)
@@ -38,6 +63,11 @@ Microsoft AI School 9기 2차 프로젝트 · 2026.04.13 ~ 04.26 (약 2주) · 6
 - 자유 텍스트("기타 특이사항")는 LLM으로 처리 → 토글로 잡히지 않는 엣지 케이스 대응
 - 각 항목은 법적 기한 기준 D-day로 정렬, 공휴일이면 다음 평일로 자동 조정
 - 항목별 상세: 설명·신청 방법·연락처·법적 근거(외부 링크)·내 메모(로컬 저장)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/checklist-dark.png">
+  <img src="docs/architecture/checklist-light.png" alt="체크리스트 아키텍처" width="100%">
+</picture>
 
 <!-- TODO: 체크리스트 화면 스크린샷 -->
 
@@ -50,6 +80,11 @@ PDF를 올리면 위험 요소를 분석해 위험·주의·안전 등급으로 
 - **해석**: GPT-4o → 사용자가 이해할 수 있게 풀어서 설명
 - 종합 점수는 의도적으로 만들지 않음 → 가중치 책임을 사용자에게 떠넘기지 않기 위해
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/registry-dark.png">
+  <img src="docs/architecture/registry-light.png" alt="등기부등본 아키텍처" width="100%">
+</picture>
+
 <!-- TODO: 등기부등본 해석기 화면 스크린샷 -->
 
 ### 3. 꽉꽉봇 (RAG 챗봇)
@@ -61,24 +96,12 @@ PDF를 올리면 위험 요소를 분석해 위험·주의·안전 등급으로 
 - 인라인 출처 토큰 + 하단 출처 목록 이중 노출
 - 도메인 외 질문은 LLM 호출 전 사전 필터링
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/chatbot-dark.png">
+  <img src="docs/architecture/chatbot-light.png" alt="꽉꽉봇 아키텍처" width="100%">
+</picture>
+
 <!-- TODO: 꽉꽉봇 화면 스크린샷 -->
-
----
-
-## Architecture
-
-<!-- TODO: 시스템 아키텍처 다이어그램 -->
-
-| 계층       | 구성                                                           |
-| ---------- | -------------------------------------------------------------- |
-| 프론트엔드 | React Native (Expo)                                            |
-| 백엔드     | FastAPI (Python)                                               |
-| AI/검색    | Azure OpenAI (GPT-4o, text-embedding-3-small), Azure AI Search |
-| 문서 처리  | Azure Document Intelligence (Custom Neural)                    |
-| 음성       | Azure Speech (STT)                                             |
-| 저장       | Azure Blob Storage                                             |
-
-데이터는 법제처 API·easylaw·정부 기관 가이드·공공데이터포털 기반이며 모두 **공공누리 제1유형**(출처 표시) 라이선스를 따른다.
 
 ---
 
@@ -100,11 +123,11 @@ PDF를 올리면 위험 요소를 분석해 위험·주의·안전 등급으로 
 
 Microsoft AI School 9기 6인 팀 프로젝트.
 
-| 이름 | GitHub | 역할 |
-| --- | --- | --- |
+| 이름                 | GitHub                                               | 역할                                                                                                                                                                                                                                          |
+| -------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **조윤재** (팀 리드) | [@liminal-cipher](https://github.com/liminal-cipher) | 기획서, 시스템 아키텍처 및 RAG 파이프라인 설계 / Azure AI Search index 스키마 설계 및 3-index 구축 / 등기부등본 테스트 시나리오 설계 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 시스템 아키텍처 발표 |
-| **김시언** | [@happybluebird](https://github.com/happybluebird) | 발표 슬라이드 구성 / UI 제작 및 디자인 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 문제 정의 및 서비스 소개 발표 |
-| **노지현** | [@Jihyun-KR](https://github.com/Jihyun-KR) | 시연 영상 기획, 촬영, 편집 / 서비스 이용자 가상 시나리오 설계 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / Azure AI Search 통합 인덱스 구현 / AI 윤리 6대 원칙 정리 / 시연 파트 발표 |
-| **이승아** | [@wes0031-rgb](https://github.com/wes0031-rgb) | React Native 앱 개발 및 Azure 서비스 연동 (AI Search, OpenAI, Document Intelligence) / 도메인 리서치 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / AI 윤리 6대 원칙 및 성과/한계 발표 |
-| **이재모** | [@imjml](https://github.com/imjml) | Azure Speech Studio 기반 커스텀 음성 모델 학습 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 발표 구성 검토 및 피드백 / 데이터 파이프라인 발표 |
-| **이정우** | [@jwoo9711-rgb](https://github.com/jwoo9711-rgb) | 도메인 리서치 및 AI 윤리 6대 원칙 정리 / STT 기능 도입 제안 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 발표 구성 검토 및 피드백 / 수행 과정 및 주요 의사결정 발표 |
+| **김시언**           | [@happybluebird](https://github.com/happybluebird)   | 발표 슬라이드 구성 / UI 제작 및 디자인 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 문제 정의 및 서비스 소개 발표                                             |
+| **노지현**           | [@Jihyun-KR](https://github.com/Jihyun-KR)           | 시연 영상 기획, 촬영, 편집 / 서비스 이용자 가상 시나리오 설계 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / Azure AI Search 통합 인덱스 구현 / AI 윤리 6대 원칙 정리 / 시연 파트 발표                               |
+| **이승아**           | [@wes0031-rgb](https://github.com/wes0031-rgb)       | React Native 앱 개발 및 Azure 서비스 연동 (AI Search, OpenAI, Document Intelligence) / 도메인 리서치 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / AI 윤리 6대 원칙 및 성과/한계 발표                   |
+| **이재모**           | [@imjml](https://github.com/imjml)                   | Azure Speech Studio 기반 커스텀 음성 모델 학습 / 도메인 리서치 및 AI 윤리 6대 원칙 정리 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 발표 구성 검토 및 피드백 / 데이터 파이프라인 발표                 |
+| **이정우**           | [@jwoo9711-rgb](https://github.com/jwoo9711-rgb)     | 도메인 리서치 및 AI 윤리 6대 원칙 정리 / STT 기능 도입 제안 / 데이터 수집·전처리 / Azure Document Intelligence 학습 데이터 라벨링 / 앱 테스트 / 발표 구성 검토 및 피드백 / 수행 과정 및 주요 의사결정 발표                                    |
